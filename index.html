@@ -296,7 +296,7 @@
   </div>
   <p class="q" id="mha-q">What did your co-parent do with Thomas?</p>
   <div class="activity-grid" id="mha-acts">
-    <button class="act-btn" onclick="toggleMomAct(this,'tennis')">Tennis</button>
+    <button class="act-btn" onclick="toggleMomAct(this,'sports')">Sports</button>
     <button class="act-btn" onclick="toggleMomAct(this,'camp')">Camp / drop-off</button>
     <button class="act-btn" onclick="toggleMomAct(this,'school')">School run</button>
     <button class="act-btn" onclick="toggleMomAct(this,'food')">Meal / dinner</button>
@@ -367,27 +367,28 @@
 <div class="screen" id="s-mom-easy">
   <div class="top-bar">
     <button class="back-btn" onclick="show('s-mom-mode')">← Back</button>
-    <div class="logo">Mom's week</div>
+    <div class="logo">Co-parent's day</div>
     <div class="back-spacer"></div>
   </div>
   <div class="progress" id="prog-mom-easy"></div>
-  <div class="banner banner-mom"><div style="font-size:20px">✅</div><div><div class="banner-title">Mom had the kids</div><div class="banner-sub">Did you do anything at all today?</div></div></div>
+  <p class="q" id="mom-easy-q">Did you do anything at all today?</p>
+  <p class="sub" id="mom-easy-sub">Choose your involvement during your co-parent's day.</p>
   <div class="option-list" id="easy-opts">
-    <div class="opt" onclick="toggleEasyOpt(this,'none')"><span class="chk">✓</span>No — completely her day</div>
+    <div class="opt" onclick="toggleEasyOpt(this,'none')"><span class="chk">✓</span>No — completely their day</div>
     <div class="opt" onclick="toggleEasyOpt(this,'call')"><span class="chk">✓</span>Phone / FaceTime with the kids</div>
     <div class="opt" onclick="toggleEasyOpt(this,'pickup')"><span class="chk">✓</span>Drop-off or pick-up</div>
     <div class="opt" onclick="toggleEasyOpt(this,'brief')"><span class="chk">✓</span>Brief visit</div>
   </div>
   <p class="sec-lbl">Quick note (optional)</p>
   <input type="text" id="easy-note" placeholder="Anything worth recording...">
-  <button class="btn primary" onclick="goToReview()" style="width:100%">Review &amp; save →</button>
+  <button class="btn primary" id="easy-review-btn" onclick="goToReview()" style="width:100%" disabled>Review &amp; save →</button>
 </div>
 
 <!-- MOM HELPED: which kids -->
 <div class="screen" id="s-mom-helped-kids2">
   <div class="top-bar">
     <button class="back-btn" onclick="show('s-mom-mode')">← Back</button>
-    <div class="logo">Mom's week</div>
+    <div class="logo">Co-parent's day</div>
     <div class="back-spacer"></div>
   </div>
   <div class="progress" id="prog-mom-helped-kids2"></div>
@@ -402,10 +403,10 @@
 </div>
 
 <!-- MOM HELPED: activity -->
-<div class="screen" id="s-mom-helped-activity">
+<div class="screen" id="s-helped-activity">
   <div class="top-bar">
     <button class="back-btn" onclick="goBackFromHelped()">← Back</button>
-    <div class="logo">Mom's week</div>
+    <div class="logo">Co-parent's day</div>
     <div class="back-spacer"></div>
   </div>
   <div class="progress" id="prog-helped-activity"></div>
@@ -415,7 +416,7 @@
   </div>
   <p class="q" id="helped-q">What did you do with Thomas?</p>
   <div class="activity-grid" id="helped-acts">
-    <button class="act-btn" onclick="toggleAct(this,'tennis')">Tennis</button>
+    <button class="act-btn" onclick="toggleAct(this,'sports')">Sports</button>
     <button class="act-btn" onclick="toggleAct(this,'camp')">Camp / drop-off</button>
     <button class="act-btn" onclick="toggleAct(this,'school')">School run</button>
     <button class="act-btn" onclick="toggleAct(this,'food')">Meal / dinner</button>
@@ -425,7 +426,7 @@
     <button class="act-btn" onclick="toggleAct(this,'other')">Other</button>
   </div>
   <p class="sec-lbl">Quick note (optional)</p>
-  <input type="text" id="helped-note" placeholder="e.g. Tennis tournament in San Diego...">
+  <input type="text" id="helped-note" placeholder="e.g. Sports tournament in San Diego...">
   <button class="btn primary" id="helped-act-next" onclick="nextHelpedKid()" style="width:100%" disabled>Next →</button>
 </div>
 
@@ -433,11 +434,12 @@
 <div class="screen" id="s-mom-dad-had">
   <div class="top-bar">
     <button class="back-btn" onclick="show('s-mom-mode')">← Back</button>
-    <div class="logo">Mom's week</div>
+    <div class="logo">Co-parent's day</div>
     <div class="back-spacer"></div>
   </div>
   <div class="progress" id="prog-mom-dad-had"></div>
-  <div class="banner banner-other"><div style="font-size:20px">⚠️</div><div><div class="banner-title">Mom left the kids with you</div><div class="banner-sub">Her week, but you had them. Who was with you?</div></div></div>
+  <p class="q" id="mom-dad-had-q">Which kids ended up with you?</p>
+  <p class="sub" id="mom-dad-had-sub">Record who was actually with you overnight.</p>
   <div class="kid-grid" id="dad-had-grid">
     <button class="kid-btn" id="dh-Thomas" onclick="toggleDadHadKid('Thomas')">Thomas</button>
     <button class="kid-btn" id="dh-Presley" onclick="toggleDadHadKid('Presley')">Presley</button>
@@ -485,11 +487,18 @@
 <div class="screen" id="s-other-diary">
   <div class="top-bar">
     <button class="back-btn" onclick="show('s-week')">← Back</button>
-    <div class="logo">Special day</div>
+    <div class="logo">SPECIAL DAY</div>
     <div class="back-spacer"></div>
   </div>
-  <div class="banner banner-other" style="margin-top:.25rem"><div style="font-size:20px">✨</div><div><div class="banner-title">Special / other day</div><div class="banner-sub">Won't count toward custody totals.</div></div></div>
+  <div class="progress" id="prog-other-diary"></div>
   <p class="q">What's the situation today?</p>
+  <p class="sub">Use this for holidays, travel, tournaments, or another exception.</p>
+  <div class="special-context-card">
+    <span class="special-context-icon">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.6 5.1L19 10l-5.4 1.9L12 17l-1.6-5.1L5 10l5.4-1.9L12 3z"></path><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"></path></svg>
+    </span>
+    <span><strong>Exception day</strong><br><span>This will be saved as a special custody note.</span></span>
+  </div>
   <textarea id="other-diary-input" placeholder="Christmas Day, tournament travel, joint event..."></textarea>
   <button class="btn primary" onclick="goToReview()" style="width:100%;margin-top:1rem">Review &amp; save →</button>
 </div>
@@ -656,6 +665,6 @@
 </div>
 
 </div><!-- end .app -->
-<script src="app.js"></script>
+<script src="app.js?v=checkin-branch-ui"></script>
 </body>
 </html>
