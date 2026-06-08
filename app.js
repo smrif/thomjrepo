@@ -286,27 +286,83 @@ function initHome(){
   checkMissedPrompt();
   const now=new Date();
   const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  document.getElementById('home-greeting').textContent=greetingFor(now)+', '+currentParent();
+  document.getElementById('home-profile').textContent=(currentParent().trim()[0]||'Y').toUpperCase();
   document.getElementById('home-date').textContent=days[now.getDay()]+', '+MONTHS[now.getMonth()]+' '+now.getDate()+', '+now.getFullYear();
   updateHomeCheckinCard();
+  renderHomeWeek(now);
   if(now.getDay()===0&&!localStorage.getItem('sunday_prompt_'+todayStr()))document.getElementById('sunday-prompt').style.display='block';
   const entries=getEntries(),dates=Object.keys(entries).sort().reverse();
   if(!dates.length)return;
-  const last=dates[0],e=entries[last];
-  let desc=describeEntry(e);
-  document.getElementById('home-recent-inner').innerHTML=`<div class="entry-date-lbl">${fmtShort(last)}</div><div class="entry-row">${desc}</div>${e.diary?`<div class="entry-row" style="color:#666;font-style:italic;font-size:13px;margin-top:3px">"${e.diary.substring(0,90)}${e.diary.length>90?'…':''}"</div>`:''}`;
+  renderHomeRecent(dates,entries);
   document.getElementById('home-recent').style.display='block';
+}
+function greetingFor(date){
+  const h=date.getHours();
+  if(h<12)return'Good morning';
+  if(h<17)return'Good afternoon';
+  return'Good evening';
 }
 function updateHomeCheckinCard(){
   const scheduled=getScheduledWeek(todayStr());
   const title=document.getElementById('home-plan-title'),sub=document.getElementById('home-plan-sub');
+  const label=document.getElementById('home-primary-label');
   if(!title||!sub)return;
   if(!scheduled){
     title.textContent='Ready to log today';
     sub.textContent='Track actual custody time in under 30 seconds.';
+    if(label)label.textContent='Log today';
     return;
   }
-  title.textContent=scheduleLabel(scheduled);
-  sub.textContent=scheduled==='dad'?'Expected: '+kidsCountLabel()+' with you tonight.':'Expected: '+kidsCountLabel()+' with '+coParent()+' today.';
+  title.textContent=expectedHomeTitle(scheduled);
+  sub.textContent='Based on your scheduled week';
+  if(label)label.textContent=scheduled?'Confirm today':'Log today';
+}
+function capitalize(text){return text.charAt(0).toUpperCase()+text.slice(1)}
+function expectedHomeTitle(scheduled){
+  const label=capitalize(kidsCountLabel());
+  const verb=KIDS.length===1?' is':' are';
+  return scheduled==='dad'?label+verb+' expected to be with you.':label+verb+' expected to be with '+coParent()+'.';
+}
+function renderHomeWeek(now){
+  const strip=document.getElementById('home-week-strip');
+  const range=document.getElementById('week-range');
+  if(!strip||!range)return;
+  strip.innerHTML='';
+  const start=new Date(now);
+  start.setDate(now.getDate()-now.getDay());
+  const end=new Date(start);
+  end.setDate(start.getDate()+6);
+  range.textContent=MONTHS[start.getMonth()].slice(0,3)+' '+start.getDate()+' - '+MONTHS[end.getMonth()].slice(0,3)+' '+end.getDate();
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const today=todayStr();
+  for(let i=0;i<7;i++){
+    const d=new Date(start);
+    d.setDate(start.getDate()+i);
+    const ds=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+    const scheduled=getScheduledWeek(ds);
+    const withMe=scheduled!=='mom';
+    const item=document.createElement('div');
+    item.className='week-day'+(ds===today?' today':'');
+    item.innerHTML=`<div class="week-day-label">${dayNames[i]}</div><div class="week-day-num">${d.getDate()}</div><div class="week-icon ${withMe?'me':'other'}">${withMe?'⌂':'○'}</div>`;
+    strip.appendChild(item);
+  }
+}
+function renderHomeRecent(dates,entries){
+  const recent=document.getElementById('home-recent-inner');
+  if(!recent)return;
+  const rows=dates.slice(0,3).map((date,idx)=>{
+    const e=entries[date];
+    const desc=describeEntry(e);
+    const dot=e.week==='not-logged'?'missed':e.week==='other'||e.dadMode==='mom-had'||e.momMode==='dad-had'?'warn':idx===0?'':'ok';
+    const when=idx===0?'Latest':idx===1?'Previous':'Older';
+    return`<div class="recent-row" onclick="showCal()"><span class="recent-dot ${dot}"></span><span class="recent-date">${fmtShortMonthDay(date)}</span><span class="recent-title">${desc}</span><span class="recent-time">${when} ›</span></div>`;
+  }).join('');
+  recent.innerHTML='<div class="recent-list">'+rows+'</div>';
+}
+function fmtShortMonthDay(ds){
+  const[y,m,d]=ds.split('-');
+  return MONTHS[parseInt(m)-1].slice(0,3)+' '+parseInt(d);
 }
 function describeEntry(e){
   if(e.week==='not-logged')return e.intentional?'Skipped intentionally':'Dad didn\'t post';
@@ -749,7 +805,14 @@ function changeMonth(dir){calM+=dir;if(calM>11){calM=0;calY++}if(calM<0){calM=11
 function switchTab(t){['cal','stats','log'].forEach(x=>{document.getElementById('t-'+x).classList.toggle('active',x===t);document.getElementById('tc-'+x).style.display=x===t?'block':'none'});if(t==='log')renderLog()}
 
 // EXPORT
-function showExport(){currentExportType=null;document.querySelectorAll('.export-card').forEach(c=>c.classList.remove('sel'));document.getElementById('export-preview-section').style.display='none';show('s-export')}
+function showExport(){
+  currentExportType=null;
+  const profile=document.getElementById('reports-profile');
+  if(profile)profile.textContent=(currentParent().trim()[0]||'Y').toUpperCase();
+  document.querySelectorAll('.export-card').forEach(c=>c.classList.remove('sel'));
+  document.getElementById('export-preview-section').style.display='none';
+  show('s-export');
+}
 function selectExport(type){
   currentExportType=type;document.querySelectorAll('.export-card').forEach(c=>c.classList.remove('sel'));document.getElementById('exp-'+type).classList.add('sel');
   currentReportText=buildReport(type);

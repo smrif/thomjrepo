@@ -66,46 +66,99 @@
 
 <!-- HOME -->
 <div class="screen active" id="s-home">
-  <div class="top-bar"><div class="logo-left" style="display:flex;align-items:center;gap:10px"><svg width="32" height="32" viewBox="0 0 32 32" style="flex-shrink:0"><rect width="32" height="32" rx="8" fill="#3C3489"/><polygon points="16,5 25,12 25,27 7,27 7,12" fill="#534AB7"/><polygon points="16,5 25,12 16,12" fill="#6c63d4"/><rect x="12.5" y="19" width="7" height="8" rx="1.5" fill="#EEEDFE"/><rect x="8" y="16" width="5" height="5" rx="1" fill="#7F77DD"/><rect x="19" y="16" width="5" height="5" rx="1" fill="#7F77DD"/><circle cx="16" cy="11" r="4" fill="#FAC775"/><path d="M16 14.5C11.5 11.8 11.5 8.2 13.5 7.2C14.5 6.7 16 7.5 16 7.5C16 7.5 17.5 6.7 18.5 7.2C20.5 8.2 20.5 11.8 16 14.5Z" fill="#993C1D"/><path d="M13.5 11L15.2 12.7L18.5 9.5" fill="none" stroke="#fff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span style="font-size:17px;font-weight:700;color:#3C3489;letter-spacing:-0.3px">Custody Tracker</span></div></div>
-  <p class="q home-greeting">Good evening</p>
-  <p class="sub" id="home-date"></p>
-  <div class="home-checkin">
-    <div class="home-checkin-head">
-      <div>
-        <div class="home-eyebrow">Tonight's check-in</div>
-        <div class="home-plan" id="home-plan-title">Ready to log today</div>
+  <div class="home-shell">
+    <div class="home-top">
+      <div class="home-brand">
+        <svg class="home-logo" width="42" height="42" viewBox="0 0 42 42" aria-hidden="true">
+          <rect width="42" height="42" rx="12" fill="#4430a0"/>
+          <path d="M11 20.5 21 12l10 8.5V32H11V20.5Z" fill="#fff8e8"/>
+          <path d="M16.3 24.1c-2.8-2.7-1.1-6.5 2-5.1 1.4.6 2.7 2.3 2.7 2.3s1.3-1.7 2.7-2.3c3.1-1.4 4.8 2.4 2 5.1L21 28.4l-4.7-4.3Z" fill="none" stroke="#4430a0" stroke-width="1.7" stroke-linejoin="round"/>
+          <path d="M8.5 20.5 21 9.8l12.5 10.7" fill="none" stroke="#fff8e8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Custody Tracker</span>
       </div>
-      <div class="home-status-dot">✓</div>
+      <button class="profile-chip" onclick="showSetup()" id="home-profile">R</button>
     </div>
-    <div class="home-plan-sub" id="home-plan-sub">Track actual custody time in under 30 seconds.</div>
-    <button class="btn primary home-primary" onclick="startCheckin()">Log today</button>
-    <div class="home-secondary-row">
-      <button class="btn" onclick="showCal()">Calendar</button>
-      <button class="btn" onclick="showExport()">Reports</button>
-      <button class="btn" onclick="showSetup()">Setup</button>
+    <p class="q home-greeting" id="home-greeting">Good evening</p>
+    <p class="sub home-date" id="home-date"></p>
+
+    <div class="home-checkin">
+      <div class="home-card-art" aria-hidden="true">
+        <img src="assets/tonight-home-illustration.png" alt="">
+      </div>
+      <div class="home-eyebrow">Tonight</div>
+      <div class="home-plan" id="home-plan-title">Ready to log today</div>
+      <div class="home-plan-sub" id="home-plan-sub">Track actual custody time in under 30 seconds.</div>
+      <button class="btn primary home-primary" onclick="startCheckin()">
+        <span class="btn-icon">✓</span>
+        <span id="home-primary-label">Log today</span>
+      </button>
     </div>
-  </div>
-  <div id="missed-prompt" class="missed-banner">
-    <div class="missed-banner-title">📅 Did you miss last night?</div>
-    <div class="missed-banner-sub" id="missed-prompt-sub">Looks like you didn't log <strong id="missed-date-label">yesterday</strong>. Want to post it now, or mark it as intentionally skipped?</div>
-    <div style="display:flex;gap:10px">
-      <button class="btn primary" onclick="startBackfill()" style="flex:2">Log last night</button>
-      <button class="btn" onclick="dismissMissedPrompt()" style="flex:1">Skip it</button>
-    </div>
-  </div>
-  <div id="sunday-prompt" style="display:none">
-    <div class="sunday-banner">
-      <div style="font-size:15px;font-weight:700;color:#3c3489;margin-bottom:5px">📬 Weekly report ready</div>
-      <div style="font-size:14px;color:#534ab7;margin-bottom:14px;line-height:1.4">Your weekly summary is available when you need it.</div>
+
+    <div id="missed-prompt" class="missed-banner">
+      <div class="missed-banner-title">Missed check-in</div>
+      <div class="missed-banner-sub" id="missed-prompt-sub">Looks like you didn't log <strong id="missed-date-label">yesterday</strong>. Want to post it now, or mark it as intentionally skipped?</div>
       <div style="display:flex;gap:10px">
-        <button class="btn" onclick="sendWeeklyEmail()" style="flex:2">Send report</button>
-        <button class="btn" onclick="document.getElementById('sunday-prompt').style.display='none'" style="flex:1">Skip</button>
+        <button class="btn primary" onclick="startBackfill()" style="flex:2">Log last night</button>
+        <button class="btn" onclick="dismissMissedPrompt()" style="flex:1">Skip it</button>
       </div>
     </div>
-  </div>
-  <div id="home-recent" style="display:none;margin-top:1.5rem">
-    <p class="sec-lbl">Last entry</p>
-    <div class="entry-card" id="home-recent-inner"></div>
+
+    <div class="home-section-card">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <span class="soft-icon calendar-icon"></span>
+          <div>
+            <div class="section-title">This week</div>
+            <div class="section-sub" id="week-range">Current week</div>
+          </div>
+        </div>
+        <button class="pill-btn" onclick="showCal()">View calendar ›</button>
+      </div>
+      <div class="week-strip" id="home-week-strip"></div>
+      <div class="week-legend">
+        <span><i class="legend-me"></i> With you</span>
+        <span><i class="legend-other"></i> With other parent</span>
+      </div>
+    </div>
+
+    <div id="sunday-prompt" style="display:none">
+      <div class="sunday-banner">
+        <div style="font-size:15px;font-weight:700;color:#3c3489;margin-bottom:5px">Weekly report ready</div>
+        <div style="font-size:14px;color:#534ab7;margin-bottom:14px;line-height:1.4">Your weekly summary is available when you need it.</div>
+        <div style="display:flex;gap:10px">
+          <button class="btn" onclick="sendWeeklyEmail()" style="flex:2">Send report</button>
+          <button class="btn" onclick="document.getElementById('sunday-prompt').style.display='none'" style="flex:1">Skip</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="home-action-row" onclick="showExport()">
+      <span class="soft-icon report-icon"></span>
+      <div>
+        <div class="section-title">Weekly report</div>
+        <div class="section-sub">Your summary is ready when you need it.</div>
+      </div>
+      <button class="pill-btn">Send report ›</button>
+    </div>
+
+    <div id="home-recent" class="home-section-card" style="display:none">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <span class="soft-icon clock-icon"></span>
+          <div class="section-title">Recent activity</div>
+        </div>
+        <button class="pill-btn text-only" onclick="showCal()">View all ›</button>
+      </div>
+      <div id="home-recent-inner"></div>
+    </div>
+
+    <div class="bottom-nav">
+      <button class="bottom-nav-item active" onclick="show('s-home')"><span class="nav-home"></span><strong>Today</strong></button>
+      <button class="bottom-nav-item" onclick="showCal()"><span class="nav-calendar"></span><strong>Calendar</strong></button>
+      <button class="bottom-nav-item" onclick="showExport()"><span class="nav-bars"></span><strong>Reports</strong></button>
+      <button class="bottom-nav-item" onclick="showSetup()"><span class="nav-gear"></span><strong>Settings</strong></button>
+    </div>
   </div>
 </div>
 
@@ -521,44 +574,97 @@
 
 <!-- EXPORT -->
 <div class="screen" id="s-export">
-  <div class="top-bar"><div class="logo-left">Export &amp; reports</div></div>
-  <p class="sub" style="margin-bottom:1rem">Choose a format, preview, then share</p>
-  <div class="export-card" id="exp-full" onclick="selectExport('full')">
-    <div class="export-icon" style="background:#eeedfe">📄</div>
-    <div class="export-title">Full diary — all entries</div>
-    <div class="export-desc">Every logged day in chronological order</div>
-  </div>
-  <div class="export-card" id="exp-dadactual" onclick="selectExport('dadactual')">
-    <div class="export-icon" style="background:#eeedfe">⏱️</div>
-    <div class="export-title">Dad's actual time with kids</div>
-    <div class="export-desc">All days Dad had kids — his week AND Mom's-week nights she left them</div>
-  </div>
-  <div class="export-card" id="exp-honest" onclick="selectExport('honest')">
-    <div class="export-icon" style="background:#e1f5ee">⚖️</div>
-    <div class="export-title">Full honesty report</div>
-    <div class="export-desc">Both sides: Dad's-week kids at Mom's AND Mom's-week kids at Dad's</div>
-  </div>
-  <div class="export-card" id="exp-momsweek" onclick="selectExport('momsweek')">
-    <div class="export-icon" style="background:#faece7">👤</div>
-    <div class="export-title">Mom's week — Dad's involvement</div>
-    <div class="export-desc">Mom's scheduled days where Dad helped or had the kids</div>
-  </div>
-  <div class="export-card" id="exp-notes" onclick="selectExport('notes')">
-    <div class="export-icon" style="background:#f2f2f0">📝</div>
-    <div class="export-title">Diary notes only</div>
-    <div class="export-desc">Just your written entries with dates</div>
-  </div>
-  <div id="export-preview-section" style="display:none">
-    <p class="sec-lbl" style="margin-top:1.5rem">Preview</p>
-    <div class="preview-box" id="preview-box"></div>
-    <div style="display:flex;gap:10px">
-      <button class="btn primary" onclick="shareReport()" style="flex:2">📤 Share / Email</button>
-      <button class="btn" onclick="copyReport()" style="flex:1">Copy</button>
+  <div class="report-shell">
+    <div class="home-top">
+      <div class="home-brand">
+        <svg class="home-logo" width="42" height="42" viewBox="0 0 42 42" aria-hidden="true">
+          <rect width="42" height="42" rx="12" fill="#4430a0"/>
+          <path d="M11 20.5 21 12l10 8.5V32H11V20.5Z" fill="#fff8e8"/>
+          <path d="M16.3 24.1c-2.8-2.7-1.1-6.5 2-5.1 1.4.6 2.7 2.3 2.7 2.3s1.3-1.7 2.7-2.3c3.1-1.4 4.8 2.4 2 5.1L21 28.4l-4.7-4.3Z" fill="none" stroke="#4430a0" stroke-width="1.7" stroke-linejoin="round"/>
+          <path d="M8.5 20.5 21 9.8l12.5 10.7" fill="none" stroke="#fff8e8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Custody Tracker</span>
+      </div>
+      <button class="profile-chip" onclick="showSetup()" id="reports-profile">R</button>
     </div>
-    <div class="copy-toast" id="copy-toast">✓ Copied!</div>
+
+    <div class="reports-hero">
+      <div>
+        <p class="reports-kicker">Reports</p>
+        <p class="q reports-title">Export a clean custody record.</p>
+        <p class="sub reports-sub">Choose a focused summary, preview it, then share or copy it.</p>
+      </div>
+      <span class="reports-hero-icon"></span>
+    </div>
+
+    <div class="report-list">
+      <div class="export-card" id="exp-full" onclick="selectExport('full')">
+        <span class="export-icon export-file"></span>
+        <div>
+          <div class="export-title">Full diary</div>
+          <div class="export-desc">Every logged day in chronological order</div>
+        </div>
+        <span class="export-chevron">›</span>
+      </div>
+      <div class="export-card" id="exp-dadactual" onclick="selectExport('dadactual')">
+        <span class="export-icon export-clock"></span>
+        <div>
+          <div class="export-title">Actual time with kids</div>
+          <div class="export-desc">All days you had the kids, including schedule changes</div>
+        </div>
+        <span class="export-chevron">›</span>
+      </div>
+      <div class="export-card" id="exp-honest" onclick="selectExport('honest')">
+        <span class="export-icon export-balance"></span>
+        <div>
+          <div class="export-title">Full honesty report</div>
+          <div class="export-desc">Both sides of missed nights and custody deviations</div>
+        </div>
+        <span class="export-chevron">›</span>
+      </div>
+      <div class="export-card" id="exp-momsweek" onclick="selectExport('momsweek')">
+        <span class="export-icon export-person"></span>
+        <div>
+          <div class="export-title">Other parent's week</div>
+          <div class="export-desc">Scheduled days where you helped or had the kids</div>
+        </div>
+        <span class="export-chevron">›</span>
+      </div>
+      <div class="export-card" id="exp-notes" onclick="selectExport('notes')">
+        <span class="export-icon export-note"></span>
+        <div>
+          <div class="export-title">Diary notes only</div>
+          <div class="export-desc">Just your written entries with dates</div>
+        </div>
+        <span class="export-chevron">›</span>
+      </div>
+    </div>
+
+    <div id="export-preview-section" class="report-preview" style="display:none">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <span class="soft-icon report-icon"></span>
+          <div>
+            <div class="section-title">Preview</div>
+            <div class="section-sub">Review before sharing</div>
+          </div>
+        </div>
+      </div>
+      <div class="preview-box" id="preview-box"></div>
+      <div class="report-actions">
+        <button class="btn primary" onclick="shareReport()">Share / Email</button>
+        <button class="btn" onclick="copyReport()">Copy</button>
+      </div>
+      <div class="copy-toast" id="copy-toast">✓ Copied!</div>
+    </div>
+
+    <div class="bottom-nav">
+      <button class="bottom-nav-item" onclick="show('s-home')"><span class="nav-home"></span><strong>Today</strong></button>
+      <button class="bottom-nav-item" onclick="showCal()"><span class="nav-calendar"></span><strong>Calendar</strong></button>
+      <button class="bottom-nav-item active" onclick="showExport()"><span class="nav-bars"></span><strong>Reports</strong></button>
+      <button class="bottom-nav-item" onclick="showSetup()"><span class="nav-gear"></span><strong>Settings</strong></button>
+    </div>
   </div>
-  <hr>
-  <button class="btn" onclick="show('s-home')" style="width:100%;padding:14px">← Back home</button>
 </div>
 
 </div><!-- end .app -->
