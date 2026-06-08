@@ -196,8 +196,7 @@ function startBackfill(){
   // Start check-in flow but target yesterday's date instead of today
   document.getElementById('missed-prompt').style.display='none';
   localStorage.setItem('missed_dismissed_'+todayStr(),'1');
-  BACKFILL_DATE=yesterdayStr();
-  startCheckin();
+  startCheckin(yesterdayStr());
 }
 // ── END MISSED DAY LOGIC ──────────────────────────────────────
 
@@ -232,7 +231,8 @@ function describeEntry(e){
   const n=(e.kidsWithDad||[]).length;return n===KIDS.length?kidsCountLabel()+' home':n===0?'No kids':(e.kidsWithDad||[]).join(', ')+' home';
 }
 
-function startCheckin(){
+function startCheckin(backfillDate=null){
+  BACKFILL_DATE=backfillDate;
   S={week:null,dadMode:null,momMode:null,kidsWithDad:[],absentData:{},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:''};
   easyOpts=[];diaryOrigin='';
   ['dad','mom','other'].forEach(w=>document.getElementById('wk-'+w).className='btn');
@@ -667,6 +667,7 @@ function selectExport(type){
   document.getElementById('preview-box').textContent=currentReportText||'No entries found.';
   document.getElementById('export-preview-section').style.display='block';document.getElementById('copy-toast').style.display='none';
 }
+function notLoggedText(e){return e.intentional?'Skipped intentionally':'Not logged'}
 function buildReport(type){
   const entries=getEntries(),sorted=Object.entries(entries).sort((a,b)=>a[0].localeCompare(b[0]));
   if(!sorted.length)return'';
@@ -676,7 +677,8 @@ function buildReport(type){
     let L=['CUSTODY TRACKER — FULL DIARY','Kids: '+kidsListLabel(),gen,'',D,''];
     for(const[ds,e]of sorted){
       L.push('DATE: '+fmtDate(ds));
-      if(e.week==='other'){L.push('TYPE: Special/other day');L.push('NOTE: '+(e.diary||'—'))}
+      if(e.week==='not-logged'){L.push('TYPE: Not logged');L.push('STATUS: '+notLoggedText(e))}
+      else if(e.week==='other'){L.push('TYPE: Special/other day');L.push('NOTE: '+(e.diary||'—'))}
       else if(e.dadMode==='mom-had'){L.push("WEEK: Dad's scheduled week — KIDS AT MOM'S");L.push('KIDS AT MOM\'S: '+(e.momHadKidsOnDadWeek||[]).join(', '));if(e.diary)L.push('NOTE: '+e.diary)}
       else if(e.dadMode==='dad-helped-mom'){L.push('WEEK: '+currentParentPoss()+' scheduled week');const n=(e.kidsWithDad||[]).length;L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(n===KIDS.length?kidsCountLabel():n===0?'None':(e.kidsWithDad||[]).join(', ')));L.push(coParent().toUpperCase()+' HELPED:');Object.entries(e.momHelpedOnDadWeek||{}).forEach(([k,v])=>L.push('  '+k+': '+(v.acts||[]).map(a=>ACT_LBL[a]).join(', ')+(v.note?' ('+v.note+')':'')));if(e.diary)L.push('NOTE: '+e.diary)}
       else if(e.momMode==='easy'){L.push("WEEK: Mom's scheduled week");L.push('STATUS: Mom had the kids');if(e.diary)L.push('NOTE: '+e.diary)}
@@ -738,7 +740,8 @@ function buildWeeklyReport(){
   let L=['CUSTODY TRACKER — WEEKLY REPORT','Week ending: '+now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'}),'','SUMMARY','───────────────────','Days logged: '+week.length,'Days Dad had kids: '+dadActual,"Mom's-week nights she left kids with Dad: "+momLeft,"Mom's-week days Dad helped out: "+dadHelped,'','DAILY BREAKDOWN','───────────────────',''];
   for(const[ds,e]of week){
     L.push(fmtDate(ds).toUpperCase());
-    if(e.week==='other')L.push('  Special: '+(e.diary||'—'));
+    if(e.week==='not-logged')L.push('  Not logged: '+notLoggedText(e));
+    else if(e.week==='other')L.push('  Special: '+(e.diary||'—'));
     else if(e.dadMode==='mom-had')L.push("  Your week — kids at Mom's: "+(e.momHadKidsOnDadWeek||[]).join(', '));
     else if(e.momMode==='easy')L.push("  Mom's week — she had kids");
     else if(e.momMode==='helped')L.push("  Mom's week — Dad helped: "+(e.helpedKids||[]).join(', '));
