@@ -125,7 +125,17 @@ hr{border:none;border-top:1px solid #ebebeb;margin:1.25rem 0}
 .export-card.sel .export-desc{color:#534ab7}
 .preview-box{background:#f2f2f0;border-radius:12px;padding:13px;margin-bottom:1rem;font-size:11px;font-family:'Courier New',monospace;color:#444;line-height:1.75;white-space:pre-wrap;word-break:break-word;max-height:260px;overflow-y:auto;border:1px solid #e0e0e0}
 .copy-toast{font-size:13px;color:#0f6e56;margin-top:8px;display:none;text-align:center;font-weight:500}
-.sunday-banner{background:#fff;border:2px solid #3c3489;border-radius:16px;padding:18px;margin-bottom:1rem}
+.home-greeting{font-size:24px;margin-bottom:.2rem}
+.home-checkin{background:#fff;border:1px solid #e7e4f7;border-radius:16px;padding:18px;margin-bottom:1rem;box-shadow:0 8px 24px rgba(60,52,137,.08)}
+.home-checkin-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:10px}
+.home-eyebrow{font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.home-plan{font-size:20px;font-weight:700;color:#1a1a1a;line-height:1.25}
+.home-plan-sub{font-size:14px;color:#666;line-height:1.45;margin-bottom:16px}
+.home-status-dot{width:34px;height:34px;border-radius:50%;background:#eeedfe;color:#3c3489;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0}
+.home-primary{width:100%;padding:18px;font-size:17px;margin-bottom:10px}
+.home-secondary-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.home-secondary-row .btn{padding:12px 8px;font-size:13px}
+.sunday-banner{background:#fff;border:1px solid #e7e4f7;border-radius:14px;padding:14px;margin-bottom:1rem}
 .week-hint{display:none;font-size:13px;border-radius:10px;padding:10px 13px;margin-top:6px}
 .setup-card{background:#fff;border:1px solid #ebebeb;border-radius:14px;padding:15px;margin-bottom:12px}
 .setup-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}

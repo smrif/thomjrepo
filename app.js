@@ -287,6 +287,7 @@ function initHome(){
   const now=new Date();
   const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   document.getElementById('home-date').textContent=days[now.getDay()]+', '+MONTHS[now.getMonth()]+' '+now.getDate()+', '+now.getFullYear();
+  updateHomeCheckinCard();
   if(now.getDay()===0&&!localStorage.getItem('sunday_prompt_'+todayStr()))document.getElementById('sunday-prompt').style.display='block';
   const entries=getEntries(),dates=Object.keys(entries).sort().reverse();
   if(!dates.length)return;
@@ -294,6 +295,18 @@ function initHome(){
   let desc=describeEntry(e);
   document.getElementById('home-recent-inner').innerHTML=`<div class="entry-date-lbl">${fmtShort(last)}</div><div class="entry-row">${desc}</div>${e.diary?`<div class="entry-row" style="color:#666;font-style:italic;font-size:13px;margin-top:3px">"${e.diary.substring(0,90)}${e.diary.length>90?'…':''}"</div>`:''}`;
   document.getElementById('home-recent').style.display='block';
+}
+function updateHomeCheckinCard(){
+  const scheduled=getScheduledWeek(todayStr());
+  const title=document.getElementById('home-plan-title'),sub=document.getElementById('home-plan-sub');
+  if(!title||!sub)return;
+  if(!scheduled){
+    title.textContent='Ready to log today';
+    sub.textContent='Track actual custody time in under 30 seconds.';
+    return;
+  }
+  title.textContent=scheduleLabel(scheduled);
+  sub.textContent=scheduled==='dad'?'Expected: '+kidsCountLabel()+' with you tonight.':'Expected: '+kidsCountLabel()+' with '+coParent()+' today.';
 }
 function describeEntry(e){
   if(e.week==='not-logged')return e.intentional?'Skipped intentionally':'Dad didn\'t post';
