@@ -3,6 +3,8 @@ const DEFAULT_CONFIG={
   coParentLabel:'Mom',
   children:['Thomas','Presley','Hayden'],
   scheduleType:'alternating-weeks',
+  scheduleAnchorDate:null,
+  scheduleAnchorParent:'dad',
   reminderPreference:'none'
 };
 const CONFIG_KEY='custody_tracker_config';
@@ -34,6 +36,7 @@ function hasSavedConfig(){return !!localStorage.getItem(CONFIG_KEY)}
 function saveConfig(config){
   APP_CONFIG={...DEFAULT_CONFIG,...config,children:config.children.map(cleanName).filter(Boolean)};
   if(!APP_CONFIG.children.length)APP_CONFIG.children=[...DEFAULT_CONFIG.children];
+  if(APP_CONFIG.scheduleType==='alternating-weeks'&&!APP_CONFIG.scheduleAnchorDate)APP_CONFIG.scheduleAnchorDate=todayStr();
   KIDS=[...APP_CONFIG.children];
   localStorage.setItem(CONFIG_KEY,JSON.stringify(APP_CONFIG));
 }
@@ -52,6 +55,12 @@ function kidsCountLabel(count=KIDS.length){
   return'all '+count+' kids';
 }
 function kidsListLabel(kids=KIDS){return kids.length<=2?kids.join(' and '):kids.slice(0,-1).join(', ')+', and '+kids[kids.length-1]}
+function parseLocalDate(ds){
+  if(!ds)return null;
+  const parts=String(ds).split('-').map(Number);
+  if(parts.length!==3||parts.some(n=>Number.isNaN(n)))return null;
+  return new Date(parts[0],parts[1]-1,parts[2]);
+}
 function labelize(text){
   return String(text)
     .replace(/Dad's/g,currentParentPoss())
@@ -103,14 +112,30 @@ function renderConfigurableUi(){
   setupKidGrid('helped-kids-grid','hk','toggleHelpedKid');
   setupKidGrid('dad-had-grid','dh','toggleDadHadKid',()=>allWithCoParentButton('dh-allThree',setDadHadAll,kidsCountLabel()));
   LOC_LBL.moms='At '+coParentPoss();
+  updateSetupLabels();
 }
 function initSetupForm(){
   document.getElementById('setup-current-parent').value=APP_CONFIG.currentParentLabel;
   document.getElementById('setup-co-parent').value=APP_CONFIG.coParentLabel;
   document.getElementById('setup-children').value=APP_CONFIG.children.join(', ');
   document.getElementById('setup-schedule').value=APP_CONFIG.scheduleType;
+  document.getElementById('setup-anchor-date').value=APP_CONFIG.scheduleAnchorDate||todayStr();
+  document.getElementById('setup-anchor-parent').value=APP_CONFIG.scheduleAnchorParent||'dad';
   document.getElementById('setup-reminder').value=APP_CONFIG.reminderPreference;
+  updateScheduleFields();
 }
+function updateSetupLabels(){
+  const anchor=document.getElementById('setup-anchor-parent');
+  if(anchor){
+    anchor.querySelector('option[value="dad"]').textContent=currentParentPoss()+' week';
+    anchor.querySelector('option[value="mom"]').textContent=coParentPoss()+' week';
+  }
+}
+function updateScheduleFields(){
+  const fields=document.getElementById('setup-schedule-fields');
+  if(fields)fields.style.display=document.getElementById('setup-schedule').value==='alternating-weeks'?'block':'none';
+}
+function showSetup(){initSetupForm();show('s-setup')}
 function saveSetup(){
   const children=document.getElementById('setup-children').value.split(',').map(cleanName).filter(Boolean);
   saveConfig({
@@ -118,6 +143,8 @@ function saveSetup(){
     coParentLabel:cleanName(document.getElementById('setup-co-parent').value)||DEFAULT_CONFIG.coParentLabel,
     children,
     scheduleType:document.getElementById('setup-schedule').value,
+    scheduleAnchorDate:document.getElementById('setup-anchor-date').value||todayStr(),
+    scheduleAnchorParent:document.getElementById('setup-anchor-parent').value||'dad',
     reminderPreference:document.getElementById('setup-reminder').value
   });
   renderConfigurableUi();
@@ -129,6 +156,54 @@ function todayStr(){const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth
 function pad(n){return String(n).padStart(2,'0')}
 function fmtDate(ds){const[y,m,d]=ds.split('-');return MONTHS[parseInt(m)-1]+' '+parseInt(d)+', '+y}
 function fmtShort(ds){const[y,m,d]=ds.split('-');return MONTHS[parseInt(m)-1].slice(0,3)+' '+parseInt(d)+', '+y}
+function getScheduledWeek(ds){
+  if(APP_CONFIG.scheduleType!=='alternating-weeks')return null;
+  const anchor=parseLocalDate(APP_CONFIG.scheduleAnchorDate),target=parseLocalDate(ds);
+  if(!anchor||!target)return null;
+  const days=Math.floor((target-anchor)/(24*60*60*1000));
+  const weekOffset=Math.floor(days/7);
+  const anchorParent=APP_CONFIG.scheduleAnchorParent==='mom'?'mom':'dad';
+  return Math.abs(weekOffset)%2===0?anchorParent:(anchorParent==='dad'?'mom':'dad');
+}
+function scheduleLabel(owner){return owner==='dad'?currentParentPoss()+' scheduled week':coParentPoss()+' scheduled week'}
+function showPlanCheck(ds){
+  const scheduled=getScheduledWeek(ds);
+  if(!scheduled)return false;
+  S.week=scheduled;
+  const isMine=scheduled==='dad';
+  document.getElementById('plan-banner').className='banner '+(isMine?'banner-dad':'banner-mom');
+  document.getElementById('plan-title').textContent=scheduleLabel(scheduled);
+  document.getElementById('plan-sub').textContent='Based on your alternating-week setup';
+  document.getElementById('plan-q').textContent='Did today go as planned?';
+  document.getElementById('plan-desc').textContent=isMine?'Expected: kids were with you tonight.':'Expected: kids were with '+coParent()+' today.';
+  document.getElementById('plan-yes-desc').textContent=isMine?'Log '+kidsCountLabel()+' with you.':'Log a normal '+coParentPoss()+' day with no involvement.';
+  setProg('prog-plan',0,3);
+  show('s-plan');
+  return true;
+}
+function showManualWeekChoice(){
+  S.week=null;
+  ['dad','mom','other'].forEach(w=>document.getElementById('wk-'+w).className='btn');
+  document.getElementById('week-hint').style.display='block';
+  document.getElementById('week-hint').style.background='#faeeda';
+  document.getElementById('week-hint').style.color='#854f0b';
+  document.getElementById('week-hint').textContent='Tell the app what actually happened today.';
+  setProg('prog-week',0,5);
+  show('s-week');
+}
+function acceptPlannedDay(){
+  if(S.week==='dad'){
+    S.dadMode='normal';
+    S.kidsWithDad=[...KIDS];
+    showKidsConfirm('s-plan');
+    return;
+  }
+  S.momMode='easy';
+  S.momOpts=['none'];
+  easyOpts=['none'];
+  buildReviewScreen();
+  show('s-review');
+}
 
 // ── MISSED DAY LOGIC ──────────────────────────────────────────
 function yesterdayStr(){
@@ -237,6 +312,7 @@ function startCheckin(backfillDate=null){
   easyOpts=[];diaryOrigin='';
   ['dad','mom','other'].forEach(w=>document.getElementById('wk-'+w).className='btn');
   document.getElementById('week-hint').style.display='none';
+  if(showPlanCheck(backfillDate||todayStr()))return;
   setProg('prog-week',0,5);show('s-week');
 }
 

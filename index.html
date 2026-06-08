@@ -33,11 +33,26 @@
     <input type="text" id="setup-children" placeholder="Thomas, Presley, Hayden">
     <div class="setup-help">Separate names with commas.</div>
     <p class="sec-lbl">Schedule type</p>
-    <select id="setup-schedule">
+    <select id="setup-schedule" onchange="updateScheduleFields()">
       <option value="alternating-weeks">Alternating weeks</option>
       <option value="custom">Custom / varies</option>
       <option value="unknown">Not sure yet</option>
     </select>
+    <div id="setup-schedule-fields">
+      <div class="setup-row">
+        <div>
+          <input type="date" id="setup-anchor-date">
+          <div class="setup-help">Week started on</div>
+        </div>
+        <div>
+          <select id="setup-anchor-parent">
+            <option value="dad">My week</option>
+            <option value="mom">Mom's week</option>
+          </select>
+          <div class="setup-help">That week belongs to</div>
+        </div>
+      </div>
+    </div>
     <p class="sec-lbl">Reminder preference</p>
     <select id="setup-reminder">
       <option value="none">No reminder yet</option>
@@ -94,10 +109,36 @@
     <button class="btn primary" style="padding:17px" onclick="startCheckin()">🌙 Start tonight's check-in</button>
     <button class="btn" style="padding:15px" onclick="showCal()">📅 Calendar &amp; stats</button>
     <button class="btn" style="padding:15px" onclick="showExport()">📤 Export &amp; reports</button>
+    <button class="btn" style="padding:15px" onclick="showSetup()">⚙️ Setup schedule</button>
   </div>
   <div id="home-recent" style="display:none;margin-top:1.5rem">
     <p class="sec-lbl">Last entry</p>
     <div class="entry-card" id="home-recent-inner"></div>
+  </div>
+</div>
+
+<!-- PLAN CHECK -->
+<div class="screen" id="s-plan">
+  <div class="top-bar">
+    <button class="back-btn" onclick="show('s-home')">← Back</button>
+    <div class="logo">planned schedule</div>
+    <div class="back-spacer"></div>
+  </div>
+  <div class="progress" id="prog-plan"></div>
+  <div class="banner banner-dad" id="plan-banner"><div style="font-size:20px">📅</div><div><div class="banner-title" id="plan-title">Scheduled today</div><div class="banner-sub" id="plan-sub">Baseline schedule</div></div></div>
+  <p class="q" id="plan-q">Did today go as planned?</p>
+  <p class="sub" id="plan-desc">Use the quick path if the schedule was right.</p>
+  <div class="scene-card" id="plan-yes" onclick="acceptPlannedDay()">
+    <div class="scene-icon">✅</div><div class="scene-title">Yes — went as planned</div>
+    <div class="scene-desc" id="plan-yes-desc">Log the expected custody day.</div>
+  </div>
+  <div class="scene-card" onclick="showManualWeekChoice()">
+    <div class="scene-icon">⚠️</div><div class="scene-title">No — something changed</div>
+    <div class="scene-desc">Use the detailed flow to record what actually happened.</div>
+  </div>
+  <div class="scene-card" onclick="setWeek('other')">
+    <div class="scene-icon">✨</div><div class="scene-title">Special / other day</div>
+    <div class="scene-desc">Holiday, travel, tournament, or another exception.</div>
   </div>
 </div>
 
