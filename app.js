@@ -19,6 +19,7 @@ let easyOpts=[];
 let diaryOrigin='';   // which screen diary came from, for back nav
 let calM=new Date().getMonth(),calY=new Date().getFullYear();
 let currentExportType=null,currentReportText='';
+let BACKFILL_DATE=null;
 
 function loadConfig(){
   try{
@@ -128,6 +129,78 @@ function todayStr(){const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth
 function pad(n){return String(n).padStart(2,'0')}
 function fmtDate(ds){const[y,m,d]=ds.split('-');return MONTHS[parseInt(m)-1]+' '+parseInt(d)+', '+y}
 function fmtShort(ds){const[y,m,d]=ds.split('-');return MONTHS[parseInt(m)-1].slice(0,3)+' '+parseInt(d)+', '+y}
+
+// ── MISSED DAY LOGIC ──────────────────────────────────────────
+function yesterdayStr(){
+  const d=new Date();d.setDate(d.getDate()-1);
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+}
+function getMissedDays(){
+  // Returns array of date strings (oldest first) that are in the past, before today,
+  // have no entry, and are after the app's first entry (so we don't flag the whole past).
+  const entries=getEntries();
+  const today=todayStr();
+  const allDates=Object.keys(entries).sort();
+  if(!allDates.length)return[];
+  const firstEntry=allDates[0];
+  const missed=[];
+  // Walk from day after first entry up to (not including) today
+  const cursor=new Date(firstEntry);
+  cursor.setDate(cursor.getDate()+1);
+  const todayD=new Date(today);
+  while(cursor<todayD){
+    const ds=cursor.getFullYear()+'-'+pad(cursor.getMonth()+1)+'-'+pad(cursor.getDate());
+    if(!entries[ds]&&ds!==today)missed.push(ds);
+    cursor.setDate(cursor.getDate()+1);
+  }
+  return missed;
+}
+function markMissedDays(){
+  // For any missed days older than yesterday, write a "not-logged" sentinel entry.
+  // Yesterday is left alone so the prompt can offer to backfill it.
+  const yesterday=yesterdayStr();
+  const missed=getMissedDays().filter(ds=>ds!==yesterday);
+  if(!missed.length)return;
+  const entries=getEntries();
+  missed.forEach(ds=>{
+    if(!entries[ds])entries[ds]={week:'not-logged',missedAt:new Date().toISOString()};
+  });
+  putEntries(entries);
+}
+function checkMissedPrompt(){
+  // Show the prompt only if yesterday has no entry and we haven't already dismissed it today.
+  const yesterday=yesterdayStr();
+  const entries=getEntries();
+  const dismissKey='missed_dismissed_'+todayStr();
+  if(entries[yesterday])return; // already logged or marked
+  if(!Object.keys(entries).length)return; // brand-new app, no history yet
+  if(localStorage.getItem(dismissKey))return; // already asked today
+  // Find the first entry to make sure the app has been in use at least one day
+  const allDates=Object.keys(entries).sort();
+  if(!allDates.length||allDates[0]>=yesterday)return;
+  // Show it
+  const yLabel=fmtShort(yesterday);
+  document.getElementById('missed-date-label').textContent=yLabel;
+  document.getElementById('missed-prompt').style.display='block';
+}
+function dismissMissedPrompt(){
+  // Mark yesterday as intentionally skipped (not-logged sentinel)
+  const yesterday=yesterdayStr();
+  const entries=getEntries();
+  if(!entries[yesterday])entries[yesterday]={week:'not-logged',intentional:true,missedAt:new Date().toISOString()};
+  putEntries(entries);
+  localStorage.setItem('missed_dismissed_'+todayStr(),'1');
+  document.getElementById('missed-prompt').style.display='none';
+}
+function startBackfill(){
+  // Start check-in flow but target yesterday's date instead of today
+  document.getElementById('missed-prompt').style.display='none';
+  localStorage.setItem('missed_dismissed_'+todayStr(),'1');
+  BACKFILL_DATE=yesterdayStr();
+  startCheckin();
+}
+// ── END MISSED DAY LOGIC ──────────────────────────────────────
+
 function getEntries(){try{const r=localStorage.getItem('familylog_entries');return r?JSON.parse(r):{}}catch(e){return{}}}
 function putEntries(e){try{localStorage.setItem('familylog_entries',JSON.stringify(e));try{sessionStorage.setItem('familylog_backup',JSON.stringify(e))}catch(ex){}}catch(e){}}
 
@@ -135,6 +208,8 @@ function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.re
 function setProg(id,step,total){const el=document.getElementById(id);if(!el)return;el.innerHTML='';for(let i=0;i<total;i++){const d=document.createElement('div');d.className='pd'+(i<step?' done':'')+(i===step?' active':'');el.appendChild(d)}}
 
 function initHome(){
+  markMissedDays();
+  checkMissedPrompt();
   const now=new Date();
   const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   document.getElementById('home-date').textContent=days[now.getDay()]+', '+MONTHS[now.getMonth()]+' '+now.getDate()+', '+now.getFullYear();
@@ -147,6 +222,7 @@ function initHome(){
   document.getElementById('home-recent').style.display='block';
 }
 function describeEntry(e){
+  if(e.week==='not-logged')return e.intentional?'Skipped intentionally':'Dad didn\'t post';
   if(e.week==='other')return'Special day';
   if(e.dadMode==='mom-had')return"Your week · Kids at "+coParentPoss()+': '+(e.momHadKidsOnDadWeek||[]).join(', ');
   if(e.dadMode==='dad-helped-mom')return'Your week · '+coParent()+' helped: '+(e.momHadKidsOnDadWeek||[]).join(', ');
@@ -233,7 +309,7 @@ function goDadWkMomDiary(){diaryOrigin='s-dad-wk-mom-had';document.getElementByI
 
 function setAllKids(all){
   document.getElementById('ak-yes').classList.toggle('sel',all);document.getElementById('ak-no').classList.toggle('sel',!all);
-  if(all){S.kidsWithDad=[...KIDS];setTimeout(()=>{diaryOrigin='s-allkids';document.getElementById('diary-q').textContent='Anything else to note?';document.getElementById('diary-sub').textContent='A quick diary — how was today?';document.getElementById('diary-input').value=S.diary||'';document.getElementById('diary-next-btn').textContent='Review & save →';setProg('prog-diary',3,4);show('s-diary')},200)}
+  if(all){S.kidsWithDad=[...KIDS];setTimeout(()=>{showKidsConfirm('s-allkids')},200)}
   else{KIDS.forEach(k=>kidBtn('kb',k).classList.remove('with-dad'));document.getElementById('kb-allMom').classList.remove('all-mom');S.kidsWithDad=[];updateWhoSummary();setTimeout(()=>{setProg('prog-whichkids',2,4);show('s-whichkids')},200)}
 }
 function toggleKid(name){
@@ -255,7 +331,7 @@ function updateWhoSummary(){
 }
 function startAbsentLoop(){
   absentQueue=KIDS.filter(k=>!S.kidsWithDad.includes(k));absentIdx=0;
-  if(!absentQueue.length){diaryOrigin='s-whichkids';document.getElementById('diary-q').textContent='Anything else to note?';document.getElementById('diary-sub').textContent='A quick diary — how was today?';document.getElementById('diary-input').value=S.diary||'';document.getElementById('diary-next-btn').textContent='Review & save →';setProg('prog-diary',3,4);show('s-diary');return}
+  if(!absentQueue.length){showKidsConfirm('s-whichkids');return}
   showAbsentStep();
 }
 function showAbsentStep(){
@@ -276,10 +352,71 @@ function nextAbsent(){
   S.absentData[kid]={location:locEl?locEl.dataset.loc:'other',note:document.getElementById('absent-note-input').value.trim()};
   absentIdx++;
   if(absentIdx<absentQueue.length)showAbsentStep();
-  else{diaryOrigin='s-absent';document.getElementById('diary-q').textContent='Anything else to note?';document.getElementById('diary-sub').textContent='A quick diary — how was today?';document.getElementById('diary-input').value=S.diary||'';document.getElementById('diary-next-btn').textContent='Review & save →';setProg('prog-diary',3,4);show('s-diary')}
+  else{showKidsConfirm('s-absent')}
 }
 function goBackFromAbsent(){if(absentIdx>0){absentIdx--;showAbsentStep()}else show('s-whichkids')}
 function goBackFromDiary(){show(diaryOrigin||'s-week')}
+
+// ── KIDS CONFIRM SCREEN ───────────────────────────────────────
+function showKidsConfirm(backTarget){
+  const list=document.getElementById('kids-confirm-list');
+  list.innerHTML='';
+
+  // Grid wrapper — same 2-col layout as the kid picker
+  const grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:10px';
+
+  KIDS.forEach(kid=>{
+    const withDad=S.kidsWithDad.includes(kid);
+    const absentData=S.absentData[kid];
+    const box=document.createElement('div');
+
+    if(withDad){
+      // Purple highlighted box — same style as .kid-btn.with-dad, plus checkmark corner
+      box.style.cssText='padding:18px 12px 14px;border-radius:14px;border:2.5px solid #3C3489;background:#EEEDFE;text-align:center;position:relative';
+      box.innerHTML=`
+        <div style="position:absolute;top:8px;right:10px;width:20px;height:20px;border-radius:50%;background:#3C3489;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">✓</div>
+        <div style="font-size:17px;font-weight:700;color:#3C3489;margin-bottom:5px">${kid}</div>
+        <div style="font-size:11px;font-weight:500;color:#534AB7;line-height:1.3">🏠 With you<br>tonight</div>`;
+    } else {
+      const locLabel=absentData?(LOC_LBL[absentData.location]||absentData.location):'Not set';
+      const noteStr=absentData&&absentData.note?absentData.note:'';
+      // Coral highlighted box — same style as absent/mom-side, plus location info
+      box.style.cssText='padding:18px 12px 14px;border-radius:14px;border:2.5px solid #993C1D;background:#FAECE7;text-align:center;position:relative';
+      box.innerHTML=`
+        <div style="position:absolute;top:8px;right:10px;width:20px;height:20px;border-radius:50%;background:#993C1D;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">✓</div>
+        <div style="font-size:17px;font-weight:700;color:#712B13;margin-bottom:5px">${kid}</div>
+        <div style="font-size:11px;font-weight:500;color:#993C1D;line-height:1.3">📍 ${locLabel}</div>
+        ${noteStr?`<div style="font-size:10px;color:#993C1D;margin-top:3px;font-style:italic;line-height:1.3">${noteStr}</div>`:''}`;
+    }
+    grid.appendChild(box);
+  });
+
+  list.appendChild(grid);
+
+  // Store where back should go
+  document.getElementById('kids-confirm-back-btn').dataset.back=backTarget||'s-whichkids';
+  setProg('prog-kids-confirm',3,5);
+  show('s-kids-confirm');
+}
+
+function goBackFromKidsConfirm(){
+  const target=document.getElementById('kids-confirm-back-btn').dataset.back||'s-whichkids';
+  show(target);
+}
+
+function confirmKidsAndContinue(){
+  // Proceed to diary
+  diaryOrigin='s-kids-confirm';
+  document.getElementById('diary-q').textContent='Anything else to note?';
+  document.getElementById('diary-sub').textContent='A quick diary — how was today?';
+  document.getElementById('diary-input').value=S.diary||'';
+  document.getElementById('diary-next-btn').textContent='Review & save →';
+  setProg('prog-diary',4,5);
+  show('s-diary');
+}
+// ── END KIDS CONFIRM ──────────────────────────────────────────
+
 
 // MOM MODE
 function toggleEasyOpt(el,key){
@@ -325,7 +462,7 @@ function nextHelpedKid(){
   const kid=helpedQueue[helpedIdx];if(!S.helpedData[kid])S.helpedData[kid]={acts:[],note:''};
   S.helpedData[kid].note=document.getElementById('helped-note').value.trim();helpedIdx++;
   if(helpedIdx<helpedQueue.length)showHelpedStep();
-  else{diaryOrigin='s-mom-helped-activity';document.getElementById('diary-q').textContent='Anything else to note?';document.getElementById('diary-sub').textContent='Optional context';document.getElementById('diary-input').value=S.diary||'';document.getElementById('diary-next-btn').textContent='Review & save →';setProg('prog-diary',2,3);show('s-diary')}
+  else{showKidsConfirm('s-mom-helped-activity')}
 }
 function goBackFromHelped(){if(helpedIdx>0){helpedIdx--;showHelpedStep()}else show('s-mom-helped-kids2')}
 function toggleDadHadKid(name){
@@ -425,7 +562,8 @@ function saveEntry(){
     momHadKidsOnDadWeek:[...S.momHadKidsOnDadWeek],
     momHelpedOnDadWeek:{...S.momHelpedOnDadWeek},
     diary:S.diary};
-  entries[todayStr()]=e;putEntries(entries);
+  const saveDate=BACKFILL_DATE||todayStr();BACKFILL_DATE=null;
+  entries[saveDate]=e;putEntries(entries);
   let ring='✅',summary='';
   if(S.week==='other'){ring='✨';summary='Special day logged'}
   else if(S.dadMode==='mom-had'){ring='🏡';summary="Your week · Kids at Mom's\n"+S.momHadKidsOnDadWeek.join(', ')}
@@ -453,7 +591,8 @@ function renderCal(){
     const cell=document.createElement('div');cell.className='cal-cell';cell.textContent=d;
     if(e){
       let cls='mom-has';
-      if(e.week==='other')cls='special';
+      if(e.week==='not-logged')cls='missed';
+      else if(e.week==='other')cls='special';
       else if(e.week==='dad'&&e.dadMode==='mom-had')cls='dad-wk-mom-has';
       else if(e.week==='dad'||(e.week==='mom'&&e.momMode==='dad-had'))cls='dad-has';
       cell.classList.add(cls);
@@ -466,6 +605,13 @@ function renderCal(){
 function showDetail(ds,e){
   const el=document.getElementById('cal-detail');el.style.display='block';
   let tag,body;
+  if(e.week==='not-logged'){
+    const reason=e.intentional?' (skipped intentionally)':'';
+    tag='<span class="tag tag-missed">Not logged</span>';
+    body=`<div class="entry-row" style="color:#999;font-style:italic">Dad didn\'t post this day${reason}.</div>`;
+    el.innerHTML=`<div class="entry-card"><div class="entry-date-lbl">${fmtDate(ds)} ${tag}</div>${body}</div>`;
+    return;
+  }
   if(e.week==='other'){tag='<span class="tag tag-other">✨ Special</span>';body=`<div class="entry-row" style="font-style:italic;color:#666">${e.diary||'No note'}</div>`}
   else if(e.dadMode==='mom-had'){tag='<span class="tag tag-teal">Your wk · Kids at Mom\'s</span>';body=`<div class="entry-row"><strong>At Mom's: ${(e.momHadKidsOnDadWeek||[]).join(', ')}</strong></div>${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
   else if(e.dadMode==='dad-helped-mom'){tag='<span class="tag tag-dad">Your week</span>';const n=(e.kidsWithDad||[]).length;const acts=Object.entries(e.momHelpedOnDadWeek||{}).map(([k,v])=>`<div class="entry-row" style="color:#666">${k}: ${coParent()} — ${(v.acts||[]).map(a=>ACT_LBL[a]).join(', ')}</div>`).join('');body=`<div class="entry-row"><strong>${n===KIDS.length?kidsCountLabel()+' home':n===0?'No kids':(e.kidsWithDad||[]).join(', ')+' home'}</strong></div>${acts}${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
@@ -487,7 +633,11 @@ function renderStats(){
     <div class="stat-card"><div class="stat-num">${momWkDadHad}</div><div class="stat-lbl">Mom's week — Dad had kids</div></div>
     <div class="stat-card"><div class="stat-num">${dadWkMomHad}</div><div class="stat-lbl">Dad's week — kids at Mom's</div></div>
     <div class="stat-card"><div class="stat-num">${involvement}</div><div class="stat-lbl">Cross-week help days</div></div>`;
-  document.getElementById('summary-box').textContent=`${MONTHS[calM]}: ${me.length} days logged. Dad had the kids on ${dadActual} days. During Mom's scheduled days, she left the kids with Dad ${momWkDadHad} time${momWkDadHad!==1?'s':''}. During Dad's scheduled days, kids ended up at Mom's ${dadWkMomHad} time${dadWkMomHad!==1?'s':''}.`;
+  const missedDays=me.filter(([,e])=>e.week==='not-logged').length;
+  const loggedDays=me.filter(([,e])=>e.week!=='not-logged').length;
+  let summaryText=`${MONTHS[calM]}: ${loggedDays} day${loggedDays!==1?'s':''} logged. Dad had the kids on ${dadActual} day${dadActual!==1?'s':''}. During Mom's scheduled days, she left the kids with Dad ${momWkDadHad} time${momWkDadHad!==1?'s':''}. During Dad's scheduled days, kids ended up at Mom's ${dadWkMomHad} time${dadWkMomHad!==1?'s':''}.`;
+  if(missedDays)summaryText+=` ${missedDays} day${missedDays!==1?'s were':' was'} not logged.`;
+  document.getElementById('summary-box').textContent=summaryText;
 }
 function renderLog(){
   const entries=getEntries(),sorted=Object.entries(entries).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,30);
@@ -495,7 +645,8 @@ function renderLog(){
   if(!sorted.length){list.innerHTML='<p style="color:#999;font-size:14px;padding:1rem 0">No entries yet.</p>';return}
   list.innerHTML=sorted.map(([date,e])=>{
     let tagCls,tagTxt,desc;
-    if(e.week==='other'){tagCls='tag-other';tagTxt='Special';desc='Special day'}
+    if(e.week==='not-logged'){tagCls='tag-missed';tagTxt='Not logged';desc=e.intentional?'Skipped intentionally':'Dad didn\'t post'}
+    else if(e.week==='other'){tagCls='tag-other';tagTxt='Special';desc='Special day'}
     else if(e.dadMode==='mom-had'){tagCls='tag-teal';tagTxt='Dad wk/Mom had';desc="Kids at Mom's: "+(e.momHadKidsOnDadWeek||[]).join(', ')}
     else if(e.dadMode==='dad-helped-mom'){tagCls='tag-dad';tagTxt='Your wk';desc='Mom helped: '+(e.momHadKidsOnDadWeek||[]).join(', ')}
     else if(e.momMode==='easy'){tagCls='tag-mom';tagTxt="Mom's wk";desc='Mom had kids'}

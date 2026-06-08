@@ -72,6 +72,14 @@
     <div style="font-size:26px;font-weight:700;color:#3C3489;letter-spacing:-0.5px;margin-bottom:3px">Custody Tracker</div>
     <div style="font-size:13px;color:#888;letter-spacing:0.02em">Daily family log &amp; co-parenting record</div>
   </div>
+  <div id="missed-prompt" class="missed-banner">
+    <div class="missed-banner-title">📅 Did you miss last night?</div>
+    <div class="missed-banner-sub" id="missed-prompt-sub">Looks like you didn't log <strong id="missed-date-label">yesterday</strong>. Want to post it now, or mark it as intentionally skipped?</div>
+    <div style="display:flex;gap:10px">
+      <button class="btn primary" onclick="startBackfill()" style="flex:2">Log last night</button>
+      <button class="btn" onclick="dismissMissedPrompt()" style="flex:1">Skip it</button>
+    </div>
+  </div>
   <div id="sunday-prompt" style="display:none">
     <div class="sunday-banner">
       <div style="font-size:15px;font-weight:700;color:#3c3489;margin-bottom:5px">📬 Weekly report ready</div>
@@ -369,6 +377,25 @@
   </div>
   <div class="who-summary" id="dad-had-summary">Tap the kids who were actually with you</div>
   <button class="btn primary" id="dad-had-next" onclick="goDadHadDiary()" style="width:100%" disabled>Continue →</button>
+</div>
+
+<!-- KIDS CONFIRM -->
+<div class="screen" id="s-kids-confirm">
+  <div class="top-bar">
+    <button class="back-btn" id="kids-confirm-back-btn" onclick="goBackFromKidsConfirm()">← Back</button>
+    <div class="logo">All accounted for?</div>
+    <div class="back-spacer"></div>
+  </div>
+  <div class="progress" id="prog-kids-confirm"></div>
+  <p class="q">Everyone accounted for tonight?</p>
+  <p class="sub">Confirm where each kid is sleeping — then continue to your diary</p>
+  <div id="kids-confirm-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:1.5rem"></div>
+  <button class="btn primary" onclick="confirmKidsAndContinue()" style="width:100%;padding:16px">
+    ✓ Yes, that's right — continue
+  </button>
+  <button class="btn" onclick="goBackFromKidsConfirm()" style="width:100%;margin-top:10px">
+    ← Something's wrong — go back
+  </button>
 </div>
 
 <!-- DIARY -->
