@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Custody Tracker">
 <title>Custody Tracker</title>
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=checkin-ui">
 </head>
 <body>
 <div class="app" id="app">
@@ -32,27 +32,6 @@
     <p class="sec-lbl">Children</p>
     <input type="text" id="setup-children" placeholder="Thomas, Presley, Hayden">
     <div class="setup-help">Separate names with commas.</div>
-    <p class="sec-lbl">Schedule type</p>
-    <select id="setup-schedule" onchange="updateScheduleFields()">
-      <option value="alternating-weeks">Alternating weeks</option>
-      <option value="custom">Custom / varies</option>
-      <option value="unknown">Not sure yet</option>
-    </select>
-    <div id="setup-schedule-fields">
-      <div class="setup-row">
-        <div>
-          <input type="date" id="setup-anchor-date">
-          <div class="setup-help">Week started on</div>
-        </div>
-        <div>
-          <select id="setup-anchor-parent">
-            <option value="dad">My week</option>
-            <option value="mom">Mom's week</option>
-          </select>
-          <div class="setup-help">That week belongs to</div>
-        </div>
-      </div>
-    </div>
     <p class="sec-lbl">Reminder preference</p>
     <select id="setup-reminder">
       <option value="none">No reminder yet</option>
@@ -145,31 +124,6 @@
   </div>
 </div>
 
-<!-- PLAN CHECK -->
-<div class="screen" id="s-plan">
-  <div class="top-bar">
-    <button class="back-btn" onclick="show('s-home')">← Back</button>
-    <div class="logo">planned schedule</div>
-    <div class="back-spacer"></div>
-  </div>
-  <div class="progress" id="prog-plan"></div>
-  <div class="banner banner-dad" id="plan-banner"><div style="font-size:20px">📅</div><div><div class="banner-title" id="plan-title">Scheduled today</div><div class="banner-sub" id="plan-sub">Baseline schedule</div></div></div>
-  <p class="q" id="plan-q">Did today go as planned?</p>
-  <p class="sub" id="plan-desc">Use the quick path if the schedule was right.</p>
-  <div class="scene-card" id="plan-yes" onclick="acceptPlannedDay()">
-    <div class="scene-icon">✅</div><div class="scene-title">Yes — went as planned</div>
-    <div class="scene-desc" id="plan-yes-desc">Log the expected custody day.</div>
-  </div>
-  <div class="scene-card" onclick="showManualWeekChoice()">
-    <div class="scene-icon">⚠️</div><div class="scene-title">No — something changed</div>
-    <div class="scene-desc">Use the detailed flow to record what actually happened.</div>
-  </div>
-  <div class="scene-card" onclick="setWeek('other')">
-    <div class="scene-icon">✨</div><div class="scene-title">Special / other day</div>
-    <div class="scene-desc">Holiday, travel, tournament, or another exception.</div>
-  </div>
-</div>
-
 <!-- STEP 1: Week type -->
 <div class="screen" id="s-week">
   <div class="top-bar">
@@ -178,12 +132,39 @@
     <div class="back-spacer"></div>
   </div>
   <div class="progress" id="prog-week"></div>
-  <p class="q">How would you describe today?</p>
-  <p class="sub">This shapes how the day gets recorded</p>
-  <div class="btn-3col">
-    <button class="btn" id="wk-dad" onclick="setWeek('dad')"><div style="font-size:22px;margin-bottom:6px">🏠</div>My week</button>
-    <button class="btn" id="wk-mom" onclick="setWeek('mom')"><div style="font-size:22px;margin-bottom:6px">🏢</div>Mom's week</button>
-    <button class="btn" id="wk-other" onclick="setWeek('other')"><div style="font-size:22px;margin-bottom:6px">✨</div>Other</button>
+  <p class="q">What kind of day is it?</p>
+  <p class="sub">Choose the scheduled custody context for today</p>
+  <div class="checkin-decision-list">
+    <button class="checkin-decision-card planned" id="wk-dad" onclick="setWeek('dad')">
+      <span class="decision-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M8 12.5l2.6 2.6L16.5 9"></path></svg>
+      </span>
+      <span class="decision-copy">
+        <span class="decision-title" id="week-my-title">My day</span>
+        <span class="decision-desc" id="week-my-desc">This was my scheduled custody day.</span>
+      </span>
+      <span class="decision-chevron">›</span>
+    </button>
+    <button class="checkin-decision-card change" id="wk-mom" onclick="setWeek('mom')">
+      <span class="decision-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 20c1.4-4 4-6 7.5-6s6.1 2 7.5 6"></path></svg>
+      </span>
+      <span class="decision-copy">
+        <span class="decision-title" id="week-coparent-title">Other parent's day</span>
+        <span class="decision-desc" id="week-coparent-desc">This was their scheduled custody day.</span>
+      </span>
+      <span class="decision-chevron">›</span>
+    </button>
+    <button class="checkin-decision-card special" id="wk-other" onclick="setWeek('other')">
+      <span class="decision-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.5 5.2L19 10l-5.5 1.8L12 17l-1.5-5.2L5 10l5.5-1.8L12 3z"></path><path d="M5.5 15l.7 2.3 2.3.7-2.3.7-.7 2.3-.7-2.3-2.3-.7 2.3-.7.7-2.3z"></path></svg>
+      </span>
+      <span class="decision-copy">
+        <span class="decision-title">Special day</span>
+        <span class="decision-desc">Holiday, travel, tournament, or another exception.</span>
+      </span>
+      <span class="decision-chevron">›</span>
+    </button>
   </div>
   <div class="week-hint" id="week-hint"></div>
 </div>
@@ -192,23 +173,32 @@
 <div class="screen" id="s-dad-mode">
   <div class="top-bar">
     <button class="back-btn" onclick="show('s-week')">← Back</button>
-    <div class="logo">My week</div>
+    <div class="logo">My day</div>
     <div class="back-spacer"></div>
   </div>
   <div class="progress" id="prog-dad-mode"></div>
-  <div class="banner banner-dad"><div style="font-size:20px">🏠</div><div><div class="banner-title">Your scheduled week</div><div class="banner-sub">How did things actually go today?</div></div></div>
   <p class="q">Were the kids with you today?</p>
+  <p class="sub">Choose what actually happened</p>
   <div class="scene-card" id="sc-dad-normal" onclick="setDadMode('normal')">
-    <div class="scene-icon">✅</div><div class="scene-title">Yes — I had the kids</div>
-    <div class="scene-desc">Normal day, kids home with me tonight.</div>
+    <span class="decision-icon">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M8 12.5l2.6 2.6L16.5 9"></path></svg>
+    </span>
+    <span class="decision-copy"><span class="scene-title">I had the kids</span><span class="scene-desc">Normal day, kids home with me tonight.</span></span>
+    <span class="decision-chevron">›</span>
   </div>
   <div class="scene-card" id="sc-dad-helped" onclick="setDadMode('dad-helped-mom')">
-    <div class="scene-icon">🤝</div><div class="scene-title">Yes, but Mom helped with one or more kids</div>
-    <div class="scene-desc">My week, I had them, but Mom took a kid to tennis, camp, etc.</div>
+    <span class="decision-icon">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12.5l2.7 2.7c.8.8 2.1.8 2.9 0l4.4-4.4c.8-.8.8-2.1 0-2.9s-2.1-.8-2.9 0l-1 1"></path><path d="M10.5 9.5l-1-1c-.8-.8-2.1-.8-2.9 0s-.8 2.1 0 2.9l1 1"></path><path d="M8.5 16.5l-2 2"></path><path d="M15.5 16.5l2 2"></path></svg>
+    </span>
+    <span class="decision-copy"><span class="scene-title">Co-parent helped</span><span class="scene-desc">Your day, but your co-parent helped with one or more kids.</span></span>
+    <span class="decision-chevron">›</span>
   </div>
   <div class="scene-card" id="sc-dad-momhad" onclick="setDadMode('mom-had')">
-    <div class="scene-icon">⚠️</div><div class="scene-title">No — kids ended up at Mom's</div>
-    <div class="scene-desc">It's my week but the kids are with Mom tonight.</div>
+    <span class="decision-icon">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3L12 4z"></path><path d="M12 9v5"></path><path d="M12 17.5h.01"></path></svg>
+    </span>
+    <span class="decision-copy"><span class="scene-title">Kids ended up with co-parent</span><span class="scene-desc">Your day, but the kids are with your co-parent tonight.</span></span>
+    <span class="decision-chevron">›</span>
   </div>
 </div>
 
@@ -216,7 +206,7 @@
 <div class="screen" id="s-allkids">
   <div class="top-bar">
     <button class="back-btn" id="allkids-back" onclick="show('s-dad-mode')">← Back</button>
-    <div class="logo">My week</div>
+    <div class="logo">My day</div>
     <div class="back-spacer"></div>
   </div>
   <div class="progress" id="prog-allkids"></div>
@@ -232,7 +222,7 @@
 <div class="screen" id="s-whichkids">
   <div class="top-bar">
     <button class="back-btn" onclick="show('s-allkids')">← Back</button>
-    <div class="logo">My week</div>
+    <div class="logo">My day</div>
     <div class="back-spacer"></div>
   </div>
   <div class="progress" id="prog-whichkids"></div>
@@ -252,7 +242,7 @@
 <div class="screen" id="s-absent">
   <div class="top-bar">
     <button class="back-btn" onclick="goBackFromAbsent()">← Back</button>
-    <div class="logo">My week</div>
+    <div class="logo">My day</div>
     <div class="back-spacer"></div>
   </div>
   <div class="progress" id="prog-absent"></div>
@@ -262,11 +252,11 @@
   </div>
   <p class="q" id="absent-q">Where is Presley tonight?</p>
   <div class="option-list" id="absent-opts">
-    <div class="opt" onclick="setAbsentLoc(this,'moms')"><span class="chk">✓</span>At Mom's house</div>
-    <div class="opt" onclick="setAbsentLoc(this,'sleepover')"><span class="chk">✓</span>Sleepover at a friend's</div>
-    <div class="opt" onclick="setAbsentLoc(this,'camp')"><span class="chk">✓</span>Overnight camp</div>
-    <div class="opt" onclick="setAbsentLoc(this,'activity')"><span class="chk">✓</span>Activity / event</div>
-    <div class="opt" onclick="setAbsentLoc(this,'other')"><span class="chk">✓</span>Other</div>
+    <div class="opt" data-loc="moms" onclick="setAbsentLoc(this,'moms')"><span class="chk">✓</span>At co-parent's house</div>
+    <div class="opt" data-loc="sleepover" onclick="setAbsentLoc(this,'sleepover')"><span class="chk">✓</span>Sleepover at a friend's</div>
+    <div class="opt" data-loc="camp" onclick="setAbsentLoc(this,'camp')"><span class="chk">✓</span>Overnight camp</div>
+    <div class="opt" data-loc="activity" onclick="setAbsentLoc(this,'activity')"><span class="chk">✓</span>Activity / event</div>
+    <div class="opt" data-loc="other" onclick="setAbsentLoc(this,'other')"><span class="chk">✓</span>Other</div>
   </div>
   <p class="sec-lbl">Quick note (optional)</p>
   <input type="text" id="absent-note-input" placeholder="e.g. Sleepover at Graham's...">
@@ -277,12 +267,12 @@
 <div class="screen" id="s-mom-helped-kids">
   <div class="top-bar">
     <button class="back-btn" onclick="show('s-dad-mode')">← Back</button>
-    <div class="logo">My week</div>
+    <div class="logo">My day</div>
     <div class="back-spacer"></div>
   </div>
   <div class="progress" id="prog-mom-helped-kids"></div>
-  <div class="banner banner-dad"><div style="font-size:20px">🤝</div><div><div class="banner-title">Mom helped — your week</div><div class="banner-sub">Which kids did she help with?</div></div></div>
-  <p class="q">Which kids did Mom help with?</p>
+  <p class="q">Which kids did your co-parent help with?</p>
+  <p class="sub">Select each child your co-parent was involved with today</p>
   <div class="kid-grid" id="mom-helped-grid">
     <button class="kid-btn" id="mhk-Thomas" onclick="toggleMomHelpedKid('Thomas')">Thomas</button>
     <button class="kid-btn" id="mhk-Presley" onclick="toggleMomHelpedKid('Presley')">Presley</button>
@@ -296,7 +286,7 @@
 <div class="screen" id="s-mom-helped-activity">
   <div class="top-bar">
     <button class="back-btn" onclick="goBackFromMomHelped()">← Back</button>
-    <div class="logo">My week</div>
+    <div class="logo">My day</div>
     <div class="back-spacer"></div>
   </div>
   <div class="progress" id="prog-mom-helped-activity"></div>
@@ -304,7 +294,7 @@
     <div class="avatar av-mom" id="mha-avatar">T</div>
     <div><div class="step-lbl" id="mha-step-lbl">Kid 1 of 2</div><div style="font-size:17px;font-weight:600" id="mha-kid-name">Thomas</div></div>
   </div>
-  <p class="q" id="mha-q">What did Mom do with Thomas?</p>
+  <p class="q" id="mha-q">What did your co-parent do with Thomas?</p>
   <div class="activity-grid" id="mha-acts">
     <button class="act-btn" onclick="toggleMomAct(this,'tennis')">Tennis</button>
     <button class="act-btn" onclick="toggleMomAct(this,'camp')">Camp / drop-off</button>
@@ -316,7 +306,7 @@
     <button class="act-btn" onclick="toggleMomAct(this,'other')">Other</button>
   </div>
   <p class="sec-lbl">Quick note (optional)</p>
-  <input type="text" id="mha-note" placeholder="e.g. Mom took Thomas to his Saturday match...">
+  <input type="text" id="mha-note" placeholder="e.g. Took Thomas to his Saturday match...">
   <button class="btn primary" id="mha-next-btn" onclick="nextMomHelpedKid()" style="width:100%" disabled>Next →</button>
 </div>
 
@@ -324,11 +314,12 @@
 <div class="screen" id="s-dad-wk-mom-had">
   <div class="top-bar">
     <button class="back-btn" onclick="show('s-dad-mode')">← Back</button>
-    <div class="logo">My week</div>
+    <div class="logo">My day</div>
     <div class="back-spacer"></div>
   </div>
   <div class="progress" id="prog-dad-wk-mom-had"></div>
-  <div class="banner banner-other"><div style="font-size:20px">⚠️</div><div><div class="banner-title">Your week — kids at Mom's</div><div class="banner-sub">Being honest. Which kids are at Mom's tonight?</div></div></div>
+  <p class="q" id="dad-wk-mom-q">Which kids are with your co-parent tonight?</p>
+  <p class="sub">Record what actually happened for your day</p>
   <div class="kid-grid" id="dad-wk-mom-grid">
     <button class="kid-btn" id="dwm-Thomas" onclick="toggleDadWkMomKid('Thomas')">Thomas</button>
     <button class="kid-btn" id="dwm-Presley" onclick="toggleDadWkMomKid('Presley')">Presley</button>
@@ -343,23 +334,32 @@
 <div class="screen" id="s-mom-mode">
   <div class="top-bar">
     <button class="back-btn" onclick="show('s-week')">← Back</button>
-    <div class="logo">Mom's week</div>
+    <div class="logo">Co-parent's day</div>
     <div class="back-spacer"></div>
   </div>
   <div class="progress" id="prog-mom-mode"></div>
-  <div class="banner banner-mom"><div style="font-size:20px">🏢</div><div><div class="banner-title">Mom's scheduled week</div><div class="banner-sub">How did things actually go today?</div></div></div>
-  <p class="q">Were the kids with Mom today?</p>
+  <p class="q">Were the kids with your co-parent today?</p>
+  <p class="sub">Choose what actually happened</p>
   <div class="scene-card" id="ft-easy" onclick="setMomMode('easy')">
-    <div class="scene-icon">✅</div><div class="scene-title">Yes — Mom had the kids</div>
-    <div class="scene-desc">Normal day, she had them. I may have helped a little or not at all.</div>
+    <span class="decision-icon">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M8 12.5l2.6 2.6L16.5 9"></path></svg>
+    </span>
+    <span class="decision-copy"><span class="scene-title">Co-parent had the kids</span><span class="scene-desc">Normal day, with little or no involvement from you.</span></span>
+    <span class="decision-chevron">›</span>
   </div>
   <div class="scene-card" id="ft-helped" onclick="setMomMode('helped')">
-    <div class="scene-icon">🤝</div><div class="scene-title">Yes, but I helped with one or more kids</div>
-    <div class="scene-desc">Mom had them, but I took a kid to tennis, camp, an activity, etc.</div>
+    <span class="decision-icon">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12.5l2.7 2.7c.8.8 2.1.8 2.9 0l4.4-4.4c.8-.8.8-2.1 0-2.9s-2.1-.8-2.9 0l-1 1"></path><path d="M10.5 9.5l-1-1c-.8-.8-2.1-.8-2.9 0s-.8 2.1 0 2.9l1 1"></path><path d="M8.5 16.5l-2 2"></path><path d="M15.5 16.5l2 2"></path></svg>
+    </span>
+    <span class="decision-copy"><span class="scene-title">I helped</span><span class="scene-desc">Your co-parent had them, but you helped with one or more kids.</span></span>
+    <span class="decision-chevron">›</span>
   </div>
   <div class="scene-card" id="ft-dad" onclick="setMomMode('dad-had')">
-    <div class="scene-icon">⚠️</div><div class="scene-title">Mom left the kids with me</div>
-    <div class="scene-desc">It's her week but I ended up having some or all of the kids overnight.</div>
+    <span class="decision-icon">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3L12 4z"></path><path d="M12 9v5"></path><path d="M12 17.5h.01"></path></svg>
+    </span>
+    <span class="decision-copy"><span class="scene-title">Kids ended up with me</span><span class="scene-desc">Co-parent's day, but you had some or all of the kids overnight.</span></span>
+    <span class="decision-chevron">›</span>
   </div>
 </div>
 
@@ -458,7 +458,7 @@
   <div class="progress" id="prog-kids-confirm"></div>
   <p class="q">Everyone accounted for tonight?</p>
   <p class="sub">Confirm where each kid is sleeping — then continue to your diary</p>
-  <div id="kids-confirm-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:1.5rem"></div>
+  <div id="kids-confirm-list"></div>
   <button class="btn primary" onclick="confirmKidsAndContinue()" style="width:100%;padding:16px">
     ✓ Yes, that's right — continue
   </button>
@@ -502,21 +502,26 @@
     <div class="back-spacer"></div>
   </div>
   <p class="q">Does everything look right?</p>
-  <p class="sub">Review your entry below — tap Edit to go back and change anything</p>
+  <p class="sub">Review the day before saving it to your log.</p>
   <div id="review-content"></div>
-  <button class="btn primary" onclick="saveEntry()" style="width:100%;padding:16px;font-size:16px;margin-top:.5rem">✅ Log it — looks good</button>
-  <button class="btn" onclick="goBackFromReview()" style="width:100%;margin-top:10px">← Edit something</button>
+  <button class="btn primary" onclick="saveEntry()" style="width:100%;padding:16px;font-size:16px;margin-top:.5rem">Log it — looks good</button>
+  <button class="btn" onclick="goBackFromReview()" style="width:100%;margin-top:10px">Edit something</button>
 </div>
 
 <!-- SAVED -->
 <div class="screen" id="s-saved">
-  <div class="top-bar"><div class="logo-left" style="display:flex;align-items:center;gap:8px"><svg width="24" height="24" viewBox="0 0 32 32" style="flex-shrink:0"><rect width="32" height="32" rx="8" fill="#3C3489"/><polygon points="16,5 25,12 25,27 7,27 7,12" fill="#534AB7"/><polygon points="16,5 25,12 16,12" fill="#6c63d4"/><rect x="12.5" y="19" width="7" height="8" rx="1.5" fill="#EEEDFE"/><rect x="8" y="16" width="5" height="5" rx="1" fill="#7F77DD"/><rect x="19" y="16" width="5" height="5" rx="1" fill="#7F77DD"/><circle cx="16" cy="11" r="4" fill="#FAC775"/><path d="M16 14.5C11.5 11.8 11.5 8.2 13.5 7.2C14.5 6.7 16 7.5 16 7.5C16 7.5 17.5 6.7 18.5 7.2C20.5 8.2 20.5 11.8 16 14.5Z" fill="#993C1D"/><path d="M13.5 11L15.2 12.7L18.5 9.5" fill="none" stroke="#fff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span style="font-size:14px;font-weight:700;color:#3C3489">Custody Tracker</span></div></div>
-  <div class="success-ring" id="saved-ring">✅</div>
-  <p class="q" style="text-align:center;font-size:22px">Logged!</p>
-  <p class="sub" style="text-align:center;white-space:pre-line;margin-top:.5rem" id="saved-summary"></p>
-  <div style="display:flex;flex-direction:column;gap:10px;margin-top:1.5rem">
-    <button class="btn primary" style="padding:15px" onclick="showCal()">📅 View calendar</button>
-    <button class="btn" style="padding:15px" onclick="show('s-home')">🏠 Home</button>
+  <div class="top-bar">
+    <div class="back-spacer"></div>
+    <div class="logo">saved</div>
+    <div class="back-spacer"></div>
+  </div>
+  <div class="saved-card">
+    <div class="success-ring" id="saved-ring">✓</div>
+    <p class="q">Logged</p>
+    <p class="sub" id="saved-summary"></p>
+  </div>
+  <div class="saved-actions">
+    <button class="btn primary" onclick="show('s-home')">Back to today</button>
   </div>
 </div>
 
