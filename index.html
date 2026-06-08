@@ -536,37 +536,50 @@
 
 <!-- CALENDAR -->
 <div class="screen" id="s-cal">
-  <div class="top-bar"><div class="logo-left" style="display:flex;align-items:center;gap:8px"><svg width="24" height="24" viewBox="0 0 32 32" style="flex-shrink:0"><rect width="32" height="32" rx="8" fill="#3C3489"/><polygon points="16,5 25,12 25,27 7,27 7,12" fill="#534AB7"/><polygon points="16,5 25,12 16,12" fill="#6c63d4"/><rect x="12.5" y="19" width="7" height="8" rx="1.5" fill="#EEEDFE"/><rect x="8" y="16" width="5" height="5" rx="1" fill="#7F77DD"/><rect x="19" y="16" width="5" height="5" rx="1" fill="#7F77DD"/><circle cx="16" cy="11" r="4" fill="#FAC775"/><path d="M16 14.5C11.5 11.8 11.5 8.2 13.5 7.2C14.5 6.7 16 7.5 16 7.5C16 7.5 17.5 6.7 18.5 7.2C20.5 8.2 20.5 11.8 16 14.5Z" fill="#993C1D"/><path d="M13.5 11L15.2 12.7L18.5 9.5" fill="none" stroke="#fff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span style="font-size:14px;font-weight:700;color:#3C3489">Custody Tracker</span></div></div>
-  <div class="nav-tabs">
+  <div class="calendar-shell">
+  <div class="calendar-top">
+    <div class="calendar-brand">
+      <svg class="home-logo" width="42" height="42" viewBox="0 0 42 42" aria-hidden="true">
+        <rect width="42" height="42" rx="12" fill="#4430a0"/>
+        <path d="M11 20.5 21 12l10 8.5V32H11V20.5Z" fill="#fff8e8"/>
+        <path d="M16.3 24.1c-2.8-2.7-1.1-6.5 2-5.1 1.4.6 2.7 2.3 2.7 2.3s1.3-1.7 2.7-2.3c3.1-1.4 4.8 2.4 2 5.1L21 28.4l-4.7-4.3Z" fill="none" stroke="#4430a0" stroke-width="1.7" stroke-linejoin="round"/>
+        <path d="M8.5 20.5 21 9.8l12.5 10.7" fill="none" stroke="#fff8e8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Custody Tracker</span>
+    </div>
+  </div>
+  <div class="nav-tabs calendar-tabs">
     <div class="nav-tab active" id="t-cal" onclick="switchTab('cal')">Calendar</div>
-    <div class="nav-tab" id="t-stats" onclick="switchTab('stats')">Stats</div>
-    <div class="nav-tab" id="t-log" onclick="switchTab('log')">Log</div>
+    <div class="nav-tab" id="t-trends" onclick="switchTab('trends')">Trends</div>
   </div>
   <div id="tc-cal">
     <div class="cal-header">
       <div class="cal-title-txt" id="cal-title"></div>
-      <div style="display:flex;gap:6px">
+      <div class="cal-nav-actions">
         <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
         <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
       </div>
     </div>
     <div class="legend">
-      <div class="leg-item"><div class="leg-dot" style="background:#eeedfe;border:1px solid #7f77dd"></div>Dad has kids</div>
-      <div class="leg-item"><div class="leg-dot" style="background:#faece7;border:1px solid #d85a30"></div>Mom has kids</div>
-      <div class="leg-item"><div class="leg-dot" style="background:#e1f5ee;border:1px solid #1d9e75"></div>Dad's wk/Mom had</div>
-      <div class="leg-item"><div class="leg-dot" style="background:#faeeda;border:1px solid #ba7517"></div>Special</div>
+      <div class="leg-item"><div class="leg-dot expected"></div>Went as expected</div>
+      <div class="leg-item"><div class="leg-dot changed"></div>Something changed</div>
+      <div class="leg-item"><div class="leg-dot special"></div>Special day</div>
     </div>
     <div class="cal-grid" id="cal-grid"></div>
     <div id="cal-detail"></div>
   </div>
-  <div id="tc-stats" style="display:none">
+  <div id="tc-trends" style="display:none">
     <p class="sec-lbl" id="stats-lbl"></p>
     <div class="stat-grid" id="stat-grid"></div>
     <div class="summary-box" id="summary-box"></div>
   </div>
-  <div id="tc-log" style="display:none"><div id="log-list"></div></div>
-  <hr>
-  <button class="btn" onclick="show('s-home')" style="width:100%;padding:14px">← Back home</button>
+  </div>
+  <div class="bottom-nav">
+    <button class="bottom-nav-item" onclick="show('s-home')"><span class="nav-home"></span><strong>Today</strong></button>
+    <button class="bottom-nav-item active" onclick="showCal()"><span class="nav-calendar"></span><strong>Calendar</strong></button>
+    <button class="bottom-nav-item" onclick="showExport()"><span class="nav-bars"></span><strong>Reports</strong></button>
+    <button class="bottom-nav-item" onclick="showSetup()"><span class="nav-gear"></span><strong>Settings</strong></button>
+  </div>
 </div>
 
 <!-- EXPORT -->
@@ -665,6 +678,6 @@
 </div>
 
 </div><!-- end .app -->
-<script src="app.js?v=checkin-branch-ui"></script>
+<script src="app.js?v=calendar-detail-cleanup"></script>
 </body>
 </html>

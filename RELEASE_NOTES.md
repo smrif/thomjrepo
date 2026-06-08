@@ -10,3 +10,4 @@
 - Removed the old planned-schedule setup fields and unused planned-schedule check screen.
 - Fixed split-night location options so absent-child location choices no longer appear preselected.
 - Removed the misleading "Log another day" action from the saved confirmation screen until date-specific logging exists.
+- Refreshed the Calendar screen with Calendar / Trends tabs, color-based day states, cleaner day details, and demo preview mode for placeholder calendar data.
