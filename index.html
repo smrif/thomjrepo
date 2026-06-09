@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="styles.css?v=checkin-ui">
 </head>
 <body>
-<div class="app" id="app">
+<div class="app" id="app" style="padding-bottom:80px">
 
 <!-- SETUP -->
 <div class="screen" id="s-setup">
@@ -41,6 +41,12 @@
   </div>
   <button class="btn primary" onclick="saveSetup()" style="width:100%;padding:16px">Save setup</button>
   <button class="link-btn" onclick="skipSetup()" style="width:100%;margin-top:8px">Use sample setup for now</button>
+  <div class="bottom-nav">
+    <button class="bottom-nav-item" onclick="show('s-home')"><span class="nav-home"></span><strong>Today</strong></button>
+    <button class="bottom-nav-item" onclick="showCal()"><span class="nav-calendar"></span><strong>Calendar</strong></button>
+    <button class="bottom-nav-item" onclick="showExport()"><span class="nav-bars"></span><strong>Reports</strong></button>
+    <button class="bottom-nav-item active" onclick="showSetup()"><span class="nav-gear"></span><strong>Settings</strong></button>
+  </div>
 </div>
 
 <!-- HOME -->
@@ -327,7 +333,7 @@
     <button class="kid-btn" id="dwm-all" onclick="setDadWkMomAll()">All three</button>
   </div>
   <div class="who-summary" id="dad-wk-mom-summary">Tap the kids who are at Mom's tonight</div>
-  <button class="btn primary" id="dwm-next" onclick="goDadWkMomDiary()" style="width:100%" disabled>Continue →</button>
+  <button class="btn primary" id="dwm-next" onclick="goToDadWkViaContext()" style="width:100%" disabled>Continue →</button>
 </div>
 
 <!-- MOM WEEK MODE -->
@@ -447,7 +453,7 @@
     <button class="kid-btn" id="dh-allThree" onclick="setDadHadAll()">All three</button>
   </div>
   <div class="who-summary" id="dad-had-summary">Tap the kids who were actually with you</div>
-  <button class="btn primary" id="dad-had-next" onclick="goDadHadDiary()" style="width:100%" disabled>Continue →</button>
+  <button class="btn primary" id="dad-had-next" onclick="goToDadHadViaContext()" style="width:100%" disabled>Continue →</button>
 </div>
 
 <!-- KIDS CONFIRM -->
@@ -469,6 +475,65 @@
   </button>
 </div>
 
+<!-- CHANGE CONTEXT -->
+<div class="screen" id="s-change-context">
+  <div class="top-bar">
+    <button class="back-btn" id="change-context-back-btn" onclick="goBackFromChangeContext()">← Back</button>
+    <div class="logo" id="change-context-logo">Schedule change</div>
+    <div class="back-spacer"></div>
+  </div>
+  <div class="progress" id="prog-change-context"></div>
+
+  <div class="change-context-banner" id="change-context-banner">
+    <div class="change-context-icon">⚠️</div>
+    <div>
+      <div class="change-context-title" id="change-context-title">Schedule change</div>
+      <div class="change-context-sub" id="change-context-sub">A quick note about how this happened</div>
+    </div>
+  </div>
+
+  <p class="q">Was this change agreed to in advance?</p>
+  <p class="sub">This helps document whether the change was mutual or unexpected</p>
+
+  <div class="change-yn-row">
+    <button class="change-yn-btn" id="agreed-yes" onclick="setAgreed(true)">
+      <div class="change-yn-icon">✅</div>
+      <div class="change-yn-label">Yes, agreed</div>
+      <div class="change-yn-sub">Mutual arrangement,<br>planned ahead</div>
+    </button>
+    <button class="change-yn-btn" id="agreed-no" onclick="setAgreed(false)">
+      <div class="change-yn-icon">❌</div>
+      <div class="change-yn-label">No, unexpected</div>
+      <div class="change-yn-sub">Not discussed or<br>agreed beforehand</div>
+    </button>
+  </div>
+
+  <div id="pressure-section" style="display:none;margin-top:.25rem">
+    <p class="q" style="font-size:16px">Did you feel pressured to agree?</p>
+    <p class="sub">You can be honest here — this is your private record</p>
+    <div class="change-yn-row">
+      <button class="change-yn-btn" id="pressure-yes" onclick="setPressure(true)">
+        <div class="change-yn-icon">😟</div>
+        <div class="change-yn-label">Yes, I felt pressured</div>
+        <div class="change-yn-sub">I agreed but didn't<br>feel I had a choice</div>
+      </button>
+      <button class="change-yn-btn" id="pressure-no" onclick="setPressure(false)">
+        <div class="change-yn-icon">👍</div>
+        <div class="change-yn-label">No, I was fine helping</div>
+        <div class="change-yn-sub">No pressure,<br>happy to help</div>
+      </button>
+    </div>
+  </div>
+
+  <button class="btn primary" id="change-context-next" onclick="goFromChangeContext()" style="width:100%;margin-top:1.25rem" disabled>Continue to notes →</button>
+  <div class="bottom-nav">
+    <button class="bottom-nav-item active" onclick="show('s-home')"><span class="nav-home"></span><strong>Today</strong></button>
+    <button class="bottom-nav-item" onclick="showCal()"><span class="nav-calendar"></span><strong>Calendar</strong></button>
+    <button class="bottom-nav-item" onclick="showExport()"><span class="nav-bars"></span><strong>Reports</strong></button>
+    <button class="bottom-nav-item" onclick="showSetup()"><span class="nav-gear"></span><strong>Settings</strong></button>
+  </div>
+</div>
+
 <!-- DIARY -->
 <div class="screen" id="s-diary">
   <div class="top-bar">
@@ -480,6 +545,20 @@
   <p class="q" id="diary-q">Anything else to note?</p>
   <p class="sub" id="diary-sub">A quick diary entry — how was today?</p>
   <textarea id="diary-input" placeholder="Quiet evening at home..."></textarea>
+
+  <div class="attach-section" style="margin-top:1rem">
+    <div class="attach-label">📎 Attach a screenshot for context <span style="color:#aaa;font-weight:400;font-size:12px">optional</span></div>
+    <div class="attach-sub">Text message, email, or anything relevant to this entry</div>
+    <div id="diary-attach-preview" class="attach-preview" style="display:none">
+      <img id="diary-attach-img" src="" alt="Attached screenshot">
+      <button class="attach-remove-btn" onclick="removeAttachment('diary')" title="Remove">✕</button>
+    </div>
+    <label class="attach-btn" id="diary-attach-btn">
+      <input type="file" id="diary-attach-input" accept="image/*" style="display:none" onchange="handleAttachment(this,'diary')">
+      📷 Add screenshot
+    </label>
+  </div>
+
   <button class="btn primary" id="diary-next-btn" onclick="goToReview()" style="width:100%;margin-top:1rem">Review &amp; save →</button>
 </div>
 
@@ -500,6 +579,20 @@
     <span><strong>Exception day</strong><br><span>This will be saved as a special custody note.</span></span>
   </div>
   <textarea id="other-diary-input" placeholder="Christmas Day, tournament travel, joint event..."></textarea>
+
+  <div class="attach-section" style="margin-top:1rem">
+    <div class="attach-label">📎 Attach a screenshot for context <span style="color:#aaa;font-weight:400;font-size:12px">optional</span></div>
+    <div class="attach-sub">Text message, email, or anything relevant to this entry</div>
+    <div id="other-attach-preview" class="attach-preview" style="display:none">
+      <img id="other-attach-img" src="" alt="Attached screenshot">
+      <button class="attach-remove-btn" onclick="removeAttachment('other')" title="Remove">✕</button>
+    </div>
+    <label class="attach-btn" id="other-attach-btn">
+      <input type="file" id="other-attach-input" accept="image/*" style="display:none" onchange="handleAttachment(this,'other')">
+      📷 Add screenshot
+    </label>
+  </div>
+
   <button class="btn primary" onclick="goToReview()" style="width:100%;margin-top:1rem">Review &amp; save →</button>
 </div>
 
@@ -513,8 +606,15 @@
   <p class="q">Does everything look right?</p>
   <p class="sub">Review the day before saving it to your log.</p>
   <div id="review-content"></div>
+  <div style="font-size:12px;color:#999;text-align:center;margin:12px 0 4px" id="review-timestamp-note"></div>
   <button class="btn primary" onclick="saveEntry()" style="width:100%;padding:16px;font-size:16px;margin-top:.5rem">Log it — looks good</button>
   <button class="btn" onclick="goBackFromReview()" style="width:100%;margin-top:10px">Edit something</button>
+  <div class="bottom-nav">
+    <button class="bottom-nav-item active" onclick="show('s-home')"><span class="nav-home"></span><strong>Today</strong></button>
+    <button class="bottom-nav-item" onclick="showCal()"><span class="nav-calendar"></span><strong>Calendar</strong></button>
+    <button class="bottom-nav-item" onclick="showExport()"><span class="nav-bars"></span><strong>Reports</strong></button>
+    <button class="bottom-nav-item" onclick="showSetup()"><span class="nav-gear"></span><strong>Settings</strong></button>
+  </div>
 </div>
 
 <!-- SAVED -->
@@ -531,6 +631,12 @@
   </div>
   <div class="saved-actions">
     <button class="btn primary" onclick="show('s-home')">Back to today</button>
+  </div>
+  <div class="bottom-nav">
+    <button class="bottom-nav-item active" onclick="show('s-home')"><span class="nav-home"></span><strong>Today</strong></button>
+    <button class="bottom-nav-item" onclick="showCal()"><span class="nav-calendar"></span><strong>Calendar</strong></button>
+    <button class="bottom-nav-item" onclick="showExport()"><span class="nav-bars"></span><strong>Reports</strong></button>
+    <button class="bottom-nav-item" onclick="showSetup()"><span class="nav-gear"></span><strong>Settings</strong></button>
   </div>
 </div>
 
@@ -561,8 +667,10 @@
       </div>
     </div>
     <div class="legend">
-      <div class="leg-item"><div class="leg-dot expected"></div>Went as expected</div>
-      <div class="leg-item"><div class="leg-dot changed"></div>Something changed</div>
+      <div class="leg-item"><div class="leg-dot dad-day"></div>Your day</div>
+      <div class="leg-item"><div class="leg-dot dad-day-mom-has"></div>Your day — kids at Mom's</div>
+      <div class="leg-item"><div class="leg-dot mom-day"></div>Mom's day</div>
+      <div class="leg-item"><div class="leg-dot mom-day-dad-has"></div>Mom's day — kids with you</div>
       <div class="leg-item"><div class="leg-dot special"></div>Special day</div>
     </div>
     <div class="cal-grid" id="cal-grid"></div>
@@ -585,6 +693,8 @@
 <!-- EXPORT -->
 <div class="screen" id="s-export">
   <div class="report-shell">
+
+    <!-- TOP BAR -->
     <div class="home-top">
       <div class="home-brand">
         <svg class="home-logo" width="42" height="42" viewBox="0 0 42 42" aria-hidden="true">
@@ -595,74 +705,82 @@
         </svg>
         <span>Custody Tracker</span>
       </div>
-      <button class="profile-chip" onclick="showSetup()" id="reports-profile">R</button>
+      <button class="profile-chip" onclick="showSetup()" id="reports-profile">D</button>
     </div>
 
-    <div class="reports-hero">
-      <div>
-        <p class="reports-kicker">Reports</p>
-        <p class="q reports-title">Export a clean custody record.</p>
-        <p class="sub reports-sub">Choose a focused summary, preview it, then share or copy it.</p>
+    <!-- SUMMARY STATS -->
+    <div id="reports-stats-bar" style="margin-bottom:1.25rem"></div>
+
+    <!-- DATE RANGE FILTER -->
+    <div class="report-filter-row">
+      <span class="report-filter-label">Period</span>
+      <div class="report-filter-pills" id="report-filter-pills">
+        <button class="report-pill active" id="pill-all" onclick="setReportFilter('all')">All time</button>
+        <button class="report-pill" id="pill-30" onclick="setReportFilter('30')">30 days</button>
+        <button class="report-pill" id="pill-60" onclick="setReportFilter('60')">60 days</button>
+        <button class="report-pill" id="pill-90" onclick="setReportFilter('90')">90 days</button>
       </div>
-      <span class="reports-hero-icon"></span>
     </div>
 
+    <!-- REPORT LIST -->
     <div class="report-list">
+
+      <div class="export-card" id="exp-honest" onclick="selectExport('honest')">
+        <span class="export-icon export-balance"></span>
+        <div>
+          <div class="export-title">Custody deviation report</div>
+          <div class="export-desc">Every night the schedule wasn't followed — both directions, with pressure flags</div>
+        </div>
+        <span class="export-chevron">›</span>
+      </div>
+
+      <div class="export-card" id="exp-dadactual" onclick="selectExport('dadactual')">
+        <span class="export-icon export-clock"></span>
+        <div>
+          <div class="export-title">Dad's actual time with kids</div>
+          <div class="export-desc">All nights Dad had the kids — his week plus any schedule changes</div>
+        </div>
+        <span class="export-chevron">›</span>
+      </div>
+
+      <div class="export-card" id="exp-momsweek" onclick="selectExport('momsweek')">
+        <span class="export-icon export-person"></span>
+        <div>
+          <div class="export-title">Mom's week — Dad's involvement</div>
+          <div class="export-desc">Her scheduled days where Dad helped or had the kids, with pressure notes</div>
+        </div>
+        <span class="export-chevron">›</span>
+      </div>
+
       <div class="export-card" id="exp-full" onclick="selectExport('full')">
         <span class="export-icon export-file"></span>
         <div>
           <div class="export-title">Full diary</div>
-          <div class="export-desc">Every logged day in chronological order</div>
+          <div class="export-desc">Complete chronological log — every entry, every note</div>
         </div>
         <span class="export-chevron">›</span>
       </div>
-      <div class="export-card" id="exp-dadactual" onclick="selectExport('dadactual')">
-        <span class="export-icon export-clock"></span>
-        <div>
-          <div class="export-title">Actual time with kids</div>
-          <div class="export-desc">All days you had the kids, including schedule changes</div>
-        </div>
-        <span class="export-chevron">›</span>
-      </div>
-      <div class="export-card" id="exp-honest" onclick="selectExport('honest')">
-        <span class="export-icon export-balance"></span>
-        <div>
-          <div class="export-title">Full honesty report</div>
-          <div class="export-desc">Both sides of missed nights and custody deviations</div>
-        </div>
-        <span class="export-chevron">›</span>
-      </div>
-      <div class="export-card" id="exp-momsweek" onclick="selectExport('momsweek')">
-        <span class="export-icon export-person"></span>
-        <div>
-          <div class="export-title">Other parent's week</div>
-          <div class="export-desc">Scheduled days where you helped or had the kids</div>
-        </div>
-        <span class="export-chevron">›</span>
-      </div>
+
       <div class="export-card" id="exp-notes" onclick="selectExport('notes')">
         <span class="export-icon export-note"></span>
         <div>
           <div class="export-title">Diary notes only</div>
-          <div class="export-desc">Just your written entries with dates</div>
+          <div class="export-desc">Just your written entries and dates — clean narrative format</div>
         </div>
         <span class="export-chevron">›</span>
       </div>
+
     </div>
 
+    <!-- PREVIEW -->
     <div id="export-preview-section" class="report-preview" style="display:none">
-      <div class="section-header">
-        <div class="section-title-wrap">
-          <span class="soft-icon report-icon"></span>
-          <div>
-            <div class="section-title">Preview</div>
-            <div class="section-sub">Review before sharing</div>
-          </div>
-        </div>
+      <div class="report-preview-header">
+        <div class="report-preview-title" id="preview-title">Preview</div>
+        <button class="report-print-btn" onclick="printReport()" title="Print">🖨️ Print</button>
       </div>
       <div class="preview-box" id="preview-box"></div>
       <div class="report-actions">
-        <button class="btn primary" onclick="shareReport()">Share / Email</button>
+        <button class="btn primary" onclick="shareReport()">📤 Share / Email</button>
         <button class="btn" onclick="copyReport()">Copy</button>
       </div>
       <div class="copy-toast" id="copy-toast">✓ Copied!</div>
@@ -676,7 +794,6 @@
     </div>
   </div>
 </div>
-
 </div><!-- end .app -->
 <script src="app.js?v=calendar-detail-cleanup"></script>
 </body>
