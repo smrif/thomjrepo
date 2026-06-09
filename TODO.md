@@ -1,19 +1,26 @@
 # Custody Tracker TODO Notes
 
+## Testing / Release Hygiene
+
+- Before pushing UI changes, run:
+  - `node scripts/contract-test.mjs`
+  - `npm run test:smoke` once npm dependencies are installed
+
+- The contract test catches missing inline handler functions, missing core screens, and missing CSS hooks.
+- The browser smoke test covers Settings nav, check-in card styling, split-night absent kid defaults, Brief Visit review state, schedule-change context, Reports preview/filter behavior, Calendar trends, custom parent/co-parent labels across Review, Saved, Calendar, and Reports, and long parent/child names without stale labels or horizontal overflow.
+- Next testing improvement: make browser smoke testing part of a simple pre-push checklist or CI run.
+
 ## Calendar / Logging Follow-ups
 
-- Tapping a day with no logging should show "Day not logged."
-  QUESTION FOR TJ: Do we want to allow people to fill in old days?
+- Product decision: only yesterday can be backfilled.
+  Older empty days should remain read-only and show "Nothing logged" to preserve log credibility.
 
-- Add timestamps for when each day was logged.
-  These timestamps should be visible when viewing a day from the calendar.
-
-- Expand the decision tree for days that did not go as expected.
-  Need to capture whether the change was mutual. If not mutual, TJ should provide the scenarios to expand the tree with.
-  QUESTION FOR TJ: Should we allow users to upload a screenshot of text messages?
+- Continue verifying timestamps, change-context badges, and screenshot previews across Calendar details, Reports, and exported text.
+- Continue watching long-label copy in report cards. It now wraps safely, but very long configured names can still make report titles visually dense.
 
 ## Future Product Areas
 
+- Review the current decision tree in `DECISION_TREE.md` and decide which strange paths should be simplified.
 - Trends page still needs to be speced.
 - Reports still needs to be speced.
 - Settings still needs to be speced.

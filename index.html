@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Custody Tracker">
 <title>Custody Tracker</title>
-<link rel="stylesheet" href="styles.css?v=checkin-ui">
+<link rel="stylesheet" href="styles.css?v=long-labels">
 </head>
 <body>
 <div class="app" id="app" style="padding-bottom:80px">
@@ -667,10 +667,10 @@
       </div>
     </div>
     <div class="legend">
-      <div class="leg-item"><div class="leg-dot dad-day"></div>Your day</div>
-      <div class="leg-item"><div class="leg-dot dad-day-mom-has"></div>Your day — kids at Mom's</div>
-      <div class="leg-item"><div class="leg-dot mom-day"></div>Mom's day</div>
-      <div class="leg-item"><div class="leg-dot mom-day-dad-has"></div>Mom's day — kids with you</div>
+      <div class="leg-item"><div class="leg-dot dad-day"></div><span id="legend-your-day">Your day</span></div>
+      <div class="leg-item"><div class="leg-dot dad-day-mom-has"></div><span id="legend-your-day-away">Your day — kids at Mom's</span></div>
+      <div class="leg-item"><div class="leg-dot mom-day"></div><span id="legend-coparent-day">Mom's day</span></div>
+      <div class="leg-item"><div class="leg-dot mom-day-dad-has"></div><span id="legend-coparent-day-with-you">Mom's day — kids with you</span></div>
       <div class="leg-item"><div class="leg-dot special"></div>Special day</div>
     </div>
     <div class="cal-grid" id="cal-grid"></div>
@@ -737,8 +737,8 @@
       <div class="export-card" id="exp-dadactual" onclick="selectExport('dadactual')">
         <span class="export-icon export-clock"></span>
         <div>
-          <div class="export-title">Dad's actual time with kids</div>
-          <div class="export-desc">All nights Dad had the kids — his week plus any schedule changes</div>
+          <div class="export-title" id="report-dadactual-title">Dad's actual time with kids</div>
+          <div class="export-desc" id="report-dadactual-desc">All nights Dad had the kids — his week plus any schedule changes</div>
         </div>
         <span class="export-chevron">›</span>
       </div>
@@ -746,8 +746,8 @@
       <div class="export-card" id="exp-momsweek" onclick="selectExport('momsweek')">
         <span class="export-icon export-person"></span>
         <div>
-          <div class="export-title">Mom's week — Dad's involvement</div>
-          <div class="export-desc">Her scheduled days where Dad helped or had the kids, with pressure notes</div>
+          <div class="export-title" id="report-momsweek-title">Mom's week — Dad's involvement</div>
+          <div class="export-desc" id="report-momsweek-desc">Her scheduled days where Dad helped or had the kids, with pressure notes</div>
         </div>
         <span class="export-chevron">›</span>
       </div>
@@ -795,6 +795,6 @@
   </div>
 </div>
 </div><!-- end .app -->
-<script src="app.js?v=calendar-detail-cleanup"></script>
+<script src="app.js?v=long-labels"></script>
 </body>
 </html>
