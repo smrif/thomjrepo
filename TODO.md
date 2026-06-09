@@ -17,6 +17,7 @@
 - Trends page still needs to be speced.
 - Reports still needs to be speced.
 - Settings still needs to be speced.
+- Keep the bottom navigation visible on the Settings screen.
 
 ## Design Polish
 
