@@ -195,6 +195,19 @@ try {
   if (!yesterdayDetail.includes('Nothing logged') || !yesterdayDetail.includes('Log yesterday')) {
     throw new Error('Yesterday with no entry should show Nothing logged and allow one-day backfill.');
   }
+  const selectedAfterYesterday = await page.evaluate(({ todayDs, yesterdayDs }) => {
+    const todayCell = document.querySelector(`[data-date="${todayDs}"]`);
+    const yesterdayCell = document.querySelector(`[data-date="${yesterdayDs}"]`);
+    return {
+      selectedCalDate,
+      yesterdayVisible: !!yesterdayCell,
+      todaySelected: todayCell?.classList.contains('selected') || false,
+      yesterdaySelected: yesterdayCell?.classList.contains('selected') || false
+    };
+  }, { todayDs: dateString(0), yesterdayDs: dateString(-1) });
+  if (selectedAfterYesterday.selectedCalDate !== dateString(-1) || selectedAfterYesterday.todaySelected || (selectedAfterYesterday.yesterdayVisible && !selectedAfterYesterday.yesterdaySelected)) {
+    throw new Error(`Calendar selected state should move to yesterday. Saw ${JSON.stringify(selectedAfterYesterday)}.`);
+  }
   await page.evaluate(ds => showEmptyDetail(ds), dateString(-2));
   const olderDetail = await page.locator('#cal-detail').innerText();
   if (!olderDetail.includes('Nothing logged') || olderDetail.includes('Log yesterday')) {

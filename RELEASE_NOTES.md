@@ -17,6 +17,9 @@
 - Replaced comma-separated child setup with explicit child-name fields and an Add another child action.
 - Simplified the Calendar legend to a single-row state key: You, Co-parent, Changed, and Special.
 - Added a local June demo preview hook at `?demo=june` for reviewing populated Calendar states.
+- Fixed Calendar selected-day state so tapping a previous day moves the dark outline off today's date.
+- Changed compact Calendar/log labels from `wk` to `day` for day-specific notes.
+- Added shareable PNG/JPEG decision-tree exports plus a local renderer script for future updates.
 
 ## June 8, 2026
 
