@@ -14,6 +14,9 @@
 - Added smoke-test coverage for custom parent/co-parent labels across Review, Saved, Calendar, Trends, and Reports.
 - Fixed stale label rendering after changing parent/co-parent names in Settings, including Calendar legend, report cards, and profile chips.
 - Added long-name stress coverage and wrapping fixes for long parent/co-parent names and long child names.
+- Replaced comma-separated child setup with explicit child-name fields and an Add another child action.
+- Simplified the Calendar legend to a single-row state key: You, Co-parent, Changed, and Special.
+- Added a local June demo preview hook at `?demo=june` for reviewing populated Calendar states.
 
 ## June 8, 2026
 

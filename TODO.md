@@ -23,7 +23,7 @@
 - Review the current decision tree in `DECISION_TREE.md` and decide which strange paths should be simplified.
 - Trends page still needs to be speced.
 - Reports still needs to be speced.
-- Settings still needs to be speced.
+- Settings still needs to be speced, including whether child profile fields should eventually include birthdays, nicknames, or display initials.
 - Keep the bottom navigation visible on the Settings screen.
 
 ## Design Polish

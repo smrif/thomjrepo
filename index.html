@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Custody Tracker">
 <title>Custody Tracker</title>
-<link rel="stylesheet" href="styles.css?v=long-labels">
+<link rel="stylesheet" href="styles.css?v=compact-calendar-legend">
 </head>
 <body>
 <div class="app" id="app" style="padding-bottom:80px">
@@ -15,10 +15,10 @@
 <!-- SETUP -->
 <div class="screen" id="s-setup">
   <div class="top-bar"><div class="logo-left">Custody Tracker setup</div></div>
-  <p class="q" style="font-size:23px">Set up your private custody log</p>
+  <p class="q">Set up your private custody log</p>
   <p class="sub">You can start with just labels and child names. Your diary entries stay on this device.</p>
   <div class="setup-card">
-    <p class="sec-lbl" style="margin-top:0">Parent labels</p>
+    <p class="sec-lbl">Parent labels</p>
     <div class="setup-row">
       <div>
         <input type="text" id="setup-current-parent" placeholder="You, e.g. Dad">
@@ -30,8 +30,9 @@
       </div>
     </div>
     <p class="sec-lbl">Children</p>
-    <input type="text" id="setup-children" placeholder="Thomas, Presley, Hayden">
-    <div class="setup-help">Separate names with commas.</div>
+    <div class="setup-children-list" id="setup-children-list"></div>
+    <button class="setup-add-child" type="button" onclick="addChildField()">+ Add another child</button>
+    <div class="setup-help">Add each child as a separate name.</div>
     <p class="sec-lbl">Reminder preference</p>
     <select id="setup-reminder">
       <option value="none">No reminder yet</option>
@@ -39,8 +40,10 @@
       <option value="weekly">Weekly summary</option>
     </select>
   </div>
-  <button class="btn primary" onclick="saveSetup()" style="width:100%;padding:16px">Save setup</button>
-  <button class="link-btn" onclick="skipSetup()" style="width:100%;margin-top:8px">Use sample setup for now</button>
+  <div class="setup-actions">
+    <button class="btn primary" onclick="saveSetup()">Save setup</button>
+    <button class="link-btn" onclick="skipSetup()">Use sample setup for now</button>
+  </div>
   <div class="bottom-nav">
     <button class="bottom-nav-item" onclick="show('s-home')"><span class="nav-home"></span><strong>Today</strong></button>
     <button class="bottom-nav-item" onclick="showCal()"><span class="nav-calendar"></span><strong>Calendar</strong></button>
@@ -667,11 +670,10 @@
       </div>
     </div>
     <div class="legend">
-      <div class="leg-item"><div class="leg-dot dad-day"></div><span id="legend-your-day">Your day</span></div>
-      <div class="leg-item"><div class="leg-dot dad-day-mom-has"></div><span id="legend-your-day-away">Your day — kids at Mom's</span></div>
-      <div class="leg-item"><div class="leg-dot mom-day"></div><span id="legend-coparent-day">Mom's day</span></div>
-      <div class="leg-item"><div class="leg-dot mom-day-dad-has"></div><span id="legend-coparent-day-with-you">Mom's day — kids with you</span></div>
-      <div class="leg-item"><div class="leg-dot special"></div>Special day</div>
+      <div class="leg-item"><div class="leg-dot dad-day"></div><span>You</span></div>
+      <div class="leg-item"><div class="leg-dot mom-day"></div><span>Co-parent</span></div>
+      <div class="leg-item"><div class="leg-dot changed"></div><span>Changed</span></div>
+      <div class="leg-item"><div class="leg-dot special"></div><span>Special</span></div>
     </div>
     <div class="cal-grid" id="cal-grid"></div>
     <div id="cal-detail"></div>
@@ -795,6 +797,6 @@
   </div>
 </div>
 </div><!-- end .app -->
-<script src="app.js?v=long-labels"></script>
+<script src="app.js?v=june-demo-data"></script>
 </body>
 </html>

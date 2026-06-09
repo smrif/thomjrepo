@@ -84,6 +84,52 @@ function allWithCoParentButton(id,handler,label){
   btn.onclick=handler;
   return btn;
 }
+function childFieldValues(){
+  return [...document.querySelectorAll('.setup-child-input')].map(input=>cleanName(input.value)).filter(Boolean);
+}
+function renderChildFields(children=APP_CONFIG.children){
+  const list=document.getElementById('setup-children-list');
+  if(!list)return;
+  const values=(Array.isArray(children)&&children.length?children:['']);
+  list.innerHTML='';
+  values.forEach((name,idx)=>appendChildField(name,idx));
+  updateChildRemoveButtons();
+}
+function appendChildField(name='',idx=0){
+  const list=document.getElementById('setup-children-list');
+  if(!list)return;
+  const row=document.createElement('div');
+  row.className='setup-child-row';
+  const input=document.createElement('input');
+  input.type='text';
+  input.className='setup-child-input';
+  input.value=name;
+  input.placeholder='Child name';
+  input.setAttribute('aria-label','Child '+(idx+1)+' name');
+  const remove=document.createElement('button');
+  remove.type='button';
+  remove.className='setup-remove-child';
+  remove.textContent='Remove';
+  remove.onclick=()=>{row.remove();updateChildRemoveButtons()};
+  row.appendChild(input);
+  row.appendChild(remove);
+  list.appendChild(row);
+}
+function updateChildRemoveButtons(){
+  const rows=[...document.querySelectorAll('.setup-child-row')];
+  rows.forEach((row,idx)=>{
+    const input=row.querySelector('.setup-child-input');
+    const remove=row.querySelector('.setup-remove-child');
+    if(input)input.setAttribute('aria-label','Child '+(idx+1)+' name');
+    if(remove)remove.disabled=rows.length===1;
+  });
+}
+function addChildField(){
+  appendChildField('',document.querySelectorAll('.setup-child-row').length);
+  updateChildRemoveButtons();
+  const inputs=document.querySelectorAll('.setup-child-input');
+  if(inputs.length)inputs[inputs.length-1].focus();
+}
 function personalizeStaticCopy(){
   const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
   const nodes=[];
@@ -96,14 +142,6 @@ function renderConfigurableUi(){
   if(homeProfile)homeProfile.textContent=currentParent().slice(0,1).toUpperCase();
   const reportsProfile=document.getElementById('reports-profile');
   if(reportsProfile)reportsProfile.textContent=currentParent().slice(0,1).toUpperCase();
-  const legendYourDay=document.getElementById('legend-your-day');
-  if(legendYourDay)legendYourDay.textContent='Your day';
-  const legendYourDayAway=document.getElementById('legend-your-day-away');
-  if(legendYourDayAway)legendYourDayAway.textContent='Your day — kids at '+coParentPoss();
-  const legendCoParentDay=document.getElementById('legend-coparent-day');
-  if(legendCoParentDay)legendCoParentDay.textContent=coParentPoss()+' day';
-  const legendCoParentDayWithYou=document.getElementById('legend-coparent-day-with-you');
-  if(legendCoParentDayWithYou)legendCoParentDayWithYou.textContent=coParentPoss()+' day — kids with you';
   const dadActualTitle=document.getElementById('report-dadactual-title');
   if(dadActualTitle)dadActualTitle.textContent=currentParentPoss()+' actual time with kids';
   const dadActualDesc=document.getElementById('report-dadactual-desc');
@@ -128,13 +166,13 @@ function renderConfigurableUi(){
 function initSetupForm(){
   document.getElementById('setup-current-parent').value=APP_CONFIG.currentParentLabel;
   document.getElementById('setup-co-parent').value=APP_CONFIG.coParentLabel;
-  document.getElementById('setup-children').value=APP_CONFIG.children.join(', ');
+  renderChildFields(APP_CONFIG.children);
   const schedule=document.getElementById('setup-schedule');
   if(schedule)schedule.value=APP_CONFIG.scheduleType;
   document.getElementById('setup-reminder').value=APP_CONFIG.reminderPreference;
 }
 function saveSetup(){
-  const children=document.getElementById('setup-children').value.split(',').map(cleanName).filter(Boolean);
+  const children=childFieldValues();
   saveConfig({
     currentParentLabel:cleanName(document.getElementById('setup-current-parent').value)||DEFAULT_CONFIG.currentParentLabel,
     coParentLabel:cleanName(document.getElementById('setup-co-parent').value)||DEFAULT_CONFIG.coParentLabel,
@@ -927,6 +965,30 @@ function sendWeeklyEmail(){
   document.getElementById('sunday-prompt').style.display='none';
 }
 
+function seedJuneDemoData(){
+  const kids=['Ava Penelope Montgomery-Sanderson','Benjamin Theodore Worthington-Harrington','Supercalifragilisticexpialidocious Junior'];
+  saveConfig({
+    currentParentLabel:'Ryan',
+    coParentLabel:'Laura',
+    children:kids,
+    scheduleType:'alternating-weeks',
+    reminderPreference:'none'
+  });
+  putEntries({
+    '2026-06-01':{week:'dad',dadMode:'normal',momMode:null,kidsWithDad:[...kids],absentData:{},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'Normal night at home. Dinner, homework, and bedtime routine.',attachment:null,changeAgreed:null,changePressured:null,loggedAt:'2026-06-01T21:12:00-07:00'},
+    '2026-06-02':{week:'dad',dadMode:'mom-had',momMode:null,kidsWithDad:[],absentData:{},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[kids[0]],momHelpedOnDadWeek:{},diary:'Ava stayed with co-parent after a schedule change in the afternoon.',attachment:null,changeAgreed:false,changePressured:null,loggedAt:'2026-06-02T21:38:00-07:00'},
+    '2026-06-03':{week:'mom',dadMode:null,momMode:'easy',kidsWithDad:[],absentData:{},momOpts:['call'],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'Quick FaceTime before bed.',attachment:null,changeAgreed:null,changePressured:null,loggedAt:'2026-06-03T20:44:00-07:00'},
+    '2026-06-04':{week:'mom',dadMode:null,momMode:'dad-had',kidsWithDad:[kids[1]],absentData:{},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[kids[1]],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'Ben ended up staying with me overnight after a late change.',attachment:null,changeAgreed:true,changePressured:false,loggedAt:'2026-06-04T22:05:00-07:00'},
+    '2026-06-05':{week:'other',dadMode:null,momMode:null,kidsWithDad:[],absentData:{},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'School event and schedule exception.',attachment:null,changeAgreed:null,changePressured:null,loggedAt:'2026-06-05T19:25:00-07:00'},
+    '2026-06-06':{week:'dad',dadMode:'dad-helped-mom',momMode:null,kidsWithDad:[kids[0],kids[1]],absentData:{},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[kids[2]],momHelpedOnDadWeek:{[kids[2]]:{acts:['activity'],note:'Co-parent handled evening activity pickup.'}},diary:'Co-parent helped with activity logistics while the other kids stayed with me.',attachment:null,changeAgreed:null,changePressured:null,loggedAt:'2026-06-06T21:16:00-07:00'},
+    '2026-06-07':{week:'dad',dadMode:'normal',momMode:null,kidsWithDad:[kids[0],kids[2]],absentData:{[kids[1]]:{location:'sleepover',note:'Friend birthday sleepover.'}},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'Split night: two kids home, Ben at sleepover.',attachment:null,changeAgreed:null,changePressured:null,loggedAt:'2026-06-07T21:03:00-07:00'},
+    '2026-06-08':{week:'not-logged',intentional:false,loggedAt:'2026-06-09T08:00:00-07:00'},
+    '2026-06-09':{week:'mom',dadMode:null,momMode:'helped',kidsWithDad:[],absentData:{},momOpts:[],helpedKids:[kids[0]],helpedData:{[kids[0]]:{acts:['school','food'],note:'School pickup and dinner.'}},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'Helped with school pickup and dinner before drop-off.',attachment:null,changeAgreed:null,changePressured:null,loggedAt:'2026-06-09T20:47:00-07:00'}
+  });
+}
+
+const DEMO_PARAMS=new URLSearchParams(window.location.search);
+if(DEMO_PARAMS.get('demo')==='june')seedJuneDemoData();
 renderConfigurableUi();
 if(hasSavedConfig()){
   initHome();
@@ -934,3 +996,4 @@ if(hasSavedConfig()){
   initSetupForm();
   show('s-setup');
 }
+if(DEMO_PARAMS.get('demo')==='june')showCal();

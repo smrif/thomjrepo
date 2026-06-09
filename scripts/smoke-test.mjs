@@ -276,16 +276,29 @@ try {
   await expectActive('s-setup');
   await page.locator('#setup-current-parent').fill(longCurrentParent);
   await page.locator('#setup-co-parent').fill(longCoParent);
-  await page.locator('#setup-children').fill('Ava Penelope Montgomery-Sanderson, Benjamin Theodore Worthington-Harrington, Supercalifragilisticexpialidocious Junior');
+  await page.locator('.setup-child-input').evaluateAll((inputs, names) => {
+    inputs.forEach((input, idx) => { input.value = names[idx] || ''; });
+  }, ['Ava Penelope Montgomery-Sanderson', 'Benjamin Theodore Worthington-Harrington']);
+  await click('#s-setup .setup-add-child');
+  await page.locator('.setup-child-input').evaluateAll((inputs, names) => {
+    inputs.forEach((input, idx) => { input.value = names[idx] || ''; });
+  }, ['Ava Penelope Montgomery-Sanderson', 'Benjamin Theodore Worthington-Harrington', 'Supercalifragilisticexpialidocious Junior']);
+  await assertNoHorizontalOverflow('Settings with long labels');
   await click('#s-setup button[onclick="saveSetup()"]');
   await expectActive('s-home');
 
   await click('#s-home .bottom-nav-item[onclick="showCal()"]');
   await expectActive('s-cal');
   const longLegendText = await page.locator('.legend').innerText();
-  assertIncludes(longLegendText, `${longCoParent}'s day`, 'Long-label calendar legend');
-  assertIncludes(longLegendText, `kids at ${longCoParent}'s`, 'Long-label calendar legend');
+  assertIncludes(longLegendText, 'You', 'Compact calendar legend');
+  assertIncludes(longLegendText, 'Co-parent', 'Compact calendar legend');
+  assertIncludes(longLegendText, 'Changed', 'Compact calendar legend');
+  assertIncludes(longLegendText, 'Special', 'Compact calendar legend');
+  assertExcludes(longLegendText, longCurrentParent, 'Compact calendar legend');
+  assertExcludes(longLegendText, longCoParent, 'Compact calendar legend');
   assertExcludes(longLegendText, "L's", 'Long-label calendar legend');
+  const legendColumnCount = await page.locator('.legend').evaluate(node => getComputedStyle(node).gridTemplateColumns.split(' ').length);
+  if (legendColumnCount !== 4) throw new Error(`Calendar legend should render as four columns, saw ${legendColumnCount}.`);
   await assertNoHorizontalOverflow('Calendar with long labels');
 
   await click('#s-cal .bottom-nav-item[onclick="showExport()"]');
