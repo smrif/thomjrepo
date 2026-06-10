@@ -109,43 +109,25 @@ hr{border:none;border-top:1px solid #ebebeb;margin:1.25rem 0}
 .cal-cell{aspect-ratio:.86;border-radius:15px;display:flex;align-items:center;justify-content:center;padding:10px 4px;font-size:13px;cursor:pointer;border:1.5px solid #e8e5ec;background:#fff;position:relative;box-shadow:0 6px 14px rgba(28,22,48,.03);overflow:hidden}
 .cal-cell:active{opacity:.75;transform:scale(.98)}
 .cal-date-num{font-size:20px;font-weight:700;line-height:1;color:#11172f}
-/* Dad's day — kids with Dad: soft blue */
-.cal-cell.dad-day{background:#ddeeff;border-color:#7ab8f5;box-shadow:0 4px 10px rgba(74,144,226,.12)}
-.cal-cell.dad-day .cal-date-num{color:#1a4a8a}
+/* Your day — kids with you: soft green */
+.cal-cell.dad-day{background:#e8f5e2;border-color:#a3d18a}
+.cal-cell.dad-day .cal-date-num{color:#2d6a1f}
 
-/* Dad's day — kids at Mom's: blue with diagonal stripe overlay */
-.cal-cell.dad-day-mom-has{
-  background: repeating-linear-gradient(
-    45deg,
-    #ddeeff,
-    #ddeeff 4px,
-    #c4d9f0 4px,
-    #c4d9f0 8px
-  );
-  border-color:#7ab8f5;
-  box-shadow:0 4px 10px rgba(74,144,226,.08);
-}
-.cal-cell.dad-day-mom-has .cal-date-num{color:#1a4a8a}
+/* Your day — kids at co-parent's: blue outer, green inner circle */
+.cal-cell.dad-day-mom-has{background:#ddeeff;border-color:#7ab8f5;position:relative;overflow:hidden}
+.cal-cell.dad-day-mom-has .cal-date-num{color:#1a4a8a;position:relative;z-index:2}
+.cal-cell.dad-day-mom-has::before{content:'';position:absolute;inset:25%;background:#e8f5e2;border-radius:50%;z-index:1}
 
-/* Mom's day — kids with Mom: soft green */
-.cal-cell.mom-day{background:#d6f0e0;border-color:#6bc88a;box-shadow:0 4px 10px rgba(72,180,106,.12)}
-.cal-cell.mom-day .cal-date-num{color:#1a5c35}
+/* Co-parent's day — kids with co-parent: soft blue */
+.cal-cell.mom-day{background:#ddeeff;border-color:#7ab8f5}
+.cal-cell.mom-day .cal-date-num{color:#1a4a8a}
 
-/* Mom's day — kids with Dad: green with diagonal stripe overlay */
-.cal-cell.mom-day-dad-has{
-  background: repeating-linear-gradient(
-    45deg,
-    #d6f0e0,
-    #d6f0e0 4px,
-    #bce0cc 4px,
-    #bce0cc 8px
-  );
-  border-color:#6bc88a;
-  box-shadow:0 4px 10px rgba(72,180,106,.08);
-}
-.cal-cell.mom-day-dad-has .cal-date-num{color:#1a5c35}
+/* Co-parent's day — kids ended up with you: green outer, blue inner circle */
+.cal-cell.mom-day-dad-has{background:#e8f5e2;border-color:#a3d18a;position:relative;overflow:hidden}
+.cal-cell.mom-day-dad-has .cal-date-num{color:#1a4a8a;position:relative;z-index:2}
+.cal-cell.mom-day-dad-has::before{content:'';position:absolute;inset:25%;background:#ddeeff;border-radius:50%;z-index:1}
 
-/* Special / other day: clear / outlined only */
+/* Special / other day: clear outlined */
 .cal-cell.special{background:#fff;border-color:#f0c040;border-width:2px;box-shadow:none}
 .cal-cell.special .cal-date-num{color:#a07800}
 .cal-cell.missed{background:#f6f4f5;color:#aaa}
@@ -573,3 +555,6 @@ select:focus{border-color:#6c63d4}
   body{background:#fff}
   .report-shell{padding:0}
 }
+
+/* Lock indicator on calendar cells */
+.cal-cell.locked-entry::after{content:'🔒';position:absolute;bottom:2px;right:3px;font-size:8px;opacity:.5}

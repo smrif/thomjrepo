@@ -381,10 +381,9 @@
   </div>
   <div class="progress" id="prog-mom-easy"></div>
   <p class="q" id="mom-easy-q">Did you do anything at all today?</p>
-  <p class="sub" id="mom-easy-sub">Choose your involvement during your co-parent's day.</p>
+  <p class="sub" id="mom-easy-sub">If you had a call or anything else worth noting, add it in the diary below.</p>
   <div class="option-list" id="easy-opts">
     <div class="opt" onclick="toggleEasyOpt(this,'none')"><span class="chk">✓</span>No — completely their day</div>
-    <div class="opt" onclick="toggleEasyOpt(this,'call')"><span class="chk">✓</span>Phone / FaceTime with the kids</div>
     <div class="opt" onclick="toggleEasyOpt(this,'pickup')"><span class="chk">✓</span>Drop-off or pick-up</div>
     <div class="opt" onclick="toggleEasyOpt(this,'brief')"><span class="chk">✓</span>Brief visit</div>
   </div>
@@ -467,8 +466,8 @@
     <div class="back-spacer"></div>
   </div>
   <div class="progress" id="prog-kids-confirm"></div>
-  <p class="q">Everyone accounted for tonight?</p>
-  <p class="sub">Confirm where each kid is sleeping — then continue to your diary</p>
+  <p class="q" id="kids-confirm-q">Everyone accounted for?</p>
+  <p class="sub" id="kids-confirm-sub">Confirm each kid's location — then continue to your diary</p>
   <div id="kids-confirm-list"></div>
   <button class="btn primary" onclick="confirmKidsAndContinue()" style="width:100%;padding:16px">
     ✓ Yes, that's right — continue
