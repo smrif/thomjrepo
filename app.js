@@ -7,10 +7,25 @@ const DEFAULT_CONFIG={
   termsAccepted:false,
 };
 const CONFIG_KEY='custody_tracker_config';
+const DEFAULT_ACTIVITIES=[
+  {id:'school',label:'School pickup / dropoff',emoji:'🏫'},
+  {id:'afterschool',label:'After school program',emoji:'🎒'},
+  {id:'medical',label:'Doctor / medical',emoji:'🏥'},
+  {id:'sports',label:'Sports / practice',emoji:'⚽'},
+  {id:'dance',label:'Dance / gymnastics',emoji:'💃'},
+  {id:'music',label:'Music / tutoring',emoji:'🎵'},
+  {id:'birthday',label:'Birthday party / playdate',emoji:'🎂'},
+  {id:'camp',label:'Camp / day program',emoji:'🏕️'},
+  {id:'therapy',label:'Therapy / counseling',emoji:'🧠'},
+  {id:'religious',label:'Religious service / worship',emoji:'🙏'},
+  {id:'volunteer',label:'Volunteering',emoji:'🤝'},
+  {id:'tournament',label:'Tournament / competition',emoji:'🏆'},
+];
+
 let APP_CONFIG=loadConfig();
 let KIDS=[...APP_CONFIG.children];
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
-const ACT_LBL={tennis:'Tennis',camp:'Camp/drop-off',school:'School run',food:'Meal/dinner',medical:'Doctor/medical',activity:'Activity/event',overnight:'Had overnight',other:'Other'};
+const ACT_LBL={school:'School pickup/dropoff',afterschool:'After school program',medical:'Doctor/medical',sports:'Sports/practice',dance:'Dance/gymnastics',music:'Music/tutoring',birthday:'Birthday party/playdate',camp:'Camp/day program',therapy:'Therapy/counseling',religious:'Religious service',volunteer:'Volunteering',tournament:'Tournament/competition',other:'Other'};
 const LOC_LBL={moms:"At Mom's",sleepover:'Sleepover',camp:'Overnight camp',activity:'Activity/event',other:'Other'};
 const MY_EMAIL='thomas.j.gamble@gmail.com';
 
@@ -111,7 +126,7 @@ function appendChildField(name='',idx=0){
   input.value=name;
   input.placeholder="Enter child’s name";
   input.setAttribute('aria-label','Child '+(idx+1)+' name');
-  input.addEventListener('input',handleSetupInput);
+  input.addEventListener('input',()=>{handleSetupInput();renderActivitySetup();});
   const error=document.createElement('div');
   error.className='setup-error';
   error.textContent='Please enter a child’s name.';
@@ -141,7 +156,101 @@ function addChildField(){
   handleSetupInput();
   const inputs=document.querySelectorAll('.setup-child-input');
   if(inputs.length)inputs[inputs.length-1].focus();
+  renderActivitySetup();
 }
+
+// ── CHILD ACTIVITIES ─────────────────────────────────────────────
+function renderActivitySetup(){
+  const container=document.getElementById('setup-activities-container');
+  if(!container)return;
+  const children=childFieldValues().filter(n=>n.trim());
+  if(!children.length){container.style.display='none';return;}
+  container.style.display='block';
+  const saved=APP_CONFIG.childActivities||{};
+
+  container.innerHTML=`<div class="setup-field">
+    <label>Common activities — uncheck any that don't apply, add your own</label>
+    <div id="setup-activity-kids"></div>
+  </div>`;
+
+  const kidContainer=document.getElementById('setup-activity-kids');
+  children.forEach(child=>{
+    // Get saved activities for this child, or default all selected
+    const childSaved=saved[child];
+    const selected=childSaved?new Set(childSaved):new Set(DEFAULT_ACTIVITIES.map(a=>a.id));
+
+    const section=document.createElement('div');
+    section.className='activity-child-section';
+    section.innerHTML=`<div class="activity-child-name">${child}</div>
+      <div class="activity-chips" id="chips-${child.replace(/\s+/g,'-')}"></div>
+      <div class="activity-add-row">
+        <input type="text" class="activity-custom-input" placeholder="Add custom activity..." id="custom-${child.replace(/\s+/g,'-')}">
+        <button type="button" class="activity-add-btn" onclick="addCustomActivity('${child.replace(/\s+/g,'-')}','${child}')">Add</button>
+      </div>`;
+    kidContainer.appendChild(section);
+
+    const chipsEl=document.getElementById('chips-'+child.replace(/\s+/g,'-'));
+    // Render default activities
+    DEFAULT_ACTIVITIES.forEach(act=>{
+      const chip=document.createElement('button');
+      chip.type='button';
+      chip.className='activity-chip'+(selected.has(act.id)?' active':'');
+      chip.dataset.actId=act.id;
+      chip.dataset.child=child;
+      chip.textContent=act.emoji+' '+act.label;
+      chip.onclick=()=>chip.classList.toggle('active');
+      chipsEl.appendChild(chip);
+    });
+    // Render any custom activities already saved
+    if(childSaved){
+      childSaved.filter(id=>!DEFAULT_ACTIVITIES.find(a=>a.id===id)).forEach(customId=>{
+        addCustomChip(chipsEl, customId, child, true);
+      });
+    }
+  });
+}
+
+function addCustomChip(chipsEl, label, child, active=false){
+  const chip=document.createElement('button');
+  chip.type='button';
+  chip.className='activity-chip custom'+(active?' active':'');
+  chip.dataset.actId=label;
+  chip.dataset.child=child;
+  chip.textContent='✚ '+label;
+  chip.onclick=()=>chip.classList.toggle('active');
+  chipsEl.appendChild(chip);
+}
+
+function addCustomActivity(childSlug, childName){
+  const input=document.getElementById('custom-'+childSlug);
+  const val=input?input.value.trim():'';
+  if(!val)return;
+  const chipsEl=document.getElementById('chips-'+childSlug);
+  if(chipsEl)addCustomChip(chipsEl, val, childName, true);
+  if(input)input.value='';
+}
+
+function getChildActivitiesFromSetup(){
+  const result={};
+  document.querySelectorAll('.activity-chip.active').forEach(chip=>{
+    const child=chip.dataset.child;
+    const act=chip.dataset.actId;
+    if(!result[child])result[child]=[];
+    result[child].push(act);
+  });
+  return result;
+}
+
+function getActivitiesForChild(childName){
+  const saved=(APP_CONFIG.childActivities||{})[childName];
+  if(saved&&saved.length)return saved.map(id=>{
+    const def=DEFAULT_ACTIVITIES.find(a=>a.id===id);
+    return def?{id,label:def.label,emoji:def.emoji}:{id,label:id,emoji:'✚'};
+  });
+  return DEFAULT_ACTIVITIES; // default all if not configured
+}
+// ── END CHILD ACTIVITIES ─────────────────────────────────────────
+
 function personalizeStaticCopy(){
   const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
   const nodes=[];
@@ -176,6 +285,7 @@ function renderConfigurableUi(){
   LOC_LBL.moms='At '+coParentPoss();
 }
 function initSetupForm(){
+  setTimeout(()=>renderActivitySetup(),100);
   const onboarding=document.getElementById('s-setup').classList.contains('onboarding-mode');
   setupValidationAttempted=false;
   document.getElementById('setup-alert').classList.remove('show');
@@ -232,11 +342,13 @@ function saveSetup(){
     return;
   }
   const children=childFieldValues();
+  const childActivities=getChildActivitiesFromSetup();
   saveConfig({
     currentParentLabel:cleanName(document.getElementById('setup-current-parent').value)||DEFAULT_CONFIG.currentParentLabel,
     coParentLabel:cleanName(document.getElementById('setup-co-parent').value)||DEFAULT_CONFIG.coParentLabel,
     email:document.getElementById('setup-email').value.trim(),
     children,
+    childActivities,
     purpose:document.getElementById('setup-purpose').value,
     termsAccepted:APP_CONFIG.termsAccepted||document.getElementById('setup-terms').checked,
   });
@@ -852,6 +964,11 @@ function saveEntry(){
 // CALENDAR
 function showCal(){
   calM=new Date().getMonth();calY=new Date().getFullYear();
+  // Init trends month to current if not already set
+  trendsM=trendsM!==undefined?trendsM:new Date().getMonth();
+  trendsY=trendsY!==undefined?trendsY:new Date().getFullYear();
+  const nav=document.getElementById('trends-month-nav');
+  if(nav)nav.style.display='flex';
   if(!selectedCalDate)selectedCalDate=todayStr();
   renderCal();show('s-cal');document.getElementById('stats-lbl').textContent=MONTHS[calM]+' '+calY;renderStats()
 }
@@ -916,21 +1033,120 @@ function showDetail(ds,e){
   const lockBadge=locked?'<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;background:#f1eff0;color:#777;border-radius:8px;padding:2px 8px;margin-left:6px">🔒 Locked</span>':'';
   el.innerHTML=`<div class="entry-card"><div class="entry-date-lbl">${fmtDate(ds)} ${tag}${lockBadge}</div>${body}${entryMetaHtml(e,{fullAttachment:true})}</div>`;
 }
+
+// ── TRENDS STATE & NAVIGATION ────────────────────────────────
+let trendsFilter='month';
+let trendsM=new Date().getMonth(), trendsY=new Date().getFullYear();
+
+function setTrendsFilter(val){
+  trendsFilter=val;
+  document.querySelectorAll('.trends-pill').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tpill-'+val).classList.add('active');
+  // Show month nav arrows only when viewing a specific month
+  const nav=document.getElementById('trends-month-nav');
+  if(nav){
+    const actions=nav.querySelector('.cal-nav-actions');
+    if(actions)actions.style.visibility=(val==='month')?'visible':'hidden';
+  }
+  renderStats();
+}
+
+function changeTrendsMonth(dir){
+  trendsM+=dir;
+  if(trendsM>11){trendsM=0;trendsY++;}
+  if(trendsM<0){trendsM=11;trendsY--;}
+  document.getElementById('trends-month-label').textContent=MONTHS[trendsM]+' '+trendsY;
+  renderStats();
+}
+
+function getTrendsEntries(){
+  const all=getEntries();
+  const sorted=Object.entries(all).sort((a,b)=>a[0].localeCompare(b[0]));
+  if(trendsFilter==='month'){
+    const px=trendsY+'-'+pad(trendsM+1)+'-';
+    return sorted.filter(([k])=>k.startsWith(px));
+  }
+  if(trendsFilter==='all') return sorted;
+  const days=parseInt(trendsFilter);
+  const cutoff=new Date();cutoff.setDate(cutoff.getDate()-days);
+  const cutoffStr=cutoff.getFullYear()+'-'+pad(cutoff.getMonth()+1)+'-'+pad(cutoff.getDate());
+  return sorted.filter(([ds])=>ds>=cutoffStr);
+}
+
+function trendsFilterLabel(){
+  if(trendsFilter==='month') return MONTHS[trendsM]+' '+trendsY;
+  if(trendsFilter==='all') return 'All time';
+  return 'Last '+trendsFilter+' days';
+}
+// ── END TRENDS STATE ─────────────────────────────────────────
+
 function renderStats(){
-  const entries=getEntries(),px=calY+'-'+pad(calM+1)+'-';
-  const me=Object.entries(entries).filter(([k])=>k.startsWith(px));
+  const me=getTrendsEntries();
+  const label=trendsFilterLabel();
+
   const dadActual=me.filter(([,e])=>(e.week==='dad'&&e.dadMode!=='mom-had'&&(e.kidsWithDad||[]).length>0)||(e.week==='mom'&&e.momMode==='dad-had')).length;
   const dadWkMomHad=me.filter(([,e])=>e.week==='dad'&&e.dadMode==='mom-had').length;
   const momWkDadHad=me.filter(([,e])=>e.week==='mom'&&e.momMode==='dad-had').length;
   const involvement=me.filter(([,e])=>(e.week==='mom'&&e.momMode==='helped')||(e.week==='dad'&&e.dadMode==='dad-helped-mom')).length;
-  document.getElementById('stat-grid').innerHTML=`
-    <div class="stat-card"><div class="stat-num">${dadActual}</div><div class="stat-lbl">Days ${currentParent()} actually had kids</div></div>
-    <div class="stat-card"><div class="stat-num">${momWkDadHad}</div><div class="stat-lbl">${coParentPoss()} week — ${currentParent()} had kids</div></div>
-    <div class="stat-card"><div class="stat-num">${dadWkMomHad}</div><div class="stat-lbl">${currentParentPoss()} week — kids at ${coParentPoss()}</div></div>
-    <div class="stat-card"><div class="stat-num">${involvement}</div><div class="stat-lbl">Cross-week help days</div></div>`;
   const missedDays=me.filter(([,e])=>e.week==='not-logged').length;
   const loggedDays=me.filter(([,e])=>e.week!=='not-logged').length;
-  let summaryText=`${MONTHS[calM]}: ${loggedDays} day${loggedDays!==1?'s':''} logged. ${currentParent()} had the kids on ${dadActual} day${dadActual!==1?'s':''}. During ${coParentPoss()} scheduled days, the kids were with ${currentParent()} ${momWkDadHad} time${momWkDadHad!==1?'s':''}. During ${currentParentPoss()} scheduled days, kids ended up at ${coParentPoss()} ${dadWkMomHad} time${dadWkMomHad!==1?'s':''}.`;
+
+  // Deviation breakdown — split by agreed vs pressured vs unexpected
+  const deviations=me.filter(([,e])=>e.week==='mom'&&e.momMode==='dad-had');
+  const pressuredDev=deviations.filter(([,e])=>e.changePressured===true);
+  const agreedDev=deviations.filter(([,e])=>e.changeAgreed===true&&e.changePressured!==true);
+  const unexpectedDev=deviations.filter(([,e])=>e.changeAgreed===false);
+  const untaggedDev=deviations.filter(([,e])=>e.changeAgreed===null||e.changeAgreed===undefined);
+
+  // Update month nav label
+  const navLbl=document.getElementById('trends-month-label');
+  if(navLbl)navLbl.textContent=MONTHS[trendsM]+' '+trendsY;
+
+  // Stat cards
+  document.getElementById('stats-lbl').textContent=label;
+  document.getElementById('stat-grid').innerHTML=`
+    <div class="stat-card"><div class="stat-num">${dadActual}</div><div class="stat-lbl">Days ${currentParent()} had kids</div></div>
+    <div class="stat-card"><div class="stat-num stat-num-red">${momWkDadHad}</div><div class="stat-lbl">${coParentPoss()} nights — kids with you</div></div>
+    <div class="stat-card"><div class="stat-num">${dadWkMomHad}</div><div class="stat-lbl">Your nights — kids at ${coParentPoss()}</div></div>
+    <div class="stat-card"><div class="stat-num">${involvement}</div><div class="stat-lbl">Cross-week help days</div></div>`;
+
+  // Deviation detail with pressure flags
+  const devDetail=document.getElementById('trends-deviation-detail');
+  if(devDetail){
+    if(!deviations.length){
+      devDetail.innerHTML='';
+    } else {
+      // Build rows for each deviation
+      const rows=deviations.map(([ds,e])=>{
+        const kids=(e.dadHadKids||[]).join(', ')||'Kids';
+        let flags='';
+        if(e.changePressured===true) flags+='<span class="flag-badge flag-pressured">😟 Felt pressured</span>';
+        else if(e.changeAgreed===true) flags+='<span class="flag-badge flag-agreed">✅ Agreed</span>';
+        else if(e.changeAgreed===false) flags+='<span class="flag-badge flag-unexpected">❌ Unexpected</span>';
+        return `<div class="trends-deviation-row">
+          <div class="trends-dev-date">${fmtShort(ds)}</div>
+          <div class="trends-dev-kids">${kids}</div>
+          <div class="trends-dev-flags">${flags}</div>
+        </div>`;
+      }).join('');
+
+      // Footnote explaining the distinction
+      const footnote=`<div class="trends-footnote">
+        ✅ <strong>Agreed</strong> — you agreed to take the kids and felt fine about it.<br>
+        😟 <strong>Felt pressured</strong> — you took the kids but felt pressured to agree.<br>
+        ❌ <strong>Unexpected</strong> — not agreed in advance, schedule was not followed.
+      </div>`;
+
+      devDetail.innerHTML=`<div class="trends-deviation-card">
+        <div class="trends-deviation-title">${coParentPoss()} nights — ${currentParent()} had kids (${deviations.length} total)</div>
+        ${rows}
+        ${footnote}
+      </div>`;
+    }
+  }
+
+  // Summary sentence
+  let summaryText=`${label}: ${loggedDays} day${loggedDays!==1?'s':''} logged. ${currentParent()} had the kids on ${dadActual} day${dadActual!==1?'s':''}. During ${coParentPoss()}'s scheduled days, kids were with ${currentParent()} ${momWkDadHad} time${momWkDadHad!==1?'s':''} (${pressuredDev.length} pressured, ${agreedDev.length} agreed, ${unexpectedDev.length} unexpected).`;
   if(missedDays)summaryText+=` ${missedDays} day${missedDays!==1?'s were':' was'} not logged.`;
   document.getElementById('summary-box').textContent=summaryText;
 }
@@ -1078,9 +1294,8 @@ function printReport(){
   const now=new Date();
   const printDate=now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const printTime=now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
-  const config=getConfig();
-  const parentName=config.currentParentLabel||'Parent';
-  const kids=(config.children||[]).join(', ')||'Children';
+  const parentName=APP_CONFIG.currentParentLabel||'Parent';
+  const kids=(APP_CONFIG.children||[]).join(', ')||'Children';
   const totalEntries=Object.keys(getEntries()).filter(ds=>!isLockedDate(ds)===false||true).length;
   const lockedEntries=Object.entries(getEntries()).filter(([ds])=>isLockedDate(ds)).length;
 

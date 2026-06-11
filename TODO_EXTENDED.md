@@ -42,11 +42,21 @@ A single screen shown on first launch only. Two paragraphs explaining what the a
 - Add optional: recurring activities per child (tennis, dance, soccer, medical)
 - These activities pre-populate the activity buttons in the check-in loop so it feels personal
 
-**Setup Step 3 — Your custody schedule (optional)**
-- Alternating weeks / 2-2-3 rotation / Custom / No fixed schedule / Prefer not to say
-- If alternating weeks: anchor date + whose week starts when
-- This enables smart plan-check on home screen (re-enables the schedule detection you removed)
-- If no fixed schedule: always ask during check-in as current behavior
+**Setup Step 3 — Custody schedule configuration**
+❌ **DECIDED: Do not build this. Ever.**
+
+Every custody arrangement that exists — alternating weeks, 2-2-3, every weekend,
+7-on-7-off, custom splits, holiday exceptions, summer schedules — is already handled
+perfectly by the existing check-in flow. The user selects whose scheduled day it was
+at the start of every check-in. That is one tap, takes 2 seconds, and works for
+every arrangement without configuration.
+
+Attempting to configure the schedule in setup creates more problems than it solves:
+getting it wrong generates false deviations that undermine the legal record; exceptions
+and holidays break any automated detection; and it adds complexity that causes users
+to abandon setup before they ever log a single night.
+
+The user always knows whose night it is. Ask them. Done.
 
 **Setup Step 4 — Why are you here? (optional, one tap)**
 - Just keeping a record
@@ -54,7 +64,7 @@ A single screen shown on first launch only. Two paragraphs explaining what the a
 - Not sure yet
 - This single answer shapes what gets surfaced first — Reports front-and-center for legal users, simpler home for casual users
 
-**Key rule:** Steps 1 and 2 are required. Steps 3 and 4 are skippable. Every extra tap in setup loses users.
+**Key rule:** Steps 1 and 2 are required. Step 3 (why are you here) is optional and skippable. **There is no schedule configuration step.** Every extra tap in setup loses users.
 
 ### Label audit needed
 `currentParent()` and `coParent()` are used well throughout but there are still hardcoded strings in a few places. Before launch, needs a full pass to ensure every user-facing string uses config labels. Internal state names (dadMode, momMode, kidsWithDad) are fine to leave as-is.

@@ -142,6 +142,7 @@ hr{border:none;border-top:1px solid #ebebeb;margin:1.25rem 0}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.25rem}
 .stat-card{background:#f2f2f0;border-radius:12px;padding:13px 15px}
 .stat-num{font-size:26px;font-weight:700;color:#1a1a1a}
+.stat-num-red{color:#c0392b}
 .stat-lbl{font-size:12px;color:#666;margin-top:3px;line-height:1.3}
 .entry-card{background:#fff;border:1px solid #ebebeb;border-radius:14px;padding:14px 16px;margin-bottom:10px}
 .entry-date-lbl{font-size:13px;font-weight:500;color:#666;margin-bottom:6px}
@@ -595,3 +596,35 @@ select:focus{border-color:#6c63d4}
 
 /* Lock indicator on calendar cells */
 .cal-cell.locked-entry::after{content:'🔒';position:absolute;bottom:2px;right:3px;font-size:8px;opacity:.5}
+
+/* ── Trends panel — matches Calendar UI ─────────────── */
+.trends-pill{padding:5px 12px;border-radius:20px;border:1.5px solid #e1e0e5;background:#fff;color:#555;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.trends-pill:active{opacity:.7}
+.trends-pill.active{background:#4430a0;border-color:#4430a0;color:#fff}
+.trends-deviation-card{background:#f2f2f0;border-radius:12px;padding:14px 16px;margin-bottom:8px}
+.trends-deviation-title{font-size:12px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+.trends-deviation-row{display:flex;align-items:flex-start;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06);gap:12px}
+.trends-deviation-row:last-child{border-bottom:none;padding-bottom:0}
+.trends-dev-date{font-size:12px;font-weight:600;color:#333;flex-shrink:0;min-width:90px}
+.trends-dev-kids{font-size:12px;color:#555;flex:1}
+.trends-dev-flags{display:flex;flex-direction:column;gap:3px;align-items:flex-end;flex-shrink:0}
+.flag-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:8px;white-space:nowrap}
+.flag-pressured{background:#fff0e0;color:#854f0b}
+.flag-agreed{background:#e8faf4;color:#0f6e56}
+.flag-unexpected{background:#faece7;color:#c0392b}
+.trends-footnote{font-size:11px;color:#999;margin-top:10px;line-height:1.6;padding:10px 14px;background:#f2f2f0;border-radius:10px}
+
+/* ── Child activities in setup ──────────────────────── */
+.activity-child-section{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #f0edf2}
+.activity-child-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.activity-child-name{font-size:13px;font-weight:700;color:#4430a0;margin-bottom:8px}
+.activity-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.activity-chip{padding:7px 12px;border-radius:20px;border:1.5px solid #e1e0e5;background:#fff;color:#666;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s;text-align:left}
+.activity-chip.active{background:#eeedfe;border-color:#7F77DD;color:#3C3489;font-weight:600}
+.activity-chip.custom.active{background:#e8faf4;border-color:#6bc88a;color:#1a5c35}
+.activity-chip:active{opacity:.7;transform:scale(.97)}
+.activity-add-row{display:flex;gap:8px;align-items:center}
+.activity-custom-input{flex:1;padding:8px 12px;border:1.5px solid #e1e0e5;border-radius:10px;font-size:13px;font-family:inherit;color:#11172f;background:#fff}
+.activity-custom-input:focus{outline:none;border-color:#7F77DD}
+.activity-add-btn{padding:8px 14px;border-radius:10px;border:1.5px solid #7F77DD;background:#eeedfe;color:#3C3489;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+.activity-add-btn:active{opacity:.7}
