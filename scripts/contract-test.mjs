@@ -55,6 +55,7 @@ for (const id of [
 for (const cls of [
   '.checkin-decision-card',
   '.bottom-nav',
+  '#s-setup.onboarding-mode .bottom-nav',
   '.cal-cell.dad-day',
   '.cal-cell.dad-day-mom-has',
   '.cal-cell.mom-day',
@@ -67,6 +68,7 @@ for (const cls of [
 
 for (const fn of [
   'showSetup',
+  'setOnboardingMode',
   'resetWeekCards',
   'showChangeContext',
   'setAgreed',

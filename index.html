@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Custody Tracker">
 <title>Custody Tracker</title>
-<link rel="stylesheet" href="styles.css?v=compact-calendar-legend">
+<link rel="stylesheet" href="styles.css?v=onboarding-terms">
 </head>
 <body>
 <div class="app" id="app" style="padding-bottom:80px">
@@ -15,34 +15,61 @@
 <!-- SETUP -->
 <div class="screen" id="s-setup">
   <div class="top-bar"><div class="logo-left">Custody Tracker setup</div></div>
-  <p class="q">Set up your private custody log</p>
-  <p class="sub">You can start with just labels and child names. Your diary entries stay on this device.</p>
+  <p class="q" id="setup-title">Let’s get you started</p>
+  <p class="sub" id="setup-subtitle">A few quick details to personalize your experience.</p>
+
+  <div class="setup-alert" id="setup-alert" role="alert" aria-live="polite">
+    <strong>Please review the highlighted fields</strong>
+    <span>Fix the errors below to continue.</span>
+  </div>
+
+  <div class="setup-trust-card">
+    <strong>Built for co-parents, designed for peace of mind.</strong>
+    <span>Simple tracking. Clear records. Less stress.</span>
+  </div>
+
   <div class="setup-card">
-    <p class="sec-lbl">Parent labels</p>
-    <div class="setup-row">
-      <div>
-        <input type="text" id="setup-current-parent" placeholder="You, e.g. Dad">
-        <div class="setup-help">Your label</div>
-      </div>
-      <div>
-        <input type="text" id="setup-co-parent" placeholder="Co-parent, e.g. Mom">
-        <div class="setup-help">Co-parent label</div>
-      </div>
+    <div class="setup-field" id="setup-name-field">
+      <label for="setup-current-parent">Your name</label>
+      <input type="text" id="setup-current-parent" placeholder="Enter your name" autocomplete="name" oninput="handleSetupInput()">
+      <div class="setup-error">Please enter your name.</div>
     </div>
-    <p class="sec-lbl">Children</p>
-    <div class="setup-children-list" id="setup-children-list"></div>
-    <button class="setup-add-child" type="button" onclick="addChildField()">+ Add another child</button>
-    <div class="setup-help">Add each child as a separate name.</div>
-    <p class="sec-lbl">Reminder preference</p>
-    <select id="setup-reminder">
-      <option value="none">No reminder yet</option>
-      <option value="nightly">Nightly check-in</option>
-      <option value="weekly">Weekly summary</option>
-    </select>
+    <div class="setup-field" id="setup-email-field">
+      <label for="setup-email">Email address</label>
+      <input type="email" id="setup-email" placeholder="Enter your email address" autocomplete="email" oninput="handleSetupInput()">
+      <div class="setup-error">Please enter a valid email address.</div>
+    </div>
+    <div class="setup-field settings-only" id="setup-coparent-field">
+      <label for="setup-co-parent">Co-parent label</label>
+      <input type="text" id="setup-co-parent" placeholder="Co-parent, e.g. Mom">
+    </div>
+    <div class="setup-field setup-children-field">
+      <label>Children’s first names only</label>
+      <div class="setup-children-list" id="setup-children-list"></div>
+      <button class="setup-add-child" type="button" onclick="addChildField()">+ Add another child</button>
+    </div>
+    <div class="setup-field">
+      <label for="setup-purpose">Why are you using Custody Tracker? <span>(optional)</span></label>
+      <select id="setup-purpose">
+        <option value="">Select a reason</option>
+        <option value="clear-record">Keep a clear record</option>
+        <option value="schedule-changes">Track schedule changes</option>
+        <option value="reduce-misunderstandings">Reduce misunderstandings</option>
+        <option value="prepare-summaries">Prepare summaries</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="setup-terms" id="setup-terms-field">
+      <label>
+        <input type="checkbox" id="setup-terms" onchange="handleSetupInput()">
+        <span>I agree to the <a href="#" onclick="return false">Terms of Use</a> and <a href="#" onclick="return false">Privacy Policy</a>.</span>
+      </label>
+      <div class="setup-error">Please accept the Terms of Use and Privacy Policy.</div>
+    </div>
   </div>
   <div class="setup-actions">
-    <button class="btn primary" onclick="saveSetup()">Save setup</button>
-    <button class="link-btn" onclick="skipSetup()">Use sample setup for now</button>
+    <button class="btn primary setup-continue is-disabled" id="setup-continue" onclick="saveSetup()" data-valid="false">Continue</button>
+    <div class="setup-privacy">Your data is private and secure.</div>
   </div>
   <div class="bottom-nav">
     <button class="bottom-nav-item" onclick="show('s-home')"><span class="nav-home"></span><strong>Today</strong></button>
@@ -796,6 +823,6 @@
   </div>
 </div>
 </div><!-- end .app -->
-<script src="app.js?v=june-demo-data"></script>
+<script src="app.js?v=settings-copy"></script>
 </body>
 </html>

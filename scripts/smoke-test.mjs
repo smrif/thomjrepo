@@ -65,9 +65,10 @@ async function bootstrap(config = {}) {
   const appConfig = {
     currentParentLabel: 'Dad',
     coParentLabel: 'Mom',
+    email: 'parent@example.com',
     children: ['Ava', 'Ben'],
-    scheduleType: 'alternating-weeks',
-    reminderPreference: 'none',
+    purpose: '',
+    termsAccepted: true,
     ...config
   };
 
@@ -124,10 +125,41 @@ async function assertNoHorizontalOverflow(context) {
 }
 
 try {
+  await page.goto(baseUrl);
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+  await page.reload();
+  await expectActive('s-setup');
+  const firstRunNavVisible = await page.locator('#s-setup .bottom-nav').isVisible();
+  if (firstRunNavVisible) throw new Error('First-run onboarding should hide the bottom navigation.');
+  const firstRunChildCount = await page.locator('#s-setup .setup-child-input').count();
+  if (firstRunChildCount !== 1) throw new Error(`First-run onboarding should start with one child field, saw ${firstRunChildCount}.`);
+  await click('#setup-continue');
+  if (!await page.locator('#setup-alert').isVisible()) throw new Error('Invalid onboarding submit should show the error banner.');
+  const onboardingErrors = await page.locator('#s-setup').innerText();
+  assertIncludes(onboardingErrors, 'Please enter your name.', 'Onboarding validation');
+  assertIncludes(onboardingErrors, 'Please enter a valid email address.', 'Onboarding validation');
+  assertIncludes(onboardingErrors, 'Please enter a child’s name.', 'Onboarding validation');
+  assertIncludes(onboardingErrors, 'Please accept the Terms of Use and Privacy Policy.', 'Onboarding validation');
+  await page.locator('#setup-current-parent').fill('Ryan');
+  await page.locator('#setup-email').fill('ryan@example.com');
+  await page.locator('#s-setup .setup-child-input').fill('Ava');
+  await page.locator('#setup-terms').check();
+  await click('#setup-continue');
+  await expectActive('s-home');
+
   await bootstrap();
 
   await click('#s-home .bottom-nav-item[onclick="showSetup()"]');
   await expectActive('s-setup');
+  const settingsNavVisible = await page.locator('#s-setup .bottom-nav').isVisible();
+  if (!settingsNavVisible) throw new Error('Settings should show the bottom navigation for returning users.');
+  const settingsTermsVisible = await page.locator('#s-setup .setup-terms').isVisible();
+  if (settingsTermsVisible) throw new Error('Settings should not show onboarding terms acceptance.');
+  const settingsTitle = await page.locator('#setup-title').innerText();
+  if (settingsTitle !== 'Settings') throw new Error(`Settings should use its own title, saw "${settingsTitle}".`);
   await click(`#s-setup.screen.active .bottom-nav-item[onclick="show('s-home')"]`);
   await expectActive('s-home');
 
@@ -249,11 +281,25 @@ try {
 
   await click('#s-saved .bottom-nav-item[onclick="showCal()"]');
   await expectActive('s-cal');
+  await page.evaluate(ds => {
+    const entries = getEntries();
+    entries[ds].attachment = {
+      name: 'context.png',
+      type: 'image/png',
+      dataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII='
+    };
+    putEntries(entries);
+  }, dateString(0));
   await page.evaluate(ds => showDetail(ds, getEntries()[ds]), dateString(0));
   const calendarDetailText = await page.locator('#cal-detail').innerText();
   assertIncludes(calendarDetailText, "Kids at Laura's", 'Calendar detail label copy');
   assertIncludes(calendarDetailText, "At Laura's", 'Calendar detail label copy');
+  assertIncludes(calendarDetailText, 'Logged:', 'Calendar detail metadata');
+  assertIncludes(calendarDetailText, 'Agreed in advance', 'Calendar detail metadata');
+  assertIncludes(calendarDetailText, 'No pressure noted', 'Calendar detail metadata');
   assertExcludes(calendarDetailText, "Mom's", 'Calendar detail label copy');
+  const calendarAttachmentCount = await page.locator('#cal-detail .entry-attachment-full img').count();
+  if (calendarAttachmentCount !== 1) throw new Error(`Calendar detail should show one full attachment image, saw ${calendarAttachmentCount}.`);
 
   await page.evaluate(() => switchTab('trends'));
   const trendsText = await page.locator('#tc-trends').innerText();
@@ -265,6 +311,8 @@ try {
 
   await click('#s-cal .bottom-nav-item[onclick="showExport()"]');
   await expectActive('s-export');
+  const reportStatsText = await page.locator('#reports-stats-bar').innerText();
+  assertIncludes(reportStatsText, '1', 'Report stats should include screenshot count');
   const reportListText = await page.locator('.report-list').innerText();
   assertIncludes(reportListText, "Ryan's actual time with kids", 'Report list label copy');
   assertIncludes(reportListText, "Laura's day", 'Report list label copy');
@@ -275,6 +323,9 @@ try {
   const reportPreviewText = await page.locator('#preview-box').innerText();
   assertIncludes(reportPreviewText, "RYAN'S WEEK", 'Report preview label copy');
   assertIncludes(reportPreviewText, 'AT LAURA', 'Report preview label copy');
+  assertIncludes(reportPreviewText, 'CHANGE AGREED IN ADVANCE: Yes', 'Report preview metadata');
+  assertIncludes(reportPreviewText, 'FELT PRESSURED: No', 'Report preview metadata');
+  assertIncludes(reportPreviewText, 'ATTACHMENT: Screenshot attached in app', 'Report preview metadata');
   assertExcludes(reportPreviewText, "DAD", 'Report preview label copy');
   assertExcludes(reportPreviewText, "MOM", 'Report preview label copy');
 
