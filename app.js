@@ -297,7 +297,7 @@ function initSetupForm(){
   renderChildFields(onboarding?['']:APP_CONFIG.children);
   document.getElementById('setup-purpose').value=onboarding?'':APP_CONFIG.purpose;
   document.getElementById('setup-terms').checked=onboarding?false:!!APP_CONFIG.termsAccepted;
-  document.getElementById('setup-continue').textContent=onboarding?'Continue':'Save changes';
+  document.getElementById('setup-continue').textContent=onboarding?'Start tracking →':'Save changes';
   validateSetup(false);
 }
 function setOnboardingMode(active){
@@ -332,13 +332,27 @@ function validateSetup(showErrors=setupValidationAttempted){
   button.classList.toggle('is-disabled',!valid);
   button.dataset.valid=String(valid);
   document.getElementById('setup-alert').classList.toggle('show',showErrors&&!valid);
+  // Show a gentle hint about what's still needed
+  const hint=document.getElementById('setup-progress-hint');
+  if(hint&&!valid){
+    const missing=[];
+    if(!nameValid)missing.push('your name');
+    if(!childrenValid)missing.push('at least one child');
+    if(!emailValid)missing.push('your email');
+    if(!termsValid)missing.push('terms acceptance');
+    hint.textContent=missing.length?'Still needed: '+missing.join(', '):'';
+    hint.style.display=missing.length?'block':'none';
+  } else if(hint){hint.style.display='none';}
   return valid;
 }
 function handleSetupInput(){validateSetup(setupValidationAttempted)}
 function saveSetup(){
   setupValidationAttempted=true;
   if(!validateSetup(true)){
-    document.getElementById('setup-alert').scrollIntoView({behavior:'smooth',block:'center'});
+    // Scroll to first invalid field so user knows what to fix
+    const firstInvalid=document.querySelector('.setup-field.invalid, .setup-terms.invalid');
+    if(firstInvalid)firstInvalid.scrollIntoView({behavior:'smooth',block:'center'});
+    else document.getElementById('setup-alert').scrollIntoView({behavior:'smooth',block:'center'});
     return;
   }
   const children=childFieldValues();
@@ -490,6 +504,188 @@ function putEntries(e){try{localStorage.setItem('familylog_entries',JSON.stringi
 
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0)}
 function setProg(id,step,total){const el=document.getElementById(id);if(!el)return;el.innerHTML='';for(let i=0;i<total;i++){const d=document.createElement('div');d.className='pd'+(i<step?' done':'')+(i===step?' active':'');el.appendChild(d)}}
+
+
+// ── MULTI-STEP ONBOARDING ─────────────────────────────────────────
+const OB_STATE = {name:'', coparent:'', kids:[], activities:[], email:'', terms:false};
+
+function obNext(targetScreen){
+  show(targetScreen);
+  window.scrollTo(0,0);
+  // Echo name on co-parent screen
+  if(targetScreen==='s-ob-coparent'){
+    const nameEl=document.getElementById('ob-name-echo');
+    if(nameEl){
+      const name=document.getElementById('ob-name').value.trim();
+      nameEl.textContent=name||'there';
+    }
+  }
+  // Echo kids on how-many screen (micro-celebration)
+  if(targetScreen==='s-ob-activities') obRenderActivities();
+}
+function obBack(targetScreen){
+  show(targetScreen);
+  window.scrollTo(0,0);
+}
+function obSkip(){
+  saveConfig(DEFAULT_CONFIG);
+  setOnboardingMode(false);
+  renderConfigurableUi();
+  initHome();
+  show('s-home');
+}
+
+function obSetExample(inputId, val){
+  const el=document.getElementById(inputId);
+  if(el){el.value=val;obValidateStep(el.closest('.screen').id);}
+}
+
+function obValidateStep(screenId){
+  if(screenId==='s-ob-name'){
+    const val=document.getElementById('ob-name').value.trim();
+    const btn=document.getElementById('btn-ob-name');
+    if(btn)btn.classList.toggle('ob-disabled',!val);
+  }
+  if(screenId==='s-ob-kids'){
+    const inputs=[...document.querySelectorAll('.ob-kid-input')];
+    const valid=inputs.length>0&&inputs.some(i=>i.value.trim());
+    const btn=document.getElementById('btn-ob-kids');
+    if(btn)btn.classList.toggle('ob-disabled',!valid);
+  }
+  if(screenId==='s-ob-finish'){
+    const email=document.getElementById('ob-email').value.trim();
+    const terms=document.getElementById('ob-terms').checked;
+    const emailOk=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const valid=emailOk&&terms;
+    const btn=document.getElementById('btn-ob-finish');
+    if(btn)btn.classList.toggle('ob-disabled',!valid);
+  }
+}
+
+function obSetKidCount(n){
+  // Highlight selected button
+  document.querySelectorAll('.ob-count-btn').forEach(b=>b.classList.remove('selected'));
+  event.target.classList.add('selected');
+
+  // Build kid name fields
+  const list=document.getElementById('ob-kids-list');
+  list.innerHTML='';
+  const count=(n===6)?3:n; // for 6+ start with 3 fields
+  for(let i=0;i<count;i++) obAddKidField(i,count);
+
+  // Update question
+  const q=document.getElementById('ob-kids-q');
+  if(q)q.textContent=n===1?'What is their name?':'What are their names?';
+
+  // Auto-advance after short delay (feels snappy)
+  setTimeout(()=>{
+    obNext('s-ob-kids');
+    // Focus first input
+    const first=document.querySelector('#ob-kids-list .ob-kid-input');
+    if(first)first.focus();
+  },250);
+}
+
+function obAddKidField(idx, total){
+  const list=document.getElementById('ob-kids-list');
+  const row=document.createElement('div');
+  row.className='ob-kid-row';
+  const ordinals=['First','Second','Third','Fourth','Fifth','Sixth'];
+  const placeholder=total===1?"Child's first name":(ordinals[idx]||'Child '+(idx+1))+" child's name";
+  row.innerHTML=`<input class="ob-kid-input" type="text" placeholder="${placeholder}" oninput="obValidateStep('s-ob-kids')">`;
+  list.appendChild(row);
+}
+
+function obAddKid(){
+  const list=document.getElementById('ob-kids-list');
+  const idx=list.children.length;
+  obAddKidField(idx, idx+1);
+  const inputs=list.querySelectorAll('.ob-kid-input');
+  if(inputs.length)inputs[inputs.length-1].focus();
+  obValidateStep('s-ob-kids');
+}
+
+function obRenderActivities(){
+  const container=document.getElementById('ob-activity-list');
+  if(!container||container.children.length>0)return; // already rendered
+  DEFAULT_ACTIVITIES.forEach(act=>{
+    const chip=document.createElement('button');
+    chip.type='button';
+    chip.className='ob-activity-chip active';
+    chip.dataset.actId=act.id;
+    chip.textContent=act.emoji+' '+act.label;
+    chip.onclick=()=>chip.classList.toggle('active');
+    container.appendChild(chip);
+  });
+}
+
+function obFinish(){
+  const email=document.getElementById('ob-email').value.trim();
+  const terms=document.getElementById('ob-terms').checked;
+  const emailOk=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const errEl=document.getElementById('ob-finish-error');
+  if(!emailOk||!terms){
+    if(errEl)errEl.style.display='block';
+    return;
+  }
+  if(errEl)errEl.style.display='none';
+
+  // Collect all state
+  const name=document.getElementById('ob-name').value.trim()||DEFAULT_CONFIG.currentParentLabel;
+  const coparent=document.getElementById('ob-coparent').value.trim()||DEFAULT_CONFIG.coParentLabel;
+  const kids=[...document.querySelectorAll('.ob-kid-input')].map(i=>i.value.trim()).filter(Boolean);
+  // Default all activities for all kids — user can customize after 48hrs
+  const childActivities={};
+  const defaultActIds=DEFAULT_ACTIVITIES.map(a=>a.id);
+  kids.forEach(k=>{childActivities[k]=defaultActIds;});
+
+  saveConfig({
+    currentParentLabel:name,
+    coParentLabel:coparent,
+    children:kids.length?kids:DEFAULT_CONFIG.children,
+    childActivities,
+    email,
+    termsAccepted:true,
+    purpose:'',
+  });
+  setOnboardingMode(false);
+  renderConfigurableUi();
+  initHome();
+  show('s-home');
+}
+
+// Kick off onboarding — init first kid row
+function initOnboarding(){
+  const list=document.getElementById('ob-kids-list');
+  if(list&&!list.children.length) obAddKid();
+}
+// ── END MULTI-STEP ONBOARDING ─────────────────────────────────────
+
+
+// ── 48-HOUR ACTIVITY PROMPT ──────────────────────────────────────
+function checkActivityPrompt(){
+  if(localStorage.getItem('activity_prompt_dismissed'))return;
+  const entries=getEntries();
+  const dates=Object.keys(entries).sort();
+  if(dates.length<2)return; // need at least 2 days
+  const first=new Date(dates[0]);
+  const now=new Date();
+  const hours=(now-first)/(1000*60*60);
+  if(hours>=48){
+    document.getElementById('activity-prompt').style.display='block';
+  }
+}
+function dismissActivityPrompt(){
+  document.getElementById('activity-prompt').style.display='none';
+  localStorage.setItem('activity_prompt_dismissed','1');
+}
+// ── END 48-HOUR PROMPT ───────────────────────────────────────────
+
+// ── WELCOME SCREEN ────────────────────────────────────
+function startWelcome(){initOnboarding();show('s-ob-welcome');}
+function skipWelcome(){obSkip();}
+function obShowPromises(){show('s-ob-promises');}
+// ── END WELCOME ───────────────────────────────────────
 function showSetup(){setOnboardingMode(false);initSetupForm();show('s-setup')}
 function resetWeekCards(){
   const classes={dad:'checkin-decision-card planned',mom:'checkin-decision-card change',other:'checkin-decision-card special'};
@@ -499,6 +695,7 @@ function resetWeekCards(){
 function initHome(){
   markMissedDays();
   checkMissedPrompt();
+  checkActivityPrompt();
   const now=new Date();
   const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   document.getElementById('home-date').textContent=days[now.getDay()]+', '+MONTHS[now.getMonth()]+' '+now.getDate()+', '+now.getFullYear();
@@ -1421,8 +1618,6 @@ renderConfigurableUi();
 if(hasSavedConfig()){
   initHome();
 }else{
-  setOnboardingMode(true);
-  initSetupForm();
-  show('s-setup');
+  initOnboarding();show('s-ob-welcome');
 }
 if(DEMO_PARAMS.get('demo')==='june')showCal();
