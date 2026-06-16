@@ -124,6 +124,40 @@ async function assertNoHorizontalOverflow(context) {
   }
 }
 
+async function assertSettingsScreen(context) {
+  await expectActive('s-setup');
+  const settingsNavVisible = await page.locator('#s-setup .bottom-nav').isVisible();
+  if (!settingsNavVisible) throw new Error(`${context}: Settings should show the bottom navigation for returning users.`);
+  const settingsTermsVisible = await page.locator('#s-setup .setup-terms').isVisible();
+  if (settingsTermsVisible) throw new Error(`${context}: Settings should not show onboarding terms acceptance.`);
+  const settingsTitle = await page.locator('#s-setup .settings-title').innerText();
+  if (settingsTitle.toLowerCase() !== 'settings') throw new Error(`${context}: Settings should use its own title, saw "${settingsTitle}".`);
+  const fieldState = await page.evaluate(() => ({
+    currentParent: document.getElementById('setup-current-parent')?.value || '',
+    email: document.getElementById('setup-email')?.value || '',
+    childCount: document.querySelectorAll('#s-setup .setup-child-input').length,
+    childRows: document.querySelectorAll('#s-setup .settings-child-row-button').length,
+    activityGroups: document.querySelectorAll('#s-setup #setup-activity-chips').length,
+    childActivityGroups: document.querySelectorAll('#s-setup .activity-child-section').length,
+    accountSection: document.querySelector('#s-setup .settings-section h2')?.textContent || '',
+    activityLabel: document.querySelector('#setup-activities-container .settings-section-head p')?.textContent || '',
+    activeActivityCount: document.querySelectorAll('#setup-activity-chips .activity-chip.active').length,
+    activityListsMatch: JSON.stringify(getActivitiesForChild('Ava')) === JSON.stringify(getActivitiesForChild('Ben')),
+    hasEmojiActivityLabels: [...document.querySelectorAll('#setup-activity-chips .activity-chip')].some(node => /[\u{1F300}-\u{1FAFF}]/u.test(node.innerText))
+  }));
+  if (fieldState.currentParent !== 'Dad') throw new Error(`${context}: Settings did not populate the current parent field. Saw ${JSON.stringify(fieldState)}.`);
+  if (fieldState.email !== 'parent@example.com') throw new Error(`${context}: Settings did not populate the email field. Saw ${JSON.stringify(fieldState)}.`);
+  if (fieldState.childCount !== 2) throw new Error(`${context}: Settings should render saved children. Saw ${JSON.stringify(fieldState)}.`);
+  if (fieldState.childRows !== 2) throw new Error(`${context}: Settings should render children as clean rows. Saw ${JSON.stringify(fieldState)}.`);
+  if (fieldState.activityGroups !== 1 || fieldState.childActivityGroups !== 0) {
+    throw new Error(`${context}: Settings should render one shared activity group, not per-child groups. Saw ${JSON.stringify(fieldState)}.`);
+  }
+  assertIncludes(fieldState.activityLabel, 'apply to every child', `${context}: Shared activity label`);
+  if (fieldState.activeActivityCount === 0) throw new Error(`${context}: Shared activities should have default active options. Saw ${JSON.stringify(fieldState)}.`);
+  if (!fieldState.activityListsMatch) throw new Error(`${context}: Activity changes should apply to every child. Saw ${JSON.stringify(fieldState)}.`);
+  if (fieldState.hasEmojiActivityLabels) throw new Error(`${context}: Activity labels should not use emoji. Saw ${JSON.stringify(fieldState)}.`);
+}
+
 try {
   await page.goto(baseUrl);
   await page.evaluate(() => {
@@ -131,35 +165,68 @@ try {
     sessionStorage.clear();
   });
   await page.reload();
-  await expectActive('s-setup');
-  const firstRunNavVisible = await page.locator('#s-setup .bottom-nav').isVisible();
-  if (firstRunNavVisible) throw new Error('First-run onboarding should hide the bottom navigation.');
-  const firstRunChildCount = await page.locator('#s-setup .setup-child-input').count();
-  if (firstRunChildCount !== 1) throw new Error(`First-run onboarding should start with one child field, saw ${firstRunChildCount}.`);
-  await click('#setup-continue');
-  if (!await page.locator('#setup-alert').isVisible()) throw new Error('Invalid onboarding submit should show the error banner.');
-  const onboardingErrors = await page.locator('#s-setup').innerText();
-  assertIncludes(onboardingErrors, 'Please enter your name.', 'Onboarding validation');
-  assertIncludes(onboardingErrors, 'Please enter a valid email address.', 'Onboarding validation');
-  assertIncludes(onboardingErrors, 'Please enter a child’s name.', 'Onboarding validation');
-  assertIncludes(onboardingErrors, 'Please accept the Terms of Use and Privacy Policy.', 'Onboarding validation');
-  await page.locator('#setup-current-parent').fill('Ryan');
-  await page.locator('#setup-email').fill('ryan@example.com');
-  await page.locator('#s-setup .setup-child-input').fill('Ava');
-  await page.locator('#setup-terms').check();
-  await click('#setup-continue');
+  await expectActive('s-ob-welcome');
+  const firstRunNavCount = await page.locator('#s-ob-welcome .bottom-nav').count();
+  if (firstRunNavCount !== 0) throw new Error('First-run onboarding should not show the bottom navigation.');
+  await click('#s-ob-welcome .ob-btn-primary');
+  await expectActive('s-ob-promises');
+  const finalPromise = await page.evaluate(() => {
+    const card = document.querySelector('#s-ob-promises .ob-promise-cards .ob-promise:last-child');
+    return {
+      title: card?.querySelector('strong')?.textContent || '',
+      body: card?.querySelector('p')?.textContent || '',
+      hasSvgIcon: !!card?.querySelector('svg')
+    };
+  });
+  if (finalPromise.title !== 'Lawyer-ready records') throw new Error(`Final onboarding promise title is wrong: ${JSON.stringify(finalPromise)}.`);
+  if (finalPromise.body !== 'Timestamped summaries are organized so they’re easy to review, export, or share when needed.') throw new Error(`Final onboarding promise body is wrong: ${JSON.stringify(finalPromise)}.`);
+  if (!finalPromise.hasSvgIcon) throw new Error(`Final onboarding promise should use a professional line icon: ${JSON.stringify(finalPromise)}.`);
+  await click('#s-ob-promises .ob-btn-primary');
+  await expectActive('s-ob-name');
+  if (await page.locator('#s-ob-name .ob-examples').count() !== 0) throw new Error('Step 1 should not show role shortcut chips.');
+  if (await page.locator('#s-ob-name .ob-label').innerText() !== 'Your name') throw new Error('Step 1 should label the name field clearly.');
+  if (await page.locator('#ob-name').getAttribute('placeholder') !== 'Enter your name') throw new Error('Step 1 should use the simplified name placeholder.');
+  await page.locator('#ob-name').fill('   ');
+  await click('#btn-ob-name');
+  await expectActive('s-ob-name');
+  await page.locator('#ob-name').fill('Ryan');
+  await click('#btn-ob-name');
+  await expectActive('s-ob-coparent');
+  if (await page.locator('#s-ob-coparent .ob-examples').count() !== 0) throw new Error('Step 2 should not show parent shortcut chips.');
+  if (await page.locator('#s-ob-coparent .ob-q').innerText() !== 'What should we call the other parent?') throw new Error('Step 2 heading should ask about the other parent label.');
+  if (await page.locator('#s-ob-coparent .ob-label').innerText() !== 'Other parent name or label') throw new Error('Step 2 should label the co-parent field clearly.');
+  if (await page.locator('#ob-coparent').getAttribute('placeholder') !== 'e.g. Kelly, Mom, Dad, Co-parent') throw new Error('Step 2 placeholder should give neutral examples.');
+  await page.locator('#ob-coparent').fill('Laura');
+  await click('#s-ob-coparent .ob-btn-primary');
+  await expectActive('s-ob-kids');
+  if (await page.locator('#s-ob-kids .ob-q').innerText() !== 'What are your kids’ first names?') throw new Error('Step 4 heading should explicitly ask for kids’ first names.');
+  if (await page.locator('#s-ob-kids .ob-sub').innerText() !== 'First names only — just enough to make the app feel personal.') throw new Error('Step 4 supporting text should clarify first names only.');
+  if (await page.locator('#s-ob-kids .ob-label').innerText() !== 'Child’s first name') throw new Error('Step 4 should label child fields clearly.');
+  if (await page.locator('#s-ob-kids .ob-kid-input').count() !== 1) throw new Error('Step 4 should show one child field by default.');
+  if (await page.locator('#s-ob-kids .ob-kid-input').first().getAttribute('placeholder') !== 'Child’s first name') throw new Error('Step 4 child input should use the first-name placeholder.');
+  await click('#s-ob-kids .ob-add-child');
+  if (await page.locator('#s-ob-kids .ob-kid-input').count() !== 2) throw new Error('Step 4 should allow adding another child field.');
+  await page.locator('#s-ob-kids .ob-kid-input').first().fill('Ava');
+  await click('#btn-ob-kids');
+  await expectActive('s-ob-finish');
+  await click('#btn-ob-finish');
+  if (!await page.locator('#ob-finish-error').isVisible()) throw new Error('Invalid onboarding finish should show the error banner.');
+  await page.locator('#ob-email').fill('ryan@example.com');
+  await page.locator('#ob-terms').check();
+  await click('#btn-ob-finish');
   await expectActive('s-home');
 
   await bootstrap();
 
   await click('#s-home .bottom-nav-item[onclick="showSetup()"]');
-  await expectActive('s-setup');
-  const settingsNavVisible = await page.locator('#s-setup .bottom-nav').isVisible();
-  if (!settingsNavVisible) throw new Error('Settings should show the bottom navigation for returning users.');
-  const settingsTermsVisible = await page.locator('#s-setup .setup-terms').isVisible();
-  if (settingsTermsVisible) throw new Error('Settings should not show onboarding terms acceptance.');
-  const settingsTitle = await page.locator('#setup-title').innerText();
-  if (settingsTitle !== 'Settings') throw new Error(`Settings should use its own title, saw "${settingsTitle}".`);
+  await assertSettingsScreen('Home Settings tab');
+  await click(`#s-setup.screen.active .bottom-nav-item[onclick="show('s-home')"]`);
+  await expectActive('s-home');
+
+  await click('#s-home .bottom-nav-item[onclick="showExport()"]');
+  await expectActive('s-export');
+  await click('#s-export .bottom-nav-item[onclick="showSetup()"]');
+  await assertSettingsScreen('Reports Settings tab');
   await click(`#s-setup.screen.active .bottom-nav-item[onclick="show('s-home')"]`);
   await expectActive('s-home');
 
@@ -303,8 +370,8 @@ try {
 
   await page.evaluate(() => switchTab('trends'));
   const trendsText = await page.locator('#tc-trends').innerText();
-  assertIncludes(trendsText, "Days Ryan actually had kids", 'Calendar trends label copy');
-  assertIncludes(trendsText, "Ryan's week", 'Calendar trends label copy');
+  assertIncludes(trendsText, "Days Ryan had kids", 'Calendar trends label copy');
+  assertIncludes(trendsText, "Your nights", 'Calendar trends label copy');
   assertIncludes(trendsText, "Laura's", 'Calendar trends label copy');
   assertExcludes(trendsText, "Dad", 'Calendar trends label copy');
   assertExcludes(trendsText, "Mom", 'Calendar trends label copy');
@@ -344,16 +411,23 @@ try {
     inputs.forEach((input, idx) => { input.value = names[idx] || ''; });
   }, ['Ava Penelope Montgomery-Sanderson', 'Benjamin Theodore Worthington-Harrington']);
   await click('#s-setup .setup-add-child');
-  await page.locator('.setup-child-input').evaluateAll((inputs, names) => {
-    inputs.forEach((input, idx) => { input.value = names[idx] || ''; });
+  await page.locator('#child-modal-input').fill('Supercalifragilisticexpialidocious Junior');
+  await click('#child-modal .child-modal-save');
+  await page.evaluate(names => {
+    document.querySelectorAll('.setup-child-input').forEach((input, idx) => {
+      input.value = names[idx] || input.value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
   }, ['Ava Penelope Montgomery-Sanderson', 'Benjamin Theodore Worthington-Harrington', 'Supercalifragilisticexpialidocious Junior']);
+  const longChildRows = await page.locator('#s-setup .settings-child-row-button').count();
+  if (longChildRows !== 3) throw new Error(`Settings should show three child rows after adding a child, saw ${longChildRows}.`);
   await assertNoHorizontalOverflow('Settings with long labels');
   await click('#s-setup button[onclick="saveSetup()"]');
   await expectActive('s-home');
 
   await click('#s-home .bottom-nav-item[onclick="showCal()"]');
   await expectActive('s-cal');
-  const longLegendText = await page.locator('.legend').innerText();
+  const longLegendText = await page.locator('#tc-cal .legend').innerText();
   assertIncludes(longLegendText, 'You', 'Compact calendar legend');
   assertIncludes(longLegendText, 'Co-parent', 'Compact calendar legend');
   assertIncludes(longLegendText, 'Changed', 'Compact calendar legend');
@@ -361,7 +435,7 @@ try {
   assertExcludes(longLegendText, longCurrentParent, 'Compact calendar legend');
   assertExcludes(longLegendText, longCoParent, 'Compact calendar legend');
   assertExcludes(longLegendText, "L's", 'Long-label calendar legend');
-  const legendColumnCount = await page.locator('.legend').evaluate(node => getComputedStyle(node).gridTemplateColumns.split(' ').length);
+  const legendColumnCount = await page.locator('#tc-cal .legend').evaluate(node => getComputedStyle(node).gridTemplateColumns.split(' ').length);
   if (legendColumnCount !== 4) throw new Error(`Calendar legend should render as four columns, saw ${legendColumnCount}.`);
   await assertNoHorizontalOverflow('Calendar with long labels');
 

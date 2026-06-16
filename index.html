@@ -57,10 +57,16 @@
         </div>
       </div>
       <div class="ob-promise ob-promise-lg">
-        <span>✏️</span>
+        <span aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" stroke="#4430a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M14 3v5h5" stroke="#4430a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="m9 14 2 2 4-5" stroke="#4430a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
         <div>
-          <strong>Nothing is permanent</strong>
-          <p>Change anything anytime in Settings. Setup takes 60 seconds.</p>
+          <strong>Lawyer-ready records</strong>
+          <p>Timestamped summaries are organized so they’re easy to review, export, or share when needed.</p>
         </div>
       </div>
     </div>
@@ -72,15 +78,11 @@
 <div class="screen" id="s-ob-name">
   <div class="ob-shell">
     <div class="ob-progress-bar"><div class="ob-progress-fill" style="width:20%"></div></div>
-    <div class="ob-step-label">Step 1 of 5</div>
+    <div class="ob-step-label">STEP 1 OF 5</div>
     <h2 class="ob-q">What should we call you?</h2>
-    <p class="ob-sub">This is how you'll appear in the app and on any reports you generate.</p>
-    <input class="ob-input" type="text" id="ob-name" placeholder="e.g. TJ, Dad, Mom, Parent" autocomplete="name" oninput="obValidateStep('s-ob-name')">
-    <div class="ob-examples">
-      <span onclick="obSetExample('ob-name','Dad')">Dad</span>
-      <span onclick="obSetExample('ob-name','Mom')">Mom</span>
-      <span onclick="obSetExample('ob-name','Parent')">Parent</span>
-    </div>
+    <p class="ob-sub">This is how you’ll appear in the app and on any reports you generate.</p>
+    <label class="ob-label" for="ob-name">Your name</label>
+    <input class="ob-input" type="text" id="ob-name" placeholder="Enter your name" autocomplete="name" oninput="obValidateStep('s-ob-name')">
     <button class="ob-btn-primary ob-disabled" id="btn-ob-name" onclick="obNext('s-ob-coparent')">Continue →</button>
     <button class="ob-btn-back" onclick="obBack('s-ob-welcome')">← Back</button>
   </div>
@@ -90,15 +92,11 @@
 <div class="screen" id="s-ob-coparent">
   <div class="ob-shell">
     <div class="ob-progress-bar"><div class="ob-progress-fill" style="width:40%"></div></div>
-    <div class="ob-step-label">Step 2 of 5</div>
-    <h2 class="ob-q">Nice to meet you, <span id="ob-name-echo" style="color:#4430a0"></span>!</h2>
-    <p class="ob-sub">One more quick one — what should we call the other parent in your logs?</p>
-    <input class="ob-input" type="text" id="ob-coparent" placeholder="e.g. Kelly, Mom, Co-parent">
-    <div class="ob-examples">
-      <span onclick="obSetExample('ob-coparent','Mom')">Mom</span>
-      <span onclick="obSetExample('ob-coparent','Dad')">Dad</span>
-      <span onclick="obSetExample('ob-coparent','Co-parent')">Co-parent</span>
-    </div>
+    <div class="ob-step-label">STEP 2 OF 5</div>
+    <h2 class="ob-q">What should we call the other parent?</h2>
+    <p class="ob-sub">This is how they’ll appear in your logs and summaries.</p>
+    <label class="ob-label" for="ob-coparent">Other parent name or label</label>
+    <input class="ob-input" type="text" id="ob-coparent" placeholder="e.g. Kelly, Mom, Dad, Co-parent">
     <button class="ob-btn-primary" onclick="obNext('s-ob-kids')">Continue →</button>
     <button class="ob-btn-ghost" onclick="obNext('s-ob-kids')">Skip for now</button>
     <button class="ob-btn-back" onclick="obBack('s-ob-name')">← Back</button>
@@ -128,12 +126,14 @@
 <div class="screen" id="s-ob-kids">
   <div class="ob-shell">
     <div class="ob-progress-bar"><div class="ob-progress-fill" style="width:75%"></div></div>
-    <div class="ob-step-label">Step 4 of 5</div>
-    <h2 class="ob-q" id="ob-kids-q">What are their names?</h2>
-    <p class="ob-sub">First names only — just enough for the app to feel personal.</p>
+    <div class="ob-step-label">STEP 4 OF 5</div>
+    <h2 class="ob-q" id="ob-kids-q">What are your kids’ first names?</h2>
+    <p class="ob-sub">First names only — just enough to make the app feel personal.</p>
+    <label class="ob-label" for="ob-kids-list">Child’s first name</label>
     <div id="ob-kids-list" class="ob-kids-list"></div>
+    <button class="ob-add-child" type="button" onclick="obAddKid()">+ Add another child</button>
     <button class="ob-btn-primary ob-disabled" id="btn-ob-kids" onclick="obNext('s-ob-finish')">Continue →</button>
-    <button class="ob-btn-back" onclick="obBack('s-ob-howmany')">← Back</button>
+    <button class="ob-btn-back" onclick="obBack('s-ob-coparent')">← Back</button>
   </div>
 </div>
 
@@ -160,41 +160,112 @@
 
 <!-- Keep original setup screen for Settings access by returning users -->
 <div class="screen" id="s-setup">
-  <div class="top-bar"><div class="logo-left">Settings</div></div>
-  <div class="setup-card">
-    <div class="setup-field">
-      <label for="setup-current-parent">Your name</label>
-      <input type="text" id="setup-current-parent" placeholder="Your name" autocomplete="name" oninput="handleSetupInput()">
-      <div class="setup-error">Please enter your name.</div>
+  <div class="settings-shell">
+    <div class="settings-top">
+      <div class="settings-brand">
+        <svg class="settings-logo" width="42" height="42" viewBox="0 0 42 42" aria-hidden="true">
+          <rect width="42" height="42" rx="12" fill="#4430a0"/>
+          <path d="M11 20.5 21 12l10 8.5V32H11V20.5Z" fill="#fff8e8"/>
+          <path d="M16.3 24.1c-2.8-2.7-1.1-6.5 2-5.1 1.4.6 2.7 2.3 2.7 2.3s1.3-1.7 2.7-2.3c3.1-1.4 4.8 2.4 2 5.1L21 28.4l-4.7-4.3Z" fill="none" stroke="#4430a0" stroke-width="1.7" stroke-linejoin="round"/>
+          <path d="M8.5 20.5 21 9.8l12.5 10.7" fill="none" stroke="#fff8e8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Custody Tracker</span>
+      </div>
+      <div class="settings-title">Settings</div>
+      <button class="profile-chip settings-profile" onclick="showSetup()" id="settings-profile">R</button>
     </div>
-    <div class="setup-field">
-      <label for="setup-co-parent">Co-parent label</label>
-      <input type="text" id="setup-co-parent" placeholder="e.g. Kelly, Mom, Co-parent">
-    </div>
-    <div class="setup-field setup-children-field">
-      <label>Children's first names</label>
-      <div class="setup-children-list" id="setup-children-list"></div>
+
+    <div class="setup-alert" id="setup-alert"></div>
+
+    <section class="settings-section">
+      <div class="settings-section-head">
+        <span class="settings-section-icon people-icon" aria-hidden="true"></span>
+        <div>
+          <h2>Account</h2>
+          <p>Your profile and report contact information.</p>
+        </div>
+      </div>
+      <div class="settings-card settings-fields-card">
+        <div class="setup-field">
+          <label for="setup-current-parent">Your name</label>
+          <input type="text" id="setup-current-parent" placeholder="Your name" autocomplete="name" oninput="handleSetupInput()">
+          <div class="setup-error">Please enter your name.</div>
+        </div>
+        <div class="setup-field">
+          <label for="setup-email">Email address</label>
+          <input type="email" id="setup-email" placeholder="your@email.com" autocomplete="email" oninput="handleSetupInput()">
+          <div class="setup-error">Please enter a valid email address.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="settings-section">
+      <div class="settings-section-head">
+        <span class="settings-section-icon coparent-icon" aria-hidden="true"></span>
+        <div>
+          <h2>Co-parent</h2>
+          <p>Keep labels neutral and recognizable.</p>
+        </div>
+      </div>
+      <div class="settings-card settings-fields-card">
+        <div class="setup-field">
+          <label for="setup-co-parent">Co-parent name</label>
+          <input type="text" id="setup-co-parent" placeholder="e.g. Kelly, Mom, Co-parent">
+        </div>
+        <div class="settings-placeholder-row">
+          <div>
+            <strong>Co-parent label</strong>
+            <span>Used in logs and reports.</span>
+          </div>
+          <span class="settings-placeholder-value" id="setup-co-parent-label-preview">Mom</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="settings-section">
+      <div class="settings-section-head">
+        <span class="settings-section-icon children-icon" aria-hidden="true"></span>
+        <div>
+          <h2>Children</h2>
+          <p>Manage your children’s profiles.</p>
+        </div>
+      </div>
+      <div class="settings-card settings-child-card">
+        <div class="setup-children-list" id="setup-children-list"></div>
+      </div>
       <button class="setup-add-child" type="button" onclick="addChildField()">+ Add another child</button>
-    </div>
+    </section>
+
     <div id="setup-activities-container" style="display:none"></div>
-    <div class="setup-field">
-      <label for="setup-email">Email address</label>
-      <input type="email" id="setup-email" placeholder="your@email.com" autocomplete="email" oninput="handleSetupInput()">
-      <div class="setup-error">Please enter a valid email address.</div>
-    </div>
+
     <div class="setup-field" id="setup-name-field" style="display:none"></div>
     <div class="setup-field" id="setup-email-field" style="display:none"></div>
-    <div class="setup-alert" id="setup-alert"></div>
     <div class="setup-terms" id="setup-terms-field">
       <label><input type="checkbox" id="setup-terms" onchange="handleSetupInput()">
       <span>I agree to the <a href="#" onclick="return false">Terms of Use</a> and <a href="#" onclick="return false">Privacy Policy</a>.</span></label>
       <div class="setup-error">Please accept the Terms of Use and Privacy Policy.</div>
     </div>
-  </div>
-  <div class="setup-actions">
-    <div id="setup-progress-hint" style="display:none;font-size:12px;color:#993c1d;background:#faece7;border-radius:8px;padding:8px 12px;margin-bottom:8px;text-align:center"></div>
-    <button class="btn primary setup-continue" id="setup-continue" onclick="saveSetup()">Save changes</button>
-    <div class="setup-privacy">🔒 Your data stays on your device. Always.</div>
+
+    <div class="setup-actions">
+      <div id="setup-progress-hint" style="display:none;font-size:12px;color:#993c1d;background:#faece7;border-radius:8px;padding:8px 12px;margin-bottom:8px;text-align:center"></div>
+      <button class="btn primary setup-continue" id="setup-continue" onclick="saveSetup()">Save changes</button>
+      <div class="setup-privacy">Your data stays on your device. Always.</div>
+    </div>
+
+    <div class="child-modal-backdrop" id="child-modal" aria-hidden="true">
+      <div class="child-modal-card" role="dialog" aria-modal="true" aria-labelledby="child-modal-title">
+        <div class="child-modal-head">
+          <h3 id="child-modal-title">Child profile</h3>
+          <button type="button" class="child-modal-close" onclick="closeChildEditor()" aria-label="Close child editor">×</button>
+        </div>
+        <label for="child-modal-input">Display name</label>
+        <input type="text" id="child-modal-input" placeholder="Child name">
+        <div class="child-modal-actions">
+          <button type="button" class="child-modal-remove" onclick="removeEditingChild()">Remove</button>
+          <button type="button" class="child-modal-save" onclick="saveChildEditor()">Done</button>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="bottom-nav">
     <button class="bottom-nav-item" onclick="show('s-home')"><span class="nav-home"></span><strong>Today</strong></button>

@@ -7,7 +7,7 @@
   - `npm run test:smoke` once npm dependencies are installed
 
 - The contract test catches missing inline handler functions, missing core screens, and missing CSS hooks.
-- The browser smoke test covers Settings nav, check-in card styling, split-night absent kid defaults, Brief Visit review state, schedule-change context, Reports preview/filter behavior, Calendar trends, custom parent/co-parent labels across Review, Saved, Calendar, and Reports, and long parent/child names without stale labels or horizontal overflow.
+- The browser smoke test covers Settings nav, check-in card styling, split-night absent kid defaults, Brief Visit review state, schedule-change context, Calendar selected-day state, Calendar metadata, screenshot previews, Reports preview/filter behavior, Calendar trends, custom parent/co-parent labels across Review, Saved, Calendar, and Reports, and long parent/child names without stale labels or horizontal overflow.
 - Next testing improvement: make browser smoke testing part of a simple pre-push checklist or CI run.
 
 ## Calendar / Logging Follow-ups
@@ -15,7 +15,7 @@
 - Product decision: only yesterday can be backfilled.
   Older empty days should remain read-only and show "Nothing logged" to preserve log credibility.
 
-- Continue verifying timestamps, change-context badges, and screenshot previews across Calendar details, Reports, and exported text.
+- Verified timestamps, change-context badges, screenshot previews, Reports stats, and exported metadata across Calendar details and Reports.
 - Continue watching long-label copy in report cards. It now wraps safely, but very long configured names can still make report titles visually dense.
 
 ## Future Product Areas

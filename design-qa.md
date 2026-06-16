@@ -1,44 +1,38 @@
-# Onboarding Design QA
+**Source Visual Truth**
+- `/Users/ryanrifkin/Downloads/ChatGPT Image Jun 15, 2026 at 04_37_12 PM.png`
 
-- Source visual truth: `/Users/ryanrifkin/Downloads/ChatGPT Image Jun 10, 2026 at 07_56_46 PM.png`
-- Implementation URL: `http://127.0.0.1:8000/`
-- Implementation screenshots:
-  - Clean: `/var/folders/b9/vlpjg87922v_4t3dp9pf2lm40000gn/T/onboarding-final-clean.png`
-  - Error: `/var/folders/b9/vlpjg87922v_4t3dp9pf2lm40000gn/T/onboarding-final-error.png`
-  - Mobile: `/var/folders/b9/vlpjg87922v_4t3dp9pf2lm40000gn/T/onboarding-mobile.png`
-- Full-view comparison: `/tmp/onboarding-final-comparison.png`
-- Viewports: 700 x 1100 desktop panel; 390 x 844 mobile
-- States: clean first run and invalid submission
+**Implementation Screenshot**
+- `/private/tmp/custody-settings-implementation.png`
 
-## Findings
+**Viewport**
+- In-app browser Settings screen, responsive local viewport approximately 503px wide.
 
-No actionable P0, P1, or P2 findings remain.
+**State**
+- Returning-user Settings screen with Account, Co-parent, Children, Common activities, custom activity input, and Save changes visible.
 
-- Typography follows the existing app font stack and closely matches the reference hierarchy, weight, and line height.
-- Spacing, field sizing, progress indicator, panel framing, error placement, and mobile rhythm match the source structure.
-- Colors preserve the app's warm off-white, deep indigo, lavender, gray, and validation-red tokens.
-- Copy matches the supplied onboarding brief, including optional purpose language and validation messages.
-- Dynamic child rows, remove behavior, email validation, disabled visual state, invalid-submit behavior, and Continue routing are functional.
-- No focused comparison was needed beyond the clean/error full views because the screen contains no photographic or detailed illustrative assets.
+**Full-View Comparison Evidence**
+- Source shows a warm off-white Settings page with a branded header, grouped Children list, dashed add-child button, shared two-column activity cards on a wide viewport, custom activity input, and a strong purple Save changes CTA.
+- Implementation shows the same section order and hierarchy, with Account and Co-parent added above Children per the written brief. At the narrower tested viewport, activities collapse to one column as requested.
 
-## Intentional Differences
+**Focused Region Comparison Evidence**
+- Children: implementation uses rounded card rows with person icons, truncated names, and chevrons. Remove controls are moved into a child editor modal.
+- Common activities: implementation uses selectable cards with line-style icons, lavender selected state, purple border, and right-side checkmark. Emoji labels are removed.
+- Save area: implementation keeps a full-width purple primary CTA after the sections.
 
-- The existing `top-bar` / `logo-left` header is retained at the user's request instead of adopting the mockup's new icon and wordmark.
-- Decorative field, shield, alert, and footer icons were not introduced because the current app does not include a matching icon library. This is P3 polish and does not affect clarity or function.
-- The clean screenshot starts empty to represent a true first run; the source mockup uses example completed values to demonstrate the valid state.
+**Findings**
+- No P0/P1/P2 findings.
 
-## Patches Made
+**Follow-up Polish**
+- [P3] The line icons are lightweight CSS approximations rather than a dedicated icon set. They satisfy the no-emoji requirement, but a future icon pass could swap them for a proper bundled icon system.
+- [P3] The implementation viewport is narrower than the supplied reference image, so the activity grid is single-column in the captured evidence. The CSS supports two columns at wider widths.
 
-- Replaced the old setup form with the focused onboarding layout.
-- Added name and email persistence and validation.
-- Added one blank child row by default with dynamic add/remove controls.
-- Removed reminder preference UI and state handling.
-- Added the optional purpose dropdown with production placeholder options.
-- Added alert and inline error states.
-- Removed the multi-step progress strip because onboarding is a single screen.
-- Added required Terms of Use and Privacy Policy acceptance with placeholder links and inline validation.
-- Hid the bottom navigation during first run while preserving it in returning Settings.
-- Added desktop panel framing and mobile responsive behavior.
-- Expanded contract and browser smoke coverage.
+**Patches Made Since QA**
+- Reorganized Settings into Account, Co-parent, Children, and Common activities sections.
+- Moved email into Account.
+- Replaced inline child inputs/remove buttons with clean child rows and a lightweight edit modal.
+- Replaced activity pills and emoji labels with shared selectable activity cards.
+- Fixed child modal layering above the bottom nav.
+- Tightened mobile overflow constraints.
 
-final result: passed
+**Final Result**
+- final result: passed

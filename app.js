@@ -5,21 +5,22 @@ const DEFAULT_CONFIG={
   children:['Thomas','Presley','Hayden'],
   purpose:'',
   termsAccepted:false,
+  activityIds:null,
 };
 const CONFIG_KEY='custody_tracker_config';
 const DEFAULT_ACTIVITIES=[
-  {id:'school',label:'School pickup / dropoff',emoji:'🏫'},
-  {id:'afterschool',label:'After school program',emoji:'🎒'},
-  {id:'medical',label:'Doctor / medical',emoji:'🏥'},
-  {id:'sports',label:'Sports / practice',emoji:'⚽'},
-  {id:'dance',label:'Dance / gymnastics',emoji:'💃'},
-  {id:'music',label:'Music / tutoring',emoji:'🎵'},
-  {id:'birthday',label:'Birthday party / playdate',emoji:'🎂'},
-  {id:'camp',label:'Camp / day program',emoji:'🏕️'},
-  {id:'therapy',label:'Therapy / counseling',emoji:'🧠'},
-  {id:'religious',label:'Religious service / worship',emoji:'🙏'},
-  {id:'volunteer',label:'Volunteering',emoji:'🤝'},
-  {id:'tournament',label:'Tournament / competition',emoji:'🏆'},
+  {id:'school',label:'School pickup / dropoff'},
+  {id:'afterschool',label:'After school program'},
+  {id:'medical',label:'Doctor / medical'},
+  {id:'sports',label:'Sports / practice'},
+  {id:'dance',label:'Dance / gymnastics'},
+  {id:'music',label:'Music / tutoring'},
+  {id:'birthday',label:'Birthday party / playdate'},
+  {id:'camp',label:'Camp / day program'},
+  {id:'therapy',label:'Therapy / counseling'},
+  {id:'religious',label:'Religious service / worship'},
+  {id:'volunteer',label:'Volunteering'},
+  {id:'tournament',label:'Tournament / competition'},
 ];
 
 let APP_CONFIG=loadConfig();
@@ -39,6 +40,7 @@ let currentExportType=null,currentReportText='';
 let BACKFILL_DATE=null;
 let REPORT_FILTER='all';
 let setupValidationAttempted=false;
+let editingChildRow=null;
 
 function loadConfig(){
   try{
@@ -110,146 +112,176 @@ function renderChildFields(children=APP_CONFIG.children){
   if(!list)return;
   const values=(Array.isArray(children)&&children.length?children:['']);
   list.innerHTML='';
-  values.forEach((name,idx)=>appendChildField(name,idx));
+  values.forEach((name,idx)=>appendChildField(name,idx,false));
   updateChildRemoveButtons();
 }
-function appendChildField(name='',idx=0){
+function appendChildField(name='',idx=0,openEditor=true){
   const list=document.getElementById('setup-children-list');
   if(!list)return;
   const row=document.createElement('div');
   row.className='setup-child-row';
-  const control=document.createElement('div');
-  control.className='setup-child-control';
   const input=document.createElement('input');
-  input.type='text';
+  input.type='hidden';
   input.className='setup-child-input';
   input.value=name;
-  input.placeholder="Enter child’s name";
   input.setAttribute('aria-label','Child '+(idx+1)+' name');
-  input.addEventListener('input',()=>{handleSetupInput();renderActivitySetup();});
+  input.addEventListener('input',()=>{renderChildRow(row);handleSetupInput();});
   const error=document.createElement('div');
   error.className='setup-error';
   error.textContent='Please enter a child’s name.';
-  const remove=document.createElement('button');
-  remove.type='button';
-  remove.className='setup-remove-child';
-  remove.textContent='Remove';
-  remove.onclick=()=>{row.remove();updateChildRemoveButtons();handleSetupInput()};
-  control.appendChild(input);
-  control.appendChild(error);
-  row.appendChild(control);
-  row.appendChild(remove);
+  row.appendChild(input);
+  row.appendChild(error);
   list.appendChild(row);
+  renderChildRow(row);
+  if(openEditor)openChildEditor(row);
 }
 function updateChildRemoveButtons(){
   const rows=[...document.querySelectorAll('.setup-child-row')];
   rows.forEach((row,idx)=>{
     const input=row.querySelector('.setup-child-input');
-    const remove=row.querySelector('.setup-remove-child');
     if(input)input.setAttribute('aria-label','Child '+(idx+1)+' name');
-    if(remove)remove.disabled=rows.length===1;
+    row.dataset.index=String(idx);
   });
 }
 function addChildField(){
-  appendChildField('',document.querySelectorAll('.setup-child-row').length);
+  appendChildField('',document.querySelectorAll('.setup-child-row').length,true);
   updateChildRemoveButtons();
   handleSetupInput();
-  const inputs=document.querySelectorAll('.setup-child-input');
-  if(inputs.length)inputs[inputs.length-1].focus();
-  renderActivitySetup();
 }
 
-// ── CHILD ACTIVITIES ─────────────────────────────────────────────
+function renderChildRow(row){
+  const input=row.querySelector('.setup-child-input');
+  const error=row.querySelector('.setup-error');
+  const name=cleanName(input?.value);
+  row.innerHTML='';
+  row.appendChild(input);
+  const btn=document.createElement('button');
+  btn.type='button';
+  btn.className='settings-child-row-button';
+  btn.onclick=()=>openChildEditor(row);
+  btn.innerHTML=`<span class="settings-child-avatar person-icon" aria-hidden="true"></span><span class="settings-child-name">${name||'Unnamed child'}</span><span class="settings-chevron" aria-hidden="true">›</span>`;
+  row.appendChild(btn);
+  row.appendChild(error);
+}
+
+function openChildEditor(row){
+  editingChildRow=row;
+  const modal=document.getElementById('child-modal');
+  const input=document.getElementById('child-modal-input');
+  const remove=document.querySelector('.child-modal-remove');
+  const childInput=row.querySelector('.setup-child-input');
+  input.value=childInput?.value||'';
+  if(remove)remove.style.display=document.querySelectorAll('.setup-child-row').length>1?'inline-flex':'none';
+  modal.classList.add('show');
+  modal.setAttribute('aria-hidden','false');
+  setTimeout(()=>input.focus(),0);
+}
+
+function closeChildEditor(){
+  const modal=document.getElementById('child-modal');
+  modal.classList.remove('show');
+  modal.setAttribute('aria-hidden','true');
+  editingChildRow=null;
+}
+
+function saveChildEditor(){
+  if(!editingChildRow)return;
+  const value=cleanName(document.getElementById('child-modal-input').value);
+  const input=editingChildRow.querySelector('.setup-child-input');
+  input.value=value;
+  renderChildRow(editingChildRow);
+  updateChildRemoveButtons();
+  handleSetupInput();
+  closeChildEditor();
+}
+
+function removeEditingChild(){
+  if(!editingChildRow)return;
+  if(document.querySelectorAll('.setup-child-row').length<=1)return;
+  editingChildRow.remove();
+  updateChildRemoveButtons();
+  handleSetupInput();
+  closeChildEditor();
+}
+
+// ── ACTIVITIES ───────────────────────────────────────────────────
 function renderActivitySetup(){
   const container=document.getElementById('setup-activities-container');
   if(!container)return;
-  const children=childFieldValues().filter(n=>n.trim());
-  if(!children.length){container.style.display='none';return;}
   container.style.display='block';
-  const saved=APP_CONFIG.childActivities||{};
+  const selected=new Set(getConfiguredActivityIds());
 
-  container.innerHTML=`<div class="setup-field">
-    <label>Common activities — uncheck any that don't apply, add your own</label>
-    <div id="setup-activity-kids"></div>
-  </div>`;
+  container.innerHTML=`<section class="settings-section">
+    <div class="settings-section-head">
+      <span class="settings-section-icon activities-icon" aria-hidden="true"></span>
+      <div>
+        <h2>Common activities</h2>
+        <p>These apply to every child.</p>
+      </div>
+    </div>
+    <div class="settings-card activity-card-grid" id="setup-activity-chips"></div>
+    <div class="activity-add-row">
+      <input type="text" class="activity-custom-input" placeholder="Add custom activity..." id="setup-custom-activity">
+      <button type="button" class="activity-add-btn" onclick="addCustomActivity()">Add</button>
+    </div>
+  </section>`;
 
-  const kidContainer=document.getElementById('setup-activity-kids');
-  children.forEach(child=>{
-    // Get saved activities for this child, or default all selected
-    const childSaved=saved[child];
-    const selected=childSaved?new Set(childSaved):new Set(DEFAULT_ACTIVITIES.map(a=>a.id));
-
-    const section=document.createElement('div');
-    section.className='activity-child-section';
-    section.innerHTML=`<div class="activity-child-name">${child}</div>
-      <div class="activity-chips" id="chips-${child.replace(/\s+/g,'-')}"></div>
-      <div class="activity-add-row">
-        <input type="text" class="activity-custom-input" placeholder="Add custom activity..." id="custom-${child.replace(/\s+/g,'-')}">
-        <button type="button" class="activity-add-btn" onclick="addCustomActivity('${child.replace(/\s+/g,'-')}','${child}')">Add</button>
-      </div>`;
-    kidContainer.appendChild(section);
-
-    const chipsEl=document.getElementById('chips-'+child.replace(/\s+/g,'-'));
-    // Render default activities
-    DEFAULT_ACTIVITIES.forEach(act=>{
-      const chip=document.createElement('button');
-      chip.type='button';
-      chip.className='activity-chip'+(selected.has(act.id)?' active':'');
-      chip.dataset.actId=act.id;
-      chip.dataset.child=child;
-      chip.textContent=act.emoji+' '+act.label;
-      chip.onclick=()=>chip.classList.toggle('active');
-      chipsEl.appendChild(chip);
-    });
-    // Render any custom activities already saved
-    if(childSaved){
-      childSaved.filter(id=>!DEFAULT_ACTIVITIES.find(a=>a.id===id)).forEach(customId=>{
-        addCustomChip(chipsEl, customId, child, true);
-      });
-    }
+  const chipsEl=document.getElementById('setup-activity-chips');
+  DEFAULT_ACTIVITIES.forEach(act=>{
+    const chip=document.createElement('button');
+    chip.type='button';
+    chip.className='activity-chip'+(selected.has(act.id)?' active':'');
+    chip.dataset.actId=act.id;
+    chip.innerHTML=`<span class="activity-line-icon activity-${act.id}" aria-hidden="true"></span><span>${act.label}</span><span class="activity-check" aria-hidden="true">✓</span>`;
+    chip.onclick=()=>chip.classList.toggle('active');
+    chipsEl.appendChild(chip);
+  });
+  selected.forEach(id=>{
+    if(!DEFAULT_ACTIVITIES.find(a=>a.id===id))addCustomChip(chipsEl,id,true);
   });
 }
 
-function addCustomChip(chipsEl, label, child, active=false){
+function getConfiguredActivityIds(){
+  if(Array.isArray(APP_CONFIG.activityIds)&&APP_CONFIG.activityIds.length)return APP_CONFIG.activityIds;
+  const legacy=APP_CONFIG.childActivities||{};
+  const legacyIds=[...new Set(Object.values(legacy).flat().filter(Boolean))];
+  return legacyIds.length?legacyIds:DEFAULT_ACTIVITIES.map(a=>a.id);
+}
+
+function addCustomChip(chipsEl, label, active=false){
   const chip=document.createElement('button');
   chip.type='button';
   chip.className='activity-chip custom'+(active?' active':'');
   chip.dataset.actId=label;
-  chip.dataset.child=child;
-  chip.textContent='✚ '+label;
+  chip.innerHTML=`<span class="activity-line-icon activity-custom" aria-hidden="true"></span><span>${label}</span><span class="activity-check" aria-hidden="true">✓</span>`;
   chip.onclick=()=>chip.classList.toggle('active');
   chipsEl.appendChild(chip);
 }
 
-function addCustomActivity(childSlug, childName){
-  const input=document.getElementById('custom-'+childSlug);
+function addCustomActivity(){
+  const input=document.getElementById('setup-custom-activity');
   const val=input?input.value.trim():'';
   if(!val)return;
-  const chipsEl=document.getElementById('chips-'+childSlug);
-  if(chipsEl)addCustomChip(chipsEl, val, childName, true);
+  const chipsEl=document.getElementById('setup-activity-chips');
+  if(chipsEl)addCustomChip(chipsEl, val, true);
   if(input)input.value='';
 }
 
-function getChildActivitiesFromSetup(){
-  const result={};
-  document.querySelectorAll('.activity-chip.active').forEach(chip=>{
-    const child=chip.dataset.child;
-    const act=chip.dataset.actId;
-    if(!result[child])result[child]=[];
-    result[child].push(act);
-  });
-  return result;
+function getActivityIdsFromSetup(){
+  return [...document.querySelectorAll('#setup-activity-chips .activity-chip.active')]
+    .map(chip=>chip.dataset.actId)
+    .filter(Boolean);
 }
 
 function getActivitiesForChild(childName){
-  const saved=(APP_CONFIG.childActivities||{})[childName];
+  const saved=getConfiguredActivityIds();
   if(saved&&saved.length)return saved.map(id=>{
     const def=DEFAULT_ACTIVITIES.find(a=>a.id===id);
-    return def?{id,label:def.label,emoji:def.emoji}:{id,label:id,emoji:'✚'};
+    return def?{id,label:def.label}:{id,label:id};
   });
-  return DEFAULT_ACTIVITIES; // default all if not configured
+  return DEFAULT_ACTIVITIES;
 }
-// ── END CHILD ACTIVITIES ─────────────────────────────────────────
+// ── END ACTIVITIES ───────────────────────────────────────────────
 
 function personalizeStaticCopy(){
   const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
@@ -263,6 +295,8 @@ function renderConfigurableUi(){
   if(homeProfile)homeProfile.textContent=currentParent().slice(0,1).toUpperCase();
   const reportsProfile=document.getElementById('reports-profile');
   if(reportsProfile)reportsProfile.textContent=currentParent().slice(0,1).toUpperCase();
+  const settingsProfile=document.getElementById('settings-profile');
+  if(settingsProfile)settingsProfile.textContent=currentParent().slice(0,1).toUpperCase();
   const dadActualTitle=document.getElementById('report-dadactual-title');
   if(dadActualTitle)dadActualTitle.textContent=currentParentPoss()+' actual time with kids';
   const dadActualDesc=document.getElementById('report-dadactual-desc');
@@ -285,17 +319,22 @@ function renderConfigurableUi(){
   LOC_LBL.moms='At '+coParentPoss();
 }
 function initSetupForm(){
-  setTimeout(()=>renderActivitySetup(),100);
   const onboarding=document.getElementById('s-setup').classList.contains('onboarding-mode');
   setupValidationAttempted=false;
   document.getElementById('setup-alert').classList.remove('show');
-  document.getElementById('setup-title').textContent=onboarding?'Let’s get you started':'Settings';
-  document.getElementById('setup-subtitle').textContent=onboarding?'A few quick details to personalize your experience.':'Update your profile and household details.';
+  const setupTitle=document.getElementById('setup-title');
+  const setupSubtitle=document.getElementById('setup-subtitle');
+  if(setupTitle)setupTitle.textContent=onboarding?'Let’s get you started':'Settings';
+  if(setupSubtitle)setupSubtitle.textContent=onboarding?'A few quick details to personalize your experience.':'Update your profile and household details.';
   document.getElementById('setup-current-parent').value=onboarding?'':APP_CONFIG.currentParentLabel;
   document.getElementById('setup-email').value=onboarding?'':(APP_CONFIG.email||'');
   document.getElementById('setup-co-parent').value=APP_CONFIG.coParentLabel;
+  document.getElementById('setup-co-parent').oninput=()=>updateCoParentPreview();
   renderChildFields(onboarding?['']:APP_CONFIG.children);
-  document.getElementById('setup-purpose').value=onboarding?'':APP_CONFIG.purpose;
+  renderActivitySetup();
+  updateCoParentPreview();
+  const setupPurpose=document.getElementById('setup-purpose');
+  if(setupPurpose)setupPurpose.value=onboarding?'':APP_CONFIG.purpose;
   document.getElementById('setup-terms').checked=onboarding?false:!!APP_CONFIG.termsAccepted;
   document.getElementById('setup-continue').textContent=onboarding?'Start tracking →':'Save changes';
   validateSetup(false);
@@ -304,27 +343,33 @@ function setOnboardingMode(active){
   document.getElementById('s-setup').classList.toggle('onboarding-mode',active);
   document.getElementById('app').classList.toggle('onboarding-active',active);
 }
+function updateCoParentPreview(){
+  const preview=document.getElementById('setup-co-parent-label-preview');
+  if(preview)preview.textContent=cleanName(document.getElementById('setup-co-parent')?.value)||DEFAULT_CONFIG.coParentLabel;
+}
 function isValidEmail(value){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value||'').trim())}
 function validateSetup(showErrors=setupValidationAttempted){
   const onboarding=document.getElementById('s-setup').classList.contains('onboarding-mode');
-  const nameField=document.getElementById('setup-name-field');
-  const emailField=document.getElementById('setup-email-field');
-  const nameValid=!!cleanName(document.getElementById('setup-current-parent').value);
-  const emailValid=isValidEmail(document.getElementById('setup-email').value);
+  const nameInput=document.getElementById('setup-current-parent');
+  const emailInput=document.getElementById('setup-email');
+  const nameField=nameInput.closest('.setup-field');
+  const emailField=emailInput.closest('.setup-field');
+  const nameValid=!!cleanName(nameInput.value);
+  const emailValid=isValidEmail(emailInput.value);
   const termsValid=!onboarding||document.getElementById('setup-terms').checked;
   const childInputs=[...document.querySelectorAll('.setup-child-input')];
   const childValidity=childInputs.map(input=>!!cleanName(input.value));
   const childrenValid=childInputs.length>0&&childValidity.every(Boolean);
   nameField.classList.toggle('invalid',showErrors&&!nameValid);
   emailField.classList.toggle('invalid',showErrors&&!emailValid);
-  nameField.querySelector('input').setAttribute('aria-invalid',String(showErrors&&!nameValid));
-  emailField.querySelector('input').setAttribute('aria-invalid',String(showErrors&&!emailValid));
+  nameInput.setAttribute('aria-invalid',String(showErrors&&!nameValid));
+  emailInput.setAttribute('aria-invalid',String(showErrors&&!emailValid));
   const termsField=document.getElementById('setup-terms-field');
   termsField.classList.toggle('invalid',showErrors&&!termsValid);
   childInputs.forEach((input,idx)=>{
-    const control=input.closest('.setup-child-control');
+    const control=input.closest('.setup-child-row');
     const invalid=showErrors&&!childValidity[idx];
-    control.classList.toggle('invalid',invalid);
+    if(control)control.classList.toggle('invalid',invalid);
     input.setAttribute('aria-invalid',String(invalid));
   });
   const valid=nameValid&&emailValid&&childrenValid&&termsValid;
@@ -356,14 +401,14 @@ function saveSetup(){
     return;
   }
   const children=childFieldValues();
-  const childActivities=getChildActivitiesFromSetup();
+  const activityIds=getActivityIdsFromSetup();
   saveConfig({
     currentParentLabel:cleanName(document.getElementById('setup-current-parent').value)||DEFAULT_CONFIG.currentParentLabel,
     coParentLabel:cleanName(document.getElementById('setup-co-parent').value)||DEFAULT_CONFIG.coParentLabel,
     email:document.getElementById('setup-email').value.trim(),
     children,
-    childActivities,
-    purpose:document.getElementById('setup-purpose').value,
+    activityIds,
+    purpose:document.getElementById('setup-purpose')?.value||APP_CONFIG.purpose,
     termsAccepted:APP_CONFIG.termsAccepted||document.getElementById('setup-terms').checked,
   });
   setOnboardingMode(false);
@@ -510,6 +555,25 @@ function setProg(id,step,total){const el=document.getElementById(id);if(!el)retu
 const OB_STATE = {name:'', coparent:'', kids:[], activities:[], email:'', terms:false};
 
 function obNext(targetScreen){
+  const activeScreen=document.querySelector('.screen.active');
+  if(activeScreen&&activeScreen.id==='s-ob-name'){
+    const nameInput=document.getElementById('ob-name');
+    if(nameInput){
+      nameInput.value=nameInput.value.trim();
+      obValidateStep('s-ob-name');
+      if(!nameInput.value)return;
+    }
+  }
+  if(activeScreen&&activeScreen.id==='s-ob-coparent'){
+    const coparentInput=document.getElementById('ob-coparent');
+    if(coparentInput)coparentInput.value=coparentInput.value.trim();
+  }
+  if(activeScreen&&activeScreen.id==='s-ob-kids'){
+    const kidInputs=[...document.querySelectorAll('.ob-kid-input')];
+    kidInputs.forEach(input=>{input.value=input.value.trim();});
+    obValidateStep('s-ob-kids');
+    if(!kidInputs.some(input=>input.value))return;
+  }
   show(targetScreen);
   window.scrollTo(0,0);
   // Echo name on co-parent screen
@@ -575,7 +639,7 @@ function obSetKidCount(n){
 
   // Update question
   const q=document.getElementById('ob-kids-q');
-  if(q)q.textContent=n===1?'What is their name?':'What are their names?';
+  if(q)q.textContent='What are your kids’ first names?';
 
   // Auto-advance after short delay (feels snappy)
   setTimeout(()=>{
@@ -590,8 +654,7 @@ function obAddKidField(idx, total){
   const list=document.getElementById('ob-kids-list');
   const row=document.createElement('div');
   row.className='ob-kid-row';
-  const ordinals=['First','Second','Third','Fourth','Fifth','Sixth'];
-  const placeholder=total===1?"Child's first name":(ordinals[idx]||'Child '+(idx+1))+" child's name";
+  const placeholder='Child’s first name';
   row.innerHTML=`<input class="ob-kid-input" type="text" placeholder="${placeholder}" oninput="obValidateStep('s-ob-kids')">`;
   list.appendChild(row);
 }
@@ -613,7 +676,7 @@ function obRenderActivities(){
     chip.type='button';
     chip.className='ob-activity-chip active';
     chip.dataset.actId=act.id;
-    chip.textContent=act.emoji+' '+act.label;
+    chip.textContent=act.label;
     chip.onclick=()=>chip.classList.toggle('active');
     container.appendChild(chip);
   });
@@ -634,16 +697,13 @@ function obFinish(){
   const name=document.getElementById('ob-name').value.trim()||DEFAULT_CONFIG.currentParentLabel;
   const coparent=document.getElementById('ob-coparent').value.trim()||DEFAULT_CONFIG.coParentLabel;
   const kids=[...document.querySelectorAll('.ob-kid-input')].map(i=>i.value.trim()).filter(Boolean);
-  // Default all activities for all kids — user can customize after 48hrs
-  const childActivities={};
   const defaultActIds=DEFAULT_ACTIVITIES.map(a=>a.id);
-  kids.forEach(k=>{childActivities[k]=defaultActIds;});
 
   saveConfig({
     currentParentLabel:name,
     coParentLabel:coparent,
     children:kids.length?kids:DEFAULT_CONFIG.children,
-    childActivities,
+    activityIds:defaultActIds,
     email,
     termsAccepted:true,
     purpose:'',
@@ -1343,7 +1403,7 @@ function renderStats(){
   }
 
   // Summary sentence
-  let summaryText=`${label}: ${loggedDays} day${loggedDays!==1?'s':''} logged. ${currentParent()} had the kids on ${dadActual} day${dadActual!==1?'s':''}. During ${coParentPoss()}'s scheduled days, kids were with ${currentParent()} ${momWkDadHad} time${momWkDadHad!==1?'s':''} (${pressuredDev.length} pressured, ${agreedDev.length} agreed, ${unexpectedDev.length} unexpected).`;
+  let summaryText=`${label}: ${loggedDays} day${loggedDays!==1?'s':''} logged. ${currentParent()} had the kids on ${dadActual} day${dadActual!==1?'s':''}. During ${coParentPoss()} scheduled days, kids were with ${currentParent()} ${momWkDadHad} time${momWkDadHad!==1?'s':''} (${pressuredDev.length} pressured, ${agreedDev.length} agreed, ${unexpectedDev.length} unexpected).`;
   if(missedDays)summaryText+=` ${missedDays} day${missedDays!==1?'s were':' was'} not logged.`;
   document.getElementById('summary-box').textContent=summaryText;
 }
