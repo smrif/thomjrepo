@@ -1,5 +1,20 @@
 # Release Notes
 
+## June 15, 2026
+
+- Redesigned returning-user Settings into clearer Account, Co-parent, Children, and Common activities sections.
+- Moved activities out of per-child configuration and into one shared Common activities list that applies to every child.
+- Replaced activity emoji labels with cleaner line-style activity cards, selected states, and a custom activity input.
+- Changed Children settings from crowded inline fields to compact child rows with a focused child profile editor modal.
+- Fixed child profile modal action alignment so Remove and Done sit cleanly together.
+- Updated onboarding Step 1 to focus only on the user display name and removed confusing Dad / Mom / Parent shortcut chips.
+- Updated onboarding Step 2 copy for the other parent name or label and removed Mom / Dad / Co-parent shortcut chips.
+- Clarified onboarding Step 4 to ask for kids' first names, show one field by default, and preserve adding another child.
+- Added trim/required-field guards for onboarding name and child-name steps before advancing.
+- Replaced the final intro promise card with "Lawyer-ready records" and a neutral file-check line icon.
+- Expanded browser smoke coverage for Settings navigation, shared activity behavior, child-row rendering, onboarding copy, removed shortcut chips, add-child behavior, and the updated intro promise card.
+- Updated design QA notes for the Settings redesign and refreshed the testing TODO notes.
+
 ## June 9, 2026
 
 - Pulled and repaired the latest check-in/reporting update after smoke testing found several regressions.
