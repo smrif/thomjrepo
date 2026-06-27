@@ -9,6 +9,7 @@
 - Polished the Saved confirmation screen with a logged date, compact receipt details, Calendar and Reports follow-up actions, and a final Edit option inside the logged card.
 - Fixed the co-parent-day helped activity route so it opens the correct activity screen.
 - Added single-child check-in logic that skips the redundant "all kids home?" screen and goes straight to confirmation when the user has one child.
+- Fixed single-child Back navigation so the confirmation screen returns to the previous meaningful step instead of the skipped "all kids home?" screen.
 - Verified the updated flows with contract tests, browser smoke tests, and focused Playwright checks for transitions, review rendering, saved confirmation, final edit, and the single-child skip.
 
 ## June 15, 2026

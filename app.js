@@ -852,7 +852,7 @@ function setDadMode(mode){
   document.querySelectorAll('#s-dad-mode .scene-card').forEach(c=>c.className='scene-card');
   const idMap={'normal':'sc-dad-normal','dad-helped-mom':'sc-dad-helped','mom-had':'sc-dad-momhad'};
   document.getElementById(idMap[mode]).classList.add(mode==='mom-had'?'sel-warn':'sel-dad');
-  if(mode==='normal')setTimeout(()=>{goToAllKidsStep()},250);
+  if(mode==='normal')setTimeout(()=>{goToAllKidsStep('s-dad-mode')},250);
   else if(mode==='dad-helped-mom')setTimeout(()=>{KIDS.forEach(k=>kidBtn('mhk',k).className='kid-btn');S.momHelpedOnDadWeek={};S.momHadKidsOnDadWeek=[];document.getElementById('mom-helped-next').disabled=true;updateMomHelpedSummary();setProg('prog-mom-helped-kids',1,5);show('s-mom-helped-kids')},250);
   else setTimeout(()=>{KIDS.forEach(k=>kidBtn('dwm',k).className='kid-btn');document.getElementById('dwm-all').className='kid-btn';S.momHadKidsOnDadWeek=[];updateDadWkMomSummary();document.getElementById('dwm-next').disabled=true;setProg('prog-dad-wk-mom-had',2,5);show('s-dad-wk-mom-had')},250);
 }
@@ -867,7 +867,7 @@ function startMomHelpedLoop(){
   momHelpedQueue=[...S.momHadKidsOnDadWeek];momHelpedIdx=0;
   S._afterMomHelped=true;
   // Ask kid location first before activities
-  goToAllKidsStep();
+  goToAllKidsStep('s-mom-helped-kids');
 }
 function startMomHelpedActivities(){
   momHelpedIdx=0;showMomHelpedStep();
@@ -893,7 +893,7 @@ function toggleMomAct(el,key){
 function nextMomHelpedKid(){
   const kid=momHelpedQueue[momHelpedIdx];S.momHelpedOnDadWeek[kid].note=document.getElementById('mha-note').value.trim();momHelpedIdx++;
   if(momHelpedIdx<momHelpedQueue.length)showMomHelpedStep();
-  else{goToAllKidsStep()}
+  else{goToAllKidsStep('s-mom-helped-activity')}
 }
 function goBackFromMomHelped(){if(momHelpedIdx>0){momHelpedIdx--;showMomHelpedStep()}else show('s-mom-helped-kids')}
 
@@ -908,20 +908,20 @@ function updateDadWkMomSummary(){const el=document.getElementById('dad-wk-mom-su
 function goDadWkMomDiary(){showChangeContext('s-dad-wk-mom-had','dad-to-mom')}
 function goToDadWkViaContext(){goDadWkMomDiary()}
 
-function goToAllKidsStep(){
+function goToAllKidsStep(backTarget){
   setProg('prog-allkids',1,4);
   if(KIDS.length===1){
-    setAllKids(true);
+    setAllKids(true,backTarget||'s-dad-mode');
     return;
   }
   show('s-allkids');
 }
 
-function setAllKids(all){
+function setAllKids(all,confirmBackTarget){
   document.getElementById('ak-yes').classList.toggle('sel',all);document.getElementById('ak-no').classList.toggle('sel',!all);
   if(all){S.kidsWithDad=[...KIDS];setTimeout(()=>{
     if(S._afterMomHelped){S._afterMomHelped=false;startMomHelpedActivities();}
-    else{showKidsConfirm('s-allkids');}
+    else{showKidsConfirm(confirmBackTarget||'s-allkids');}
   },200)}
   else{KIDS.forEach(k=>kidBtn('kb',k).classList.remove('with-dad'));document.getElementById('kb-allMom').classList.remove('all-mom');S.kidsWithDad=[];updateWhoSummary();setTimeout(()=>{setProg('prog-whichkids',2,4);show('s-whichkids')},200)}
 }

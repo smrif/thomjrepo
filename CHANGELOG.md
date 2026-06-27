@@ -17,3 +17,4 @@
 ### Fixed
 
 - Corrected the co-parent-day helped activity route to show the intended screen.
+- Fixed single-child Back navigation so it no longer opens the skipped "all kids home?" screen.
