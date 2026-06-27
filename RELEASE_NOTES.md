@@ -1,5 +1,16 @@
 # Release Notes
 
+## June 26, 2026
+
+- Added directional slide transitions across the daily check-in decision flow, with forward screens sliding in from the right and back navigation reversing direction.
+- Added cache-busted asset versions for recent UI updates so local browsers reliably pick up changed JavaScript and CSS.
+- Reworked the Review screen into a clearer confirmation receipt with grouped Schedule, Kids & involvement, Change context, and Notes sections.
+- Moved the timestamp/read-only reassurance below the Review actions and restyled it as a quiet footnote.
+- Polished the Saved confirmation screen with a logged date, compact receipt details, Calendar and Reports follow-up actions, and a final Edit option inside the logged card.
+- Fixed the co-parent-day helped activity route so it opens the correct activity screen.
+- Added single-child check-in logic that skips the redundant "all kids home?" screen and goes straight to confirmation when the user has one child.
+- Verified the updated flows with contract tests, browser smoke tests, and focused Playwright checks for transitions, review rendering, saved confirmation, final edit, and the single-child skip.
+
 ## June 15, 2026
 
 - Redesigned returning-user Settings into clearer Account, Co-parent, Children, and Common activities sections.

@@ -547,7 +547,51 @@ function isLockedEntry(ds){
 function getEntries(){try{const r=localStorage.getItem('familylog_entries');return r?JSON.parse(r):{}}catch(e){return{}}}
 function putEntries(e){try{localStorage.setItem('familylog_entries',JSON.stringify(e));try{sessionStorage.setItem('familylog_backup',JSON.stringify(e))}catch(ex){}}catch(e){}}
 
-function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0)}
+const CHECKIN_FLOW_SCREENS=new Set([
+  's-week','s-dad-mode','s-allkids','s-whichkids','s-absent','s-mom-helped-kids',
+  's-mom-helped-activity','s-dad-wk-mom-had','s-mom-mode','s-mom-easy',
+  's-mom-helped-kids2','s-helped-activity','s-mom-dad-had','s-kids-confirm',
+  's-change-context','s-diary','s-other-diary','s-review'
+]);
+let screenStack=[];
+
+function show(id,direction){
+  const next=document.getElementById(id);
+  if(!next)return;
+  const current=document.querySelector('.screen.active');
+  const currentId=current?.id||null;
+  let navDirection=direction;
+  const isCheckinTransition=currentId&&CHECKIN_FLOW_SCREENS.has(currentId)&&CHECKIN_FLOW_SCREENS.has(id);
+
+  if(!navDirection&&isCheckinTransition){
+    const existingIdx=screenStack.lastIndexOf(id);
+    navDirection=existingIdx>=0?'back':'forward';
+  }
+  if(currentId!==id){
+    const existingIdx=screenStack.lastIndexOf(id);
+    if(existingIdx>=0)screenStack=screenStack.slice(0,existingIdx+1);
+    else screenStack.push(id);
+  }
+
+  document.querySelectorAll('.screen.screen-leave,.screen-enter').forEach(s=>{
+    s.classList.remove('screen-leave','screen-leave-forward','screen-leave-back','screen-enter','screen-enter-forward','screen-enter-back');
+  });
+
+  if(isCheckinTransition&&current&&current!==next&&navDirection){
+    const enterClass=navDirection==='back'?'screen-enter-back':'screen-enter-forward';
+    const leaveClass=navDirection==='back'?'screen-leave-back':'screen-leave-forward';
+    current.classList.add('screen-leave',leaveClass);
+    next.classList.add('active','screen-enter',enterClass);
+    window.setTimeout(()=>{
+      current.classList.remove('active','screen-leave',leaveClass);
+      next.classList.remove('screen-enter',enterClass);
+    },320);
+  }else{
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    next.classList.add('active');
+  }
+  window.scrollTo(0,0);
+}
 function setProg(id,step,total){const el=document.getElementById(id);if(!el)return;el.innerHTML='';for(let i=0;i<total;i++){const d=document.createElement('div');d.className='pd'+(i<step?' done':'')+(i===step?' active':'');el.appendChild(d)}}
 
 
@@ -808,7 +852,7 @@ function setDadMode(mode){
   document.querySelectorAll('#s-dad-mode .scene-card').forEach(c=>c.className='scene-card');
   const idMap={'normal':'sc-dad-normal','dad-helped-mom':'sc-dad-helped','mom-had':'sc-dad-momhad'};
   document.getElementById(idMap[mode]).classList.add(mode==='mom-had'?'sel-warn':'sel-dad');
-  if(mode==='normal')setTimeout(()=>{setProg('prog-allkids',1,4);show('s-allkids')},250);
+  if(mode==='normal')setTimeout(()=>{goToAllKidsStep()},250);
   else if(mode==='dad-helped-mom')setTimeout(()=>{KIDS.forEach(k=>kidBtn('mhk',k).className='kid-btn');S.momHelpedOnDadWeek={};S.momHadKidsOnDadWeek=[];document.getElementById('mom-helped-next').disabled=true;updateMomHelpedSummary();setProg('prog-mom-helped-kids',1,5);show('s-mom-helped-kids')},250);
   else setTimeout(()=>{KIDS.forEach(k=>kidBtn('dwm',k).className='kid-btn');document.getElementById('dwm-all').className='kid-btn';S.momHadKidsOnDadWeek=[];updateDadWkMomSummary();document.getElementById('dwm-next').disabled=true;setProg('prog-dad-wk-mom-had',2,5);show('s-dad-wk-mom-had')},250);
 }
@@ -823,7 +867,7 @@ function startMomHelpedLoop(){
   momHelpedQueue=[...S.momHadKidsOnDadWeek];momHelpedIdx=0;
   S._afterMomHelped=true;
   // Ask kid location first before activities
-  setProg('prog-allkids',1,4);show('s-allkids');
+  goToAllKidsStep();
 }
 function startMomHelpedActivities(){
   momHelpedIdx=0;showMomHelpedStep();
@@ -849,7 +893,7 @@ function toggleMomAct(el,key){
 function nextMomHelpedKid(){
   const kid=momHelpedQueue[momHelpedIdx];S.momHelpedOnDadWeek[kid].note=document.getElementById('mha-note').value.trim();momHelpedIdx++;
   if(momHelpedIdx<momHelpedQueue.length)showMomHelpedStep();
-  else{setProg('prog-allkids',1,4);show('s-allkids')}
+  else{goToAllKidsStep()}
 }
 function goBackFromMomHelped(){if(momHelpedIdx>0){momHelpedIdx--;showMomHelpedStep()}else show('s-mom-helped-kids')}
 
@@ -863,6 +907,15 @@ function setDadWkMomAll(){S.momHadKidsOnDadWeek=[...KIDS];KIDS.forEach(k=>kidBtn
 function updateDadWkMomSummary(){const el=document.getElementById('dad-wk-mom-summary');if(!S.momHadKidsOnDadWeek.length){el.textContent='Tap the kids who are at '+coParentPoss()+' tonight';return}el.innerHTML='<strong style="color:#993c1d">At '+coParentPoss()+':</strong> '+S.momHadKidsOnDadWeek.join(', ')}
 function goDadWkMomDiary(){showChangeContext('s-dad-wk-mom-had','dad-to-mom')}
 function goToDadWkViaContext(){goDadWkMomDiary()}
+
+function goToAllKidsStep(){
+  setProg('prog-allkids',1,4);
+  if(KIDS.length===1){
+    setAllKids(true);
+    return;
+  }
+  show('s-allkids');
+}
 
 function setAllKids(all){
   document.getElementById('ak-yes').classList.toggle('sel',all);document.getElementById('ak-no').classList.toggle('sel',!all);
@@ -1030,7 +1083,7 @@ function showHelpedStep(){
   document.querySelectorAll('#helped-acts .act-btn').forEach(b=>{b.classList.toggle('sel',S.helpedData[kid].acts.includes(b.getAttribute('onclick').match(/'(\w+)'/)[1]))});
   document.getElementById('helped-act-next').disabled=S.helpedData[kid].acts.length===0;
   document.getElementById('helped-act-next').textContent=helpedIdx<total-1?'Next kid →':'Continue →';
-  setProg('prog-helped-activity',2,3);show('s-mom-helped-activity');
+  setProg('prog-helped-activity',2,3);show('s-helped-activity');
 }
 function toggleAct(el,key){
   el.classList.toggle('sel');const kid=helpedQueue[helpedIdx];
@@ -1120,69 +1173,92 @@ function goToReview(){
 
 function buildReviewScreen(){
   const rc=document.getElementById('review-content');
-  let html='';
-  // Week type
-  const weekLabel=S.week==='dad'?'🏠 '+currentParentPoss()+' scheduled day':S.week==='mom'?'🏢 '+coParentPoss()+' scheduled day':'✨ Special / other day';
-  html+=reviewSection('Day type',`<div class="review-row"><span class="review-val">${weekLabel}</span></div>`,S.week==='dad'?'s-dad-mode':S.week==='mom'?'s-mom-mode':'s-week');
+  const schedule=[],kids=[],notes=[],context=[];
+  const weekLabel=S.week==='dad'?currentParentPoss()+' scheduled day':S.week==='mom'?coParentPoss()+' scheduled day':'Special / other day';
+  const weekTone=S.week==='dad'?'rt-dad':S.week==='mom'?'rt-mom':'rt-other';
+  schedule.push(reviewSection('Day type',reviewChips([{label:weekLabel,cls:weekTone}]),S.week==='dad'?'s-dad-mode':S.week==='mom'?'s-mom-mode':'s-week'));
 
   if(S.week==='other'){
-    html+=reviewSection('Note',`<div class="review-row"><span class="review-val" style="font-style:italic">"${S.diary||'(no note)'}"</span></div>`,'s-other-diary');
+    notes.push(reviewSection('Exception note',reviewNote(S.diary||'No note added.'),'s-other-diary'));
   } else if(S.week==='dad'){
     // Dad mode
-    const modeLabel=S.dadMode==='normal'?'✅ I had the kids':S.dadMode==='dad-helped-mom'?'🤝 '+coParent()+' helped out':'⚠️ Kids ended up at '+coParentPoss();
-    html+=reviewSection('Situation',`<div class="review-row"><span class="review-val">${modeLabel}</span></div>`,'s-dad-mode');
+    const modeLabel=S.dadMode==='normal'?'I had the kids':S.dadMode==='dad-helped-mom'?coParent()+' helped out':'Kids ended up at '+coParentPoss();
+    schedule.push(reviewSection('Situation',reviewChips([{label:modeLabel,cls:S.dadMode==='mom-had'?'rt-warn':'rt-dad'}]),'s-dad-mode'));
     if(S.dadMode==='normal'||S.dadMode==='dad-helped-mom'){
       const n=S.kidsWithDad.length;
       const kidsStr=n===KIDS.length?kidsListLabel():n===0?'None — all at '+coParentPoss():S.kidsWithDad.join(', ');
-      html+=reviewSection('Kids with you',`<div class="review-row"><span class="review-val">${kidsStr}</span></div>`,'s-allkids');
+      kids.push(reviewSection('With you',reviewLine('Sleeping at your place',kidsStr),'s-allkids'));
       const absent=KIDS.filter(k=>!S.kidsWithDad.includes(k));
       if(absent.length){
-        const abRows=absent.map(k=>{const d=S.absentData[k];return`<div class="review-row"><span class="review-key">${k}</span><span class="review-val">${d?(LOC_LBL[d.location]||d.location)+(d.note?' — '+d.note:''):'—'}</span></div>`}).join('');
-        html+=reviewSection('Absent kids',abRows,'s-whichkids');
+        const abRows=absent.map(k=>{const d=S.absentData[k];return reviewLine(k,d?(LOC_LBL[d.location]||d.location)+(d.note?' — '+d.note:''):'Not set')}).join('');
+        kids.push(reviewSection('Not home tonight',abRows,'s-whichkids'));
       }
       if(S.dadMode==='dad-helped-mom'&&S.momHadKidsOnDadWeek.length){
-        const mhRows=S.momHadKidsOnDadWeek.map(k=>{const v=S.momHelpedOnDadWeek[k];return`<div class="review-row"><span class="review-key">${k}</span><span class="review-val">${v?(v.acts.map(a=>ACT_LBL[a]).join(', '))+(v.note?' — '+v.note:''):'—'}</span></div>`}).join('');
-        html+=reviewSection(coParentPoss()+" help",mhRows,'s-mom-helped-kids');
+        const mhRows=S.momHadKidsOnDadWeek.map(k=>{const v=S.momHelpedOnDadWeek[k];return reviewLine(k,v?(v.acts.map(actLabel).join(', '))+(v.note?' — '+v.note:''):'Not set')}).join('');
+        kids.push(reviewSection(coParentPoss()+" help",mhRows,'s-mom-helped-kids'));
       }
     }
     if(S.dadMode==='mom-had'){
-      html+=reviewSection("Kids at "+coParentPoss(),`<div class="review-row"><span class="review-val">${S.momHadKidsOnDadWeek.join(', ')||'—'}</span></div>`,'s-dad-wk-mom-had');
+      kids.push(reviewSection('Kids at '+coParentPoss(),reviewLine('Kids',S.momHadKidsOnDadWeek.join(', ')||'Not set'),'s-dad-wk-mom-had'));
     }
-    if(S.diary)html+=reviewSection('Diary note',`<div class="review-row"><span class="review-val" style="font-style:italic">"${S.diary}"</span></div>`,'s-diary');
+    notes.push(reviewSection('Diary note',reviewNote(S.diary||'No diary note added.'),'s-diary'));
   } else if(S.week==='mom'){
-    const modeLabel=S.momMode==='easy'?'✅ '+coParent()+' had the kids':S.momMode==='helped'?'🤝 I helped with some kids':'⚠️ Kids ended up with me';
-    html+=reviewSection('Situation',`<div class="review-row"><span class="review-val">${modeLabel}</span></div>`,'s-mom-mode');
+    const modeLabel=S.momMode==='easy'?coParent()+' had the kids':S.momMode==='helped'?'I helped with some kids':'Kids ended up with me';
+    schedule.push(reviewSection('Situation',reviewChips([{label:modeLabel,cls:S.momMode==='dad-had'?'rt-warn':S.momMode==='easy'?'rt-mom':'rt-dad'}]),'s-mom-mode'));
     if(S.momMode==='easy'){
       const inv=S.momOpts.filter(o=>o!=='none');
-      html+=reviewSection('Your involvement',`<div class="review-row"><span class="review-val">${inv.length?inv.join(', '):'None — completely her day'}</span></div>`,'s-mom-easy');
+      kids.push(reviewSection('Your involvement',reviewLine('Today',inv.length?inv.join(', '):'None — completely their day'),'s-mom-easy'));
     }
     if(S.momMode==='helped'&&S.helpedKids.length){
-      const hRows=S.helpedKids.map(k=>{const v=S.helpedData[k];return`<div class="review-row"><span class="review-key">${k}</span><span class="review-val">${v?(v.acts.map(a=>ACT_LBL[a]).join(', '))+(v.note?' — '+v.note:''):'—'}</span></div>`}).join('');
-      html+=reviewSection('You helped with',hRows,'s-mom-helped-kids2');
+      const hRows=S.helpedKids.map(k=>{const v=S.helpedData[k];return reviewLine(k,v?(v.acts.map(actLabel).join(', '))+(v.note?' — '+v.note:''):'Not set')}).join('');
+      kids.push(reviewSection('You helped with',hRows,'s-mom-helped-kids2'));
     }
     if(S.momMode==='dad-had'){
-      html+=reviewSection('Kids you had',`<div class="review-row"><span class="review-val">${S.dadHadKids.join(', ')||'—'}</span></div>`,'s-mom-dad-had');
+      kids.push(reviewSection('Kids with you',reviewLine('Kids',S.dadHadKids.join(', ')||'Not set'),'s-mom-dad-had'));
     }
-    if(S.diary)html+=reviewSection('Diary note',`<div class="review-row"><span class="review-val" style="font-style:italic">"${S.diary}"</span></div>`,'s-diary');
+    notes.push(reviewSection('Diary note',reviewNote(S.diary||'No diary note added.'),'s-diary'));
   }
   if(S.changeAgreed!==null){
     const badges=`<span class="context-badge ${S.changeAgreed?'badge-agreed':'badge-unexpected'}">${S.changeAgreed?'Agreed in advance':'Not agreed in advance'}</span>`+(S.changePressured===null?'':` <span class="context-badge ${S.changePressured?'badge-pressured':'badge-agreed'}">${S.changePressured?'Felt pressured':'No pressure noted'}</span>`);
-    html+=reviewSection('Change context',`<div class="review-row"><span class="review-val">${badges}</span></div>`,'s-change-context');
+    context.push(reviewSection('Agreement',`<div class="review-badge-row">${badges}</div>`,'s-change-context'));
   }
-  if(S.attachment)html+=reviewSection('Attachment',`<div class="review-row"><img class="attach-thumb" src="${S.attachment.dataUrl}" alt="Attached screenshot"><span class="review-val">Screenshot attached</span></div>`,'s-diary');
-  rc.innerHTML=html;
-  document.getElementById('review-timestamp-note').textContent='Will be logged at '+new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}).toLowerCase();
+  if(S.attachment)notes.push(reviewSection('Attachment',`<div class="review-row"><img class="attach-thumb" src="${S.attachment.dataUrl}" alt="Attached screenshot"><span class="review-val">Screenshot attached</span></div>`,'s-diary'));
+
+  rc.innerHTML=[
+    reviewReceiptHero(),
+    reviewGroup('Schedule',schedule),
+    reviewGroup('Kids & involvement',kids),
+    context.length?reviewGroup('Change context',context):'',
+    reviewGroup('Notes',notes),
+  ].join('');
+  document.getElementById('review-timestamp-note').textContent='This entry will be timestamped at '+new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}).toLowerCase()+' and becomes read-only after 24 hours.';
 }
 
 function reviewSection(label,content,editTarget){
-  return`<div class="review-section">
+  return`<section class="review-section">
     <div class="review-section-head">
       <div class="review-label">${label}</div>
       <button class="review-edit-btn" onclick="goEditFromReview('${editTarget}')">Edit</button>
     </div>
     <div class="review-card">${content}</div>
+  </section>`;
+}
+
+function reviewGroup(title,sections){
+  if(!sections.length)return'';
+  return`<section class="review-group"><div class="review-group-title">${title}</div>${sections.join('')}</section>`;
+}
+function reviewReceiptHero(){
+  return`<div class="review-receipt">
+    <div class="review-receipt-mark">✓</div>
+    <div><div class="review-receipt-title">Ready to log</div><div class="review-receipt-sub">Give this a quick scan before it joins your custody record.</div></div>
   </div>`;
 }
+function reviewLine(key,val){return`<div class="review-row"><span class="review-key">${escHtml(key)}</span><span class="review-val">${escHtml(val)}</span></div>`}
+function reviewNote(text){return`<div class="review-note">"${escHtml(text)}"</div>`}
+function reviewChips(chips){return`<div class="review-chip-row">${chips.map(c=>`<span class="review-tag ${c.cls||''}">${escHtml(c.label)}</span>`).join('')}</div>`}
+function actLabel(a){return ACT_LBL[a]||String(a).replace(/-/g,' ')}
+function escHtml(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 
 function goEditFromReview(target){show(target)}
 function goBackFromReview(){
@@ -1215,8 +1291,45 @@ function saveEntry(){
   else{const n=e.kidsWithDad.length;summary=(S.week==='dad'?'Your week · ':'')+(n===KIDS.length?kidsCountLabel()+' home':n===0?'No kids':e.kidsWithDad.join(', ')+' home')}
   document.getElementById('saved-ring').textContent=ring;
   document.getElementById('saved-summary').textContent=summary;
+  renderSavedReceipt(e,saveDate);
   show('s-saved');
 }
+
+function renderSavedReceipt(e,saveDate){
+  const dateEl=document.getElementById('saved-date');
+  const receiptEl=document.getElementById('saved-receipt');
+  if(dateEl)dateEl.textContent=fmtDate(saveDate);
+  if(!receiptEl)return;
+  const rows=[
+    ['Logged',new Date(e.loggedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}).toLowerCase()],
+    ['Entry type',savedEntryType(e)],
+    ['Kids',savedKidsLine(e)],
+    ['Status','Read-only after 24 hours'],
+  ];
+  if(e.diary)rows.splice(3,0,['Note','Added']);
+  if(e.attachment)rows.splice(3,0,['Attachment','Screenshot included']);
+  receiptEl.innerHTML=rows.map(([key,val])=>`<div class="saved-receipt-row"><span>${escHtml(key)}</span><strong>${escHtml(val)}</strong></div>`).join('');
+}
+function savedEntryType(e){
+  if(e.week==='other')return'Special day';
+  if(e.dadMode==='mom-had')return'Your day changed';
+  if(e.dadMode==='dad-helped-mom')return coParent()+' helped';
+  if(e.momMode==='easy')return coParentPoss()+' day';
+  if(e.momMode==='helped')return'You helped';
+  if(e.momMode==='dad-had')return'Kids with you';
+  return currentParentPoss()+' day';
+}
+function savedKidsLine(e){
+  if(e.week==='other')return'Exception note';
+  if(e.dadMode==='mom-had')return(e.momHadKidsOnDadWeek||[]).join(', ')||'Not specified';
+  if(e.momMode==='dad-had')return(e.dadHadKids||[]).join(', ')||'Not specified';
+  if(e.momMode==='helped')return(e.helpedKids||[]).join(', ')||'Not specified';
+  const kids=e.kidsWithDad||[];
+  if(kids.length===KIDS.length)return kidsCountLabel();
+  if(kids.length===0)return'No kids with you';
+  return kids.join(', ');
+}
+function goBackFromSaved(){goBackFromReview()}
 
 // CALENDAR
 function showCal(){

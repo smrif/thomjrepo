@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Custody Tracker">
 <title>Custody Tracker</title>
-<link rel="stylesheet" href="styles.css?v=onboarding-terms">
+<link rel="stylesheet" href="styles.css?v=single-kid-skip-1">
 </head>
 <body>
 <div class="app" id="app" style="padding-bottom:80px">
@@ -839,9 +839,9 @@
   <p class="q">Does everything look right?</p>
   <p class="sub">Review the day before saving it to your log.</p>
   <div id="review-content"></div>
-  <div style="font-size:12px;color:#999;text-align:center;margin:12px 0 4px" id="review-timestamp-note"></div>
   <button class="btn primary" onclick="saveEntry()" style="width:100%;padding:16px;font-size:16px;margin-top:.5rem">Log it — looks good</button>
   <button class="btn" onclick="goBackFromReview()" style="width:100%;margin-top:10px">Edit something</button>
+  <div style="font-size:12px;color:#999;text-align:center;margin:12px 0 4px" id="review-timestamp-note"></div>
   <div class="bottom-nav">
     <button class="bottom-nav-item active" onclick="show('s-home')"><span class="nav-home"></span><strong>Today</strong></button>
     <button class="bottom-nav-item" onclick="showCal()"><span class="nav-calendar"></span><strong>Calendar</strong></button>
@@ -858,12 +858,19 @@
     <div class="back-spacer"></div>
   </div>
   <div class="saved-card">
+    <button class="saved-card-edit" onclick="goBackFromSaved()">Edit</button>
     <div class="success-ring" id="saved-ring">✓</div>
     <p class="q">Logged</p>
+    <div class="saved-date" id="saved-date"></div>
     <p class="sub" id="saved-summary"></p>
+    <div class="saved-receipt" id="saved-receipt"></div>
   </div>
   <div class="saved-actions">
     <button class="btn primary" onclick="show('s-home')">Back to today</button>
+    <div class="saved-action-row">
+      <button class="btn" onclick="showCal()">View calendar</button>
+      <button class="btn" onclick="showExport()">Reports</button>
+    </div>
   </div>
   <div class="bottom-nav">
     <button class="bottom-nav-item active" onclick="show('s-home')"><span class="nav-home"></span><strong>Today</strong></button>
@@ -1053,6 +1060,6 @@
   </div>
 </div>
 </div><!-- end .app -->
-<script src="app.js?v=settings-copy"></script>
+<script src="app.js?v=single-kid-skip-1"></script>
 </body>
 </html>
