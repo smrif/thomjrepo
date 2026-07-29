@@ -215,7 +215,6 @@ def build():
     add_h2(doc, "Top-Level Choice")
     add_number(doc, "My day")
     add_number(doc, "Other parent's day")
-    add_number(doc, "Special day")
 
     add_h2(doc, "My Day Branch")
     add_table(
@@ -240,9 +239,6 @@ def build():
         ],
         [2300, 4200, 2860]
     )
-
-    add_h2(doc, "Special Day Branch")
-    add_para(doc, "Special days go directly to a special-day diary note with optional screenshot attachment, then Review and Saved.")
 
     add_h1(doc, "3. Schedule Change Context")
     add_para(doc, "This appears only when actual custody differs from the scheduled day.")
@@ -272,7 +268,6 @@ def build():
     add_bullet(doc, "Blue with diagonal stripes: your day, kids ended up with co-parent.")
     add_bullet(doc, "Soft green: other parent's scheduled day.")
     add_bullet(doc, "Green with diagonal stripes: other parent's day, kids ended up with you.")
-    add_bullet(doc, "White/outlined: special day.")
     add_bullet(doc, "Calendar detail shows logged timestamp, change-context badges, screenshot thumbnail/full image, and entry details.")
     add_bullet(doc, "Reports currently include summary stats, date-range filters, custody deviation report first, pressure/agreed flags, print, and preview auto-scroll.")
 

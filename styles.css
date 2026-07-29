@@ -106,7 +106,7 @@ hr{border:none;border-top:1px solid #ebebeb;margin:1.25rem 0}
 .cal-nav-actions{display:flex;gap:10px}
 .cal-nav-btn{border:1.5px solid #e1e0e5;background:#fff;color:#11172f;border-radius:18px;width:54px;height:54px;cursor:pointer;font-size:30px;line-height:1;font-family:inherit;box-shadow:0 8px 18px rgba(28,22,48,.05)}
 .cal-nav-btn:active{transform:scale(.97);opacity:.75}
-.legend{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-bottom:22px}
+.legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-bottom:22px}
 .leg-item{display:flex;align-items:center;justify-content:center;gap:5px;font-size:10.5px;color:#11172f;border:1px solid #e1e0e5;background:#fff;border-radius:999px;padding:6px 4px;box-shadow:0 6px 14px rgba(28,22,48,.03);min-width:0;line-height:1.1;white-space:nowrap}
 .leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .leg-dot.dad-day{background:#ddeeff;border:1.5px solid #7ab8f5}
@@ -114,7 +114,6 @@ hr{border:none;border-top:1px solid #ebebeb;margin:1.25rem 0}
 .leg-dot.mom-day{background:#d6f0e0;border:1.5px solid #6bc88a}
 .leg-dot.mom-day-dad-has{background:repeating-linear-gradient(45deg,#d6f0e0,#d6f0e0 3px,#bce0cc 3px,#bce0cc 6px);border:1.5px solid #6bc88a}
 .leg-dot.changed{background:repeating-linear-gradient(45deg,#ddeeff,#ddeeff 3px,#c4d9f0 3px,#c4d9f0 6px);border:1.5px solid #7ab8f5}
-.leg-dot.special{background:#fff;border:2px solid #f0c040}
 .leg-dot.unlogged{background:#f0edf2}
 .cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin-bottom:18px}
 .cal-lbl{text-align:center;font-size:12px;color:#8a8894;padding:4px 0 8px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
@@ -139,9 +138,6 @@ hr{border:none;border-top:1px solid #ebebeb;margin:1.25rem 0}
 .cal-cell.mom-day-dad-has .cal-date-num{color:#1a4a8a;position:relative;z-index:2}
 .cal-cell.mom-day-dad-has::before{content:'';position:absolute;inset:25%;background:#ddeeff;border-radius:50%;z-index:1}
 
-/* Special / other day: clear outlined */
-.cal-cell.special{background:#fff;border-color:#f0c040;border-width:2px;box-shadow:none}
-.cal-cell.special .cal-date-num{color:#a07800}
 .cal-cell.missed{background:#f6f4f5;color:#aaa}
 .cal-cell.today:not(.selected){box-shadow:inset 0 0 0 1px rgba(68,48,160,.42),0 8px 18px rgba(68,48,160,.06)}
 .cal-cell.selected{box-shadow:inset 0 0 0 3px #11172f,0 10px 20px rgba(17,23,47,.14)}
@@ -375,11 +371,10 @@ select:focus{border-color:#6c63d4}
 .checkin-decision-card.planned{border-color:#6b57c7;background:linear-gradient(135deg,#fff 0%,#fff 58%,#f5f2ff 100%)}
 .checkin-decision-card.sel{border-color:#6b57c7;background:linear-gradient(135deg,#fff 0%,#fff 58%,#f5f2ff 100%)}
 .checkin-decision-card.sel-mom{border-color:#ef9b58;background:#fffaf7}
-.checkin-decision-card.sel-other{border-color:#d8b24c;background:#fffaf0}
 .decision-icon{width:64px;height:64px;border-radius:50%;display:block;position:relative;background:#f0edf9}
-.planned .decision-icon{background:#eefaf4}.change .decision-icon{background:#fff2ed}.special .decision-icon{background:#f2efff}
+.planned .decision-icon{background:#eefaf4}.change .decision-icon{background:#fff2ed}
 .decision-icon svg{position:absolute;inset:15px;width:34px;height:34px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-.planned .decision-icon{color:#4db184}.change .decision-icon{color:#ef7c35}.special .decision-icon{color:#6b57c7}
+.planned .decision-icon{color:#4db184}.change .decision-icon{color:#ef7c35}
 .decision-copy{min-width:0;display:flex;flex-direction:column;gap:8px}
 .decision-title{font-size:23px;font-weight:800;line-height:1.15;color:#11172f}
 .decision-desc{font-size:18px;line-height:1.35;color:#70717a}
@@ -530,23 +525,6 @@ select:focus{border-color:#6c63d4}
 #s-mom-easy input[type=text],#s-helped-activity input[type=text]{border-radius:18px;border-color:#e1e0e5;background:#fff;box-shadow:0 8px 18px rgba(28,22,48,.04);font-size:16px}
 #s-mom-easy .btn.primary,#s-mom-helped-kids2 .btn.primary,#s-helped-activity .btn.primary,#s-mom-dad-had .btn.primary{min-height:56px;border-radius:16px;background:#4430a0;border-color:#4430a0;box-shadow:0 10px 20px rgba(68,48,160,.16)}
 
-#s-other-diary{max-width:430px;margin:0 auto}
-#s-other-diary .top-bar{margin:4px 0 24px}
-#s-other-diary .back-btn{background:none;border:none;box-shadow:none;color:#4430a0;font-size:20px;font-weight:800;padding:0}
-#s-other-diary .logo{font-size:14px;font-weight:800;color:#8a8894;letter-spacing:.18em}
-#s-other-diary .progress{gap:10px;margin-bottom:32px}
-#s-other-diary .pd{height:5px;border-radius:999px;background:#dfdfe0}
-#s-other-diary .pd.active,#s-other-diary .pd.done{background:#4430a0}
-#s-other-diary>.q{font-family:Georgia,'Times New Roman',serif;font-size:32px;font-weight:800;line-height:1.1;color:#11172f;letter-spacing:0;margin-bottom:14px}
-#s-other-diary>.sub{font-size:18px;color:#70717a;line-height:1.35;margin-bottom:22px}
-.special-context-card{display:flex;align-items:center;gap:14px;background:#fff;border:1.5px solid #e1e0e5;border-radius:20px;padding:16px;margin-bottom:18px;box-shadow:0 8px 18px rgba(28,22,48,.04);color:#11172f}
-.special-context-card strong{font-size:17px;color:#11172f}
-.special-context-card span span{font-size:14px;color:#70717a;line-height:1.35}
-.special-context-icon{width:54px;height:54px;border-radius:50%;background:#f1edff;color:#6b57c7;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.special-context-icon svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-#s-other-diary textarea{border-radius:20px;border-color:#e1e0e5;background:#fff;min-height:170px;box-shadow:0 8px 18px rgba(28,22,48,.04);font-size:16px}
-#s-other-diary .btn{min-height:56px;border-radius:16px}
-#s-other-diary .btn.primary{background:#4430a0;border-color:#4430a0;box-shadow:0 10px 20px rgba(68,48,160,.16)}
 
 @media (max-width:360px){
   .bottom-nav{padding-left:6px;padding-right:6px;gap:0}

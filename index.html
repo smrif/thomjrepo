@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Custody Tracker">
 <title>Custody Tracker</title>
-<link rel="stylesheet" href="styles.css?v=single-kid-back-fix-1">
+<link rel="stylesheet" href="styles.css?v=remove-special-day-1">
 </head>
 <body>
 <div class="app" id="app" style="padding-bottom:80px">
@@ -392,16 +392,6 @@
       <span class="decision-copy">
         <span class="decision-title" id="week-coparent-title">Other parent's day</span>
         <span class="decision-desc" id="week-coparent-desc">This was their scheduled custody day.</span>
-      </span>
-      <span class="decision-chevron">›</span>
-    </button>
-    <button class="checkin-decision-card special" id="wk-other" onclick="setWeek('other')">
-      <span class="decision-icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.5 5.2L19 10l-5.5 1.8L12 17l-1.5-5.2L5 10l5.5-1.8L12 3z"></path><path d="M5.5 15l.7 2.3 2.3.7-2.3.7-.7 2.3-.7-2.3-2.3-.7 2.3-.7.7-2.3z"></path></svg>
-      </span>
-      <span class="decision-copy">
-        <span class="decision-title">Special day</span>
-        <span class="decision-desc">Holiday, travel, tournament, or another exception.</span>
       </span>
       <span class="decision-chevron">›</span>
     </button>
@@ -795,40 +785,6 @@
   <button class="btn primary" id="diary-next-btn" onclick="goToReview()" style="width:100%;margin-top:1rem">Review &amp; save →</button>
 </div>
 
-<!-- OTHER -->
-<div class="screen" id="s-other-diary">
-  <div class="top-bar">
-    <button class="back-btn" onclick="show('s-week')">← Back</button>
-    <div class="logo">SPECIAL DAY</div>
-    <div class="back-spacer"></div>
-  </div>
-  <div class="progress" id="prog-other-diary"></div>
-  <p class="q">What's the situation today?</p>
-  <p class="sub">Use this for holidays, travel, tournaments, or another exception.</p>
-  <div class="special-context-card">
-    <span class="special-context-icon">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.6 5.1L19 10l-5.4 1.9L12 17l-1.6-5.1L5 10l5.4-1.9L12 3z"></path><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"></path></svg>
-    </span>
-    <span><strong>Exception day</strong><br><span>This will be saved as a special custody note.</span></span>
-  </div>
-  <textarea id="other-diary-input" placeholder="Christmas Day, tournament travel, joint event..."></textarea>
-
-  <div class="attach-section" style="margin-top:1rem">
-    <div class="attach-label">📎 Attach a screenshot for context <span style="color:#aaa;font-weight:400;font-size:12px">optional</span></div>
-    <div class="attach-sub">Text message, email, or anything relevant to this entry</div>
-    <div id="other-attach-preview" class="attach-preview" style="display:none">
-      <img id="other-attach-img" src="" alt="Attached screenshot">
-      <button class="attach-remove-btn" onclick="removeAttachment('other')" title="Remove">✕</button>
-    </div>
-    <label class="attach-btn" id="other-attach-btn">
-      <input type="file" id="other-attach-input" accept="image/*" style="display:none" onchange="handleAttachment(this,'other')">
-      📷 Add screenshot
-    </label>
-  </div>
-
-  <button class="btn primary" onclick="goToReview()" style="width:100%;margin-top:1rem">Review &amp; save →</button>
-</div>
-
 <!-- REVIEW & CONFIRM -->
 <div class="screen" id="s-review">
   <div class="top-bar">
@@ -910,7 +866,6 @@
       <div class="leg-item"><div class="leg-dot dad-day"></div><span>You</span></div>
       <div class="leg-item"><div class="leg-dot mom-day"></div><span>Co-parent</span></div>
       <div class="leg-item"><div class="leg-dot changed"></div><span>Changed</span></div>
-      <div class="leg-item"><div class="leg-dot special"></div><span>Special</span></div>
     </div>
     <div class="cal-grid" id="cal-grid"></div>
     <div id="cal-detail"></div>
@@ -1060,6 +1015,6 @@
   </div>
 </div>
 </div><!-- end .app -->
-<script src="app.js?v=july-demo-data-1"></script>
+<script src="app.js?v=remove-special-day-1"></script>
 </body>
 </html>

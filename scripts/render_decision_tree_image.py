@@ -16,8 +16,6 @@ BLUE = "#dceefe"
 BLUE_EDGE = "#6aa9e9"
 GREEN = "#def4e7"
 GREEN_EDGE = "#65b984"
-YELLOW = "#fff2c7"
-YELLOW_EDGE = "#d8aa2c"
 WHITE = "#ffffff"
 GRAY = "#eef1f5"
 RED = "#ffe3df"
@@ -249,24 +247,6 @@ def main():
     arrow(draw, center_right(pick_me), center_left(change_their))
     arrow(draw, center_right(change_their), center_left(diary_b))
     arrow(draw, center_right(diary_b), center_left(review_c))
-
-    # Special day lane
-    label(draw, (110, 1310, 2860, 1375), "Special day", YELLOW, YELLOW_EDGE)
-    special = (170, 1435, 430, 1520)
-    special_diary = (530, 1435, 850, 1520)
-    special_review = (980, 1435, 1235, 1520)
-    saved = (1355, 1435, 1665, 1520)
-    for xy, text, fill in [
-        (special, "Special day", YELLOW),
-        (special_diary, "Special-day diary + optional screenshot", WHITE),
-        (special_review, "Review", WHITE),
-        (saved, "Saved", WHITE),
-    ]:
-        box(draw, xy, text, fill=fill)
-    elbow(draw, [bottom_center(day_type), (615, 1270), (300, 1270), top_center(special)])
-    arrow(draw, center_right(special), center_left(special_diary))
-    arrow(draw, center_right(special_diary), center_left(special_review))
-    arrow(draw, center_right(special_review), center_left(saved))
 
     # Schedule change context detail
     draw.rounded_rectangle((110, 1640, 2860, 2180), radius=26, fill="#fbfbfd", outline=PURPLE_EDGE, width=4)

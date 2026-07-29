@@ -10,10 +10,7 @@ flowchart TD
 
   DayType --> MyDay["My day"]
   DayType --> TheirDay["Other parent's day"]
-  DayType --> Special["Special day"]
 
-  Special --> SpecialDiary["Special-day diary + optional screenshot"]
-  SpecialDiary --> Review["Review"]
   Review --> Saved["Saved"]
 
   MyDay --> MyDayActual["Were the kids with you today?"]
@@ -81,7 +78,7 @@ flowchart TD
 
 Core shape:
 
-- `week`: `dad`, `mom`, `other`, or `not-logged`
+- `week`: `dad`, `mom`, or `not-logged`
 - `dadMode`: `normal`, `dad-helped-mom`, or `mom-had`
 - `momMode`: `easy`, `helped`, or `dad-had`
 - `kidsWithDad`

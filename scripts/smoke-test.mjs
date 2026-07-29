@@ -431,12 +431,12 @@ try {
   assertIncludes(longLegendText, 'You', 'Compact calendar legend');
   assertIncludes(longLegendText, 'Co-parent', 'Compact calendar legend');
   assertIncludes(longLegendText, 'Changed', 'Compact calendar legend');
-  assertIncludes(longLegendText, 'Special', 'Compact calendar legend');
+  assertExcludes(longLegendText, 'Special', 'Compact calendar legend');
   assertExcludes(longLegendText, longCurrentParent, 'Compact calendar legend');
   assertExcludes(longLegendText, longCoParent, 'Compact calendar legend');
   assertExcludes(longLegendText, "L's", 'Long-label calendar legend');
   const legendColumnCount = await page.locator('#tc-cal .legend').evaluate(node => getComputedStyle(node).gridTemplateColumns.split(' ').length);
-  if (legendColumnCount !== 4) throw new Error(`Calendar legend should render as four columns, saw ${legendColumnCount}.`);
+  if (legendColumnCount !== 3) throw new Error(`Calendar legend should render as three columns, saw ${legendColumnCount}.`);
   await assertNoHorizontalOverflow('Calendar with long labels');
 
   await click('#s-cal .bottom-nav-item[onclick="showExport()"]');
