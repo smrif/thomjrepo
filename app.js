@@ -1785,12 +1785,48 @@ function seedJuneDemoData(){
   });
 }
 
+function seedJulyDemoData(){
+  const kids=['Thomas','Presley','Hayden'];
+  saveConfig({
+    currentParentLabel:'Dad',
+    coParentLabel:'Mom',
+    email:'dad@example.com',
+    children:kids,
+    purpose:'Calendar QA demo data',
+    termsAccepted:true,
+  });
+  putEntries({
+    '2026-07-01':{week:'dad',dadMode:'normal',momMode:null,kidsWithDad:[...kids],absentData:{},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'Placeholder: normal overnight with all kids. Dinner, reading, and bedtime routine.',attachment:null,changeAgreed:null,changePressured:null,loggedAt:'2026-07-01T21:08:00-07:00'},
+    '2026-07-02':{week:'dad',dadMode:'normal',momMode:null,kidsWithDad:[kids[0],kids[2]],absentData:{[kids[1]]:{location:'activity',note:'Placeholder: evening rehearsal with Mom handling pickup.'}},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'Placeholder: split evening. Two kids home, one at an activity.',attachment:null,changeAgreed:null,changePressured:null,loggedAt:'2026-07-02T20:54:00-07:00'},
+    '2026-07-03':{week:'dad',dadMode:'mom-had',momMode:null,kidsWithDad:[],absentData:{},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[kids[1]],momHelpedOnDadWeek:{},diary:'Placeholder: Presley stayed with Mom after a schedule change.',attachment:null,changeAgreed:true,changePressured:false,loggedAt:'2026-07-03T21:22:00-07:00'},
+    '2026-07-04':{week:'other',dadMode:null,momMode:null,kidsWithDad:[],absentData:{},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'Placeholder: holiday schedule exception for July 4.',attachment:null,changeAgreed:null,changePressured:null,loggedAt:'2026-07-04T19:30:00-07:00'},
+    '2026-07-05':{week:'mom',dadMode:null,momMode:'easy',kidsWithDad:[],absentData:{},momOpts:['call'],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'Placeholder: Mom had the kids. Short goodnight call.',attachment:null,changeAgreed:null,changePressured:null,loggedAt:'2026-07-05T20:41:00-07:00'},
+    '2026-07-06':{week:'mom',dadMode:null,momMode:'helped',kidsWithDad:[],absentData:{},momOpts:[],helpedKids:[kids[0],kids[2]],helpedData:{[kids[0]]:{acts:['school','food'],note:'Placeholder: pickup and dinner.'},[kids[2]]:{acts:['sports'],note:'Placeholder: practice dropoff.'}},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'Placeholder: helped during Mom week with pickup and practice.',attachment:null,changeAgreed:null,changePressured:null,loggedAt:'2026-07-06T21:10:00-07:00'},
+    '2026-07-07':{week:'mom',dadMode:null,momMode:'dad-had',kidsWithDad:[kids[1]],absentData:{},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[kids[1]],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'Placeholder: Presley stayed overnight with Dad during Mom week.',attachment:null,changeAgreed:true,changePressured:false,loggedAt:'2026-07-07T22:02:00-07:00'},
+    '2026-07-08':{week:'not-logged',intentional:false,loggedAt:'2026-07-09T08:00:00-07:00'},
+    '2026-07-09':{week:'dad',dadMode:'dad-helped-mom',momMode:null,kidsWithDad:[kids[0],kids[1]],absentData:{},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[kids[2]],momHelpedOnDadWeek:{[kids[2]]:{acts:['medical'],note:'Placeholder: Mom handled appointment transportation.'}},diary:'Placeholder: Mom helped with Hayden appointment while others stayed with Dad.',attachment:null,changeAgreed:null,changePressured:null,loggedAt:'2026-07-09T21:35:00-07:00'},
+    '2026-07-10':{week:'dad',dadMode:'normal',momMode:null,kidsWithDad:[...kids],absentData:{},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'Placeholder: all kids home for movie night.',attachment:null,changeAgreed:null,changePressured:null,loggedAt:'2026-07-10T20:58:00-07:00'},
+    '2026-07-11':{week:'other',dadMode:null,momMode:null,kidsWithDad:[],absentData:{},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'Placeholder: tournament day with nonstandard handoff.',attachment:null,changeAgreed:null,changePressured:null,loggedAt:'2026-07-11T18:44:00-07:00'},
+    '2026-07-12':{week:'mom',dadMode:null,momMode:'easy',kidsWithDad:[],absentData:{},momOpts:['call','text'],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'Placeholder: Mom had all kids; text update received.',attachment:null,changeAgreed:null,changePressured:null,loggedAt:'2026-07-12T20:20:00-07:00'},
+    '2026-07-13':{week:'mom',dadMode:null,momMode:'helped',kidsWithDad:[],absentData:{},momOpts:[],helpedKids:[kids[0]],helpedData:{[kids[0]]:{acts:['camp'],note:'Placeholder: camp pickup and snack.'}},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'Placeholder: helped with camp pickup.',attachment:null,changeAgreed:null,changePressured:null,loggedAt:'2026-07-13T19:52:00-07:00'},
+    '2026-07-14':{week:'not-logged',intentional:true,loggedAt:'2026-07-14T23:10:00-07:00'},
+    '2026-07-15':{week:'dad',dadMode:'normal',momMode:null,kidsWithDad:[kids[0],kids[1]],absentData:{[kids[2]]:{location:'camp',note:'Placeholder: overnight camp.'}},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'Placeholder: current-day entry with one child at overnight camp.',attachment:null,changeAgreed:null,changePressured:null,loggedAt:'2026-07-15T20:15:00-07:00'}
+  });
+  calM=6;
+  calY=2026;
+  trendsM=6;
+  trendsY=2026;
+  selectedCalDate='2026-07-15';
+}
+
 const DEMO_PARAMS=new URLSearchParams(window.location.search);
-if(DEMO_PARAMS.get('demo')==='june')seedJuneDemoData();
+const DEMO_MODE=DEMO_PARAMS.get('demo');
+if(DEMO_MODE==='june')seedJuneDemoData();
+if(DEMO_MODE==='july')seedJulyDemoData();
 renderConfigurableUi();
 if(hasSavedConfig()){
   initHome();
 }else{
   initOnboarding();show('s-ob-welcome');
 }
-if(DEMO_PARAMS.get('demo')==='june')showCal();
+if(DEMO_MODE==='june'||DEMO_MODE==='july')showCal();
