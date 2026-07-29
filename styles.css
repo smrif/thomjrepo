@@ -406,18 +406,18 @@ select:focus{border-color:#6c63d4}
 #s-dad-mode .scene-card.sel-dad .scene-desc,#s-dad-mode .scene-card.sel-warn .scene-desc,#s-mom-mode .scene-card.sel-dad .scene-desc,#s-mom-mode .scene-card.sel-warn .scene-desc{color:#70717a}
 
 /* Dad-day branch screens */
-#s-allkids,#s-whichkids,#s-absent,#s-mom-helped-kids,#s-mom-helped-activity,#s-dad-wk-mom-had{max-width:430px;margin:0 auto}
-#s-allkids .top-bar,#s-whichkids .top-bar,#s-absent .top-bar,#s-mom-helped-kids .top-bar,#s-mom-helped-activity .top-bar,#s-dad-wk-mom-had .top-bar{margin:4px 0 24px}
-#s-allkids .back-btn,#s-whichkids .back-btn,#s-absent .back-btn,#s-mom-helped-kids .back-btn,#s-mom-helped-activity .back-btn,#s-dad-wk-mom-had .back-btn{background:none;border:none;box-shadow:none;color:#4430a0;font-size:20px;font-weight:800;padding:0}
-#s-allkids .logo,#s-whichkids .logo,#s-absent .logo,#s-mom-helped-kids .logo,#s-mom-helped-activity .logo,#s-dad-wk-mom-had .logo{font-size:14px;font-weight:800;color:#8a8894;letter-spacing:.18em}
-#s-allkids .progress,#s-whichkids .progress,#s-absent .progress,#s-mom-helped-kids .progress,#s-mom-helped-activity .progress,#s-dad-wk-mom-had .progress{gap:10px;margin-bottom:32px}
-#s-allkids .pd,#s-whichkids .pd,#s-absent .pd,#s-mom-helped-kids .pd,#s-mom-helped-activity .pd,#s-dad-wk-mom-had .pd{height:5px;border-radius:999px;background:#dfdfe0}
-#s-allkids .pd.active,#s-allkids .pd.done,#s-whichkids .pd.active,#s-whichkids .pd.done,#s-absent .pd.active,#s-absent .pd.done,#s-mom-helped-kids .pd.active,#s-mom-helped-kids .pd.done,#s-mom-helped-activity .pd.active,#s-mom-helped-activity .pd.done,#s-dad-wk-mom-had .pd.active,#s-dad-wk-mom-had .pd.done{background:#4430a0}
-#s-allkids>.q,#s-whichkids>.q,#s-absent>.q,#s-mom-helped-kids>.q,#s-mom-helped-activity>.q,#s-dad-wk-mom-had>.q{font-family:Georgia,'Times New Roman',serif;font-size:32px;font-weight:800;line-height:1.1;color:#11172f;letter-spacing:0;margin-bottom:14px}
-#s-allkids>.sub,#s-whichkids>.sub,#s-mom-helped-kids>.sub,#s-dad-wk-mom-had>.sub{font-size:18px;color:#70717a;line-height:1.35;margin-bottom:22px}
-#s-allkids .btn-row{display:flex;flex-direction:column;gap:16px;margin-bottom:0}
-#s-allkids .btn{width:100%;min-height:94px;border:1.5px solid #e1e0e5;border-radius:22px;background:#fff;color:#11172f;padding:18px;text-align:left;font-size:22px;font-weight:800;box-shadow:0 12px 28px rgba(28,22,48,.06)}
-#s-allkids .btn.sel{border-color:#6b57c7;background:linear-gradient(135deg,#fff 0%,#fff 58%,#f5f2ff 100%);color:#11172f}
+#s-allkids,#s-whichkids,#s-absent,#s-mom-helped-kids,#s-mom-helped-activity,#s-dad-wk-mom-had,#s-dad-help-choice{max-width:430px;margin:0 auto}
+#s-allkids .top-bar,#s-whichkids .top-bar,#s-absent .top-bar,#s-mom-helped-kids .top-bar,#s-mom-helped-activity .top-bar,#s-dad-wk-mom-had .top-bar,#s-dad-help-choice .top-bar{margin:4px 0 24px}
+#s-allkids .back-btn,#s-whichkids .back-btn,#s-absent .back-btn,#s-mom-helped-kids .back-btn,#s-mom-helped-activity .back-btn,#s-dad-wk-mom-had .back-btn,#s-dad-help-choice .back-btn{background:none;border:none;box-shadow:none;color:#4430a0;font-size:20px;font-weight:800;padding:0}
+#s-allkids .logo,#s-whichkids .logo,#s-absent .logo,#s-mom-helped-kids .logo,#s-mom-helped-activity .logo,#s-dad-wk-mom-had .logo,#s-dad-help-choice .logo{font-size:14px;font-weight:800;color:#8a8894;letter-spacing:.18em}
+#s-allkids .progress,#s-whichkids .progress,#s-absent .progress,#s-mom-helped-kids .progress,#s-mom-helped-activity .progress,#s-dad-wk-mom-had .progress,#s-dad-help-choice .progress{gap:10px;margin-bottom:32px}
+#s-allkids .pd,#s-whichkids .pd,#s-absent .pd,#s-mom-helped-kids .pd,#s-mom-helped-activity .pd,#s-dad-wk-mom-had .pd,#s-dad-help-choice .pd{height:5px;border-radius:999px;background:#dfdfe0}
+#s-allkids .pd.active,#s-allkids .pd.done,#s-whichkids .pd.active,#s-whichkids .pd.done,#s-absent .pd.active,#s-absent .pd.done,#s-mom-helped-kids .pd.active,#s-mom-helped-kids .pd.done,#s-mom-helped-activity .pd.active,#s-mom-helped-activity .pd.done,#s-dad-wk-mom-had .pd.active,#s-dad-wk-mom-had .pd.done,#s-dad-help-choice .pd.active,#s-dad-help-choice .pd.done{background:#4430a0}
+#s-allkids>.q,#s-whichkids>.q,#s-absent>.q,#s-mom-helped-kids>.q,#s-mom-helped-activity>.q,#s-dad-wk-mom-had>.q,#s-dad-help-choice>.q{font-family:Georgia,'Times New Roman',serif;font-size:32px;font-weight:800;line-height:1.1;color:#11172f;letter-spacing:0;margin-bottom:14px}
+#s-allkids>.sub,#s-whichkids>.sub,#s-mom-helped-kids>.sub,#s-dad-wk-mom-had>.sub,#s-dad-help-choice>.sub{font-size:18px;color:#70717a;line-height:1.35;margin-bottom:22px}
+#s-allkids .btn-row,#s-dad-help-choice .btn-row{display:flex;flex-direction:column;gap:16px;margin-bottom:0}
+#s-allkids .btn,#s-dad-help-choice .btn{width:100%;min-height:94px;border:1.5px solid #e1e0e5;border-radius:22px;background:#fff;color:#11172f;padding:18px;text-align:left;font-size:22px;font-weight:800;box-shadow:0 12px 28px rgba(28,22,48,.06)}
+#s-allkids .btn.sel,#s-dad-help-choice .btn.sel{border-color:#6b57c7;background:linear-gradient(135deg,#fff 0%,#fff 58%,#f5f2ff 100%);color:#11172f}
 #s-whichkids .kid-grid,#s-mom-helped-kids .kid-grid,#s-dad-wk-mom-had .kid-grid{gap:12px;margin-bottom:18px}
 #s-whichkids .kid-btn,#s-mom-helped-kids .kid-btn,#s-dad-wk-mom-had .kid-btn{min-height:76px;border:1.5px solid #e1e0e5;border-radius:18px;background:#fff;box-shadow:0 8px 18px rgba(28,22,48,.05);color:#11172f}
 #s-whichkids .kid-btn.with-dad,#s-mom-helped-kids .kid-btn.with-mom,#s-dad-wk-mom-had .kid-btn.with-mom,#s-whichkids .kid-btn.all-mom{border-color:#6b57c7;background:#f5f2ff;color:#4430a0}
@@ -511,8 +511,8 @@ select:focus{border-color:#6c63d4}
 #s-mom-easy .pd.active,#s-mom-easy .pd.done,#s-mom-helped-kids2 .pd.active,#s-mom-helped-kids2 .pd.done,#s-helped-activity .pd.active,#s-helped-activity .pd.done,#s-mom-dad-had .pd.active,#s-mom-dad-had .pd.done{background:#4430a0}
 #s-mom-easy>.q,#s-mom-helped-kids2>.q,#s-helped-activity>.q,#s-mom-dad-had>.q{font-family:Georgia,'Times New Roman',serif;font-size:32px;font-weight:800;line-height:1.1;color:#11172f;letter-spacing:0;margin-bottom:14px}
 #s-mom-easy>.sub,#s-mom-helped-kids2>.sub,#s-mom-dad-had>.sub{font-size:18px;color:#70717a;line-height:1.35;margin-bottom:22px}
-#s-mom-easy .option-list{gap:12px;margin-bottom:18px}
-#s-mom-easy .opt{min-height:64px;border:1.5px solid #e1e0e5;border-radius:18px;background:#fff;box-shadow:0 8px 18px rgba(28,22,48,.04);font-size:16px;color:#11172f}
+#s-mom-easy .option-list{gap:16px;margin-bottom:22px}
+#s-mom-easy .opt{min-height:94px;border:1.5px solid #e1e0e5;border-radius:22px;background:#fff;box-shadow:0 12px 28px rgba(28,22,48,.06);font-size:22px;font-weight:800;color:#11172f}
 #s-mom-easy .opt.sel{border-color:#6b57c7;background:#f5f2ff;color:#4430a0}
 #s-mom-helped-kids2 .kid-grid,#s-mom-dad-had .kid-grid{gap:12px;margin-bottom:18px}
 #s-mom-helped-kids2 .kid-btn,#s-mom-dad-had .kid-btn{min-height:76px;border:1.5px solid #e1e0e5;border-radius:18px;background:#fff;box-shadow:0 8px 18px rgba(28,22,48,.05);color:#11172f}

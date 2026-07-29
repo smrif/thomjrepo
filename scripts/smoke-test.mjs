@@ -258,10 +258,12 @@ try {
   await expectActive('s-mom-mode');
   await click('#ft-easy');
   await expectActive('s-mom-easy');
-  await click('#s-mom-easy .opt[onclick*="brief"]');
+  await click('#s-mom-easy .opt[onclick*="helped"]');
   if (await page.locator('#easy-review-btn').isDisabled()) {
-    throw new Error('Brief visit should enable Review & save.');
+    throw new Error('Nested help choice should enable Continue.');
   }
+  await click('#easy-review-btn');
+  await expectActive('s-mom-helped-kids2');
 
   await bootstrap();
   await click('#s-home .home-primary');

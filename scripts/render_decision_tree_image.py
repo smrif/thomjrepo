@@ -166,16 +166,16 @@ def main():
 
     for xy, text, fill in [
         (my_day, "My day", BLUE),
-        (my_actual, "Were the kids with you today?", WHITE),
-        (my_normal, "I had the kids", WHITE),
+        (my_actual, "Where did the kids stay tonight?", WHITE),
+        (my_normal, "With me", WHITE),
         (all_home, "Are all kids sleeping at your house?", WHITE),
         (confirm_a, "Confirm each kid's location", GRAY),
         (diary_a, "Diary + optional screenshot", WHITE),
         (review_a, "Review", WHITE),
-        (co_helped, "Co-parent helped", WHITE),
+        (co_helped, "Did co-parent help?", WHITE),
         (pick_co, "Pick kids co-parent helped with", WHITE),
         (activity_co, "For each kid: what did co-parent do?", WHITE),
-        (kids_coparent, "Kids ended up with co-parent", RED),
+        (kids_coparent, "With co-parent", RED),
         (pick_coparent, "Pick kids at co-parent tonight", WHITE),
         (change_my, "Schedule change context", PURPLE),
     ]:
@@ -186,12 +186,12 @@ def main():
     elbow(draw, [center_right(my_actual), (910, 557), (910, 447), center_left(my_normal)])
     arrow(draw, center_right(my_normal), center_left(all_home))
     arrow(draw, center_right(all_home), center_left(confirm_a))
-    arrow(draw, center_right(confirm_a), center_left(diary_a))
+    arrow(draw, center_right(confirm_a), center_left(co_helped))
+    elbow(draw, [center_right(co_helped), (1290, 577), (1290, 447), center_left(diary_a)])
     arrow(draw, center_right(diary_a), center_left(review_a))
     arrow(draw, center_right(co_helped), center_left(pick_co))
     arrow(draw, center_right(pick_co), center_left(activity_co))
-    elbow(draw, [center_right(activity_co), (2140, 577), (2140, 447), center_left(all_home)])
-    elbow(draw, [center_right(my_actual), (910, 557), center_left(co_helped)])
+    elbow(draw, [center_right(activity_co), (2140, 577), (2140, 447), center_left(diary_a)])
     elbow(draw, [center_right(my_actual), (910, 557), (910, 707), center_left(kids_coparent)])
     arrow(draw, center_right(kids_coparent), center_left(pick_coparent))
     arrow(draw, center_right(pick_coparent), center_left(change_my))
@@ -207,7 +207,6 @@ def main():
     i_helped = (980, 995, 1235, 1080)
     pick_helped = (1355, 995, 1665, 1080)
     helped_activity = (1785, 995, 2095, 1080)
-    confirm_b = (2215, 995, 2550, 1080)
     kids_me = (980, 1125, 1235, 1210)
     pick_me = (1355, 1125, 1665, 1210)
     change_their = (1785, 1125, 2095, 1210)
@@ -216,15 +215,14 @@ def main():
 
     for xy, text, fill in [
         (their_day, "Other parent's day", GREEN),
-        (their_actual, "Were the kids with your co-parent today?", WHITE),
-        (co_had, "Co-parent had the kids", WHITE),
-        (involvement, "Choose involvement: none, call, pickup, brief visit", WHITE),
+        (their_actual, "Where did the kids stay tonight?", WHITE),
+        (co_had, "With co-parent", WHITE),
+        (involvement, "Did you help?", WHITE),
         (review_b, "Review", WHITE),
-        (i_helped, "I helped", WHITE),
+        (i_helped, "Yes", WHITE),
         (pick_helped, "Pick kids you helped with", WHITE),
         (helped_activity, "For each kid: what did you do?", WHITE),
-        (confirm_b, "Confirm each kid's location", GRAY),
-        (kids_me, "Kids ended up with me", RED),
+        (kids_me, "With me", RED),
         (pick_me, "Pick kids who ended up with you", WHITE),
         (change_their, "Schedule change context", PURPLE),
         (diary_b, "Diary + optional screenshot", WHITE),
@@ -237,11 +235,10 @@ def main():
     elbow(draw, [center_right(their_actual), (910, 1017), (910, 907), center_left(co_had)])
     arrow(draw, center_right(co_had), center_left(involvement))
     arrow(draw, center_right(involvement), center_left(review_b))
-    elbow(draw, [center_right(their_actual), (910, 1017), center_left(i_helped)])
+    elbow(draw, [center_right(involvement), (1715, 907), (1715, 1037), center_left(i_helped)])
     arrow(draw, center_right(i_helped), center_left(pick_helped))
     arrow(draw, center_right(pick_helped), center_left(helped_activity))
-    arrow(draw, center_right(helped_activity), center_left(confirm_b))
-    elbow(draw, [center_right(confirm_b), (2590, 1037), (2590, 1167), center_left(review_c)])
+    elbow(draw, [center_right(helped_activity), (2160, 1037), (2160, 1167), center_left(diary_b)])
     elbow(draw, [center_right(their_actual), (910, 1017), (910, 1167), center_left(kids_me)])
     arrow(draw, center_right(kids_me), center_left(pick_me))
     arrow(draw, center_right(pick_me), center_left(change_their))

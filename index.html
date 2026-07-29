@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Custody Tracker">
 <title>Custody Tracker</title>
-<link rel="stylesheet" href="styles.css?v=remove-special-day-1">
+<link rel="stylesheet" href="styles.css?v=nested-help-tree-2">
 </head>
 <body>
 <div class="app" id="app" style="padding-bottom:80px">
@@ -407,28 +407,37 @@
     <div class="back-spacer"></div>
   </div>
   <div class="progress" id="prog-dad-mode"></div>
-  <p class="q">Were the kids with you today?</p>
-  <p class="sub">Choose what actually happened</p>
+  <p class="q">Where did the kids stay tonight?</p>
+  <p class="sub">Choose the overnight location first</p>
   <div class="scene-card" id="sc-dad-normal" onclick="setDadMode('normal')">
     <span class="decision-icon">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M8 12.5l2.6 2.6L16.5 9"></path></svg>
     </span>
-    <span class="decision-copy"><span class="scene-title">I had the kids</span><span class="scene-desc">Normal day, kids home with me tonight.</span></span>
-    <span class="decision-chevron">›</span>
-  </div>
-  <div class="scene-card" id="sc-dad-helped" onclick="setDadMode('dad-helped-mom')">
-    <span class="decision-icon">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12.5l2.7 2.7c.8.8 2.1.8 2.9 0l4.4-4.4c.8-.8.8-2.1 0-2.9s-2.1-.8-2.9 0l-1 1"></path><path d="M10.5 9.5l-1-1c-.8-.8-2.1-.8-2.9 0s-.8 2.1 0 2.9l1 1"></path><path d="M8.5 16.5l-2 2"></path><path d="M15.5 16.5l2 2"></path></svg>
-    </span>
-    <span class="decision-copy"><span class="scene-title">Co-parent helped</span><span class="scene-desc">Your day, but your co-parent helped with one or more kids.</span></span>
+    <span class="decision-copy"><span class="scene-title">With me</span><span class="scene-desc">Some or all kids stayed at your place tonight.</span></span>
     <span class="decision-chevron">›</span>
   </div>
   <div class="scene-card" id="sc-dad-momhad" onclick="setDadMode('mom-had')">
     <span class="decision-icon">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3L12 4z"></path><path d="M12 9v5"></path><path d="M12 17.5h.01"></path></svg>
     </span>
-    <span class="decision-copy"><span class="scene-title">Kids ended up with co-parent</span><span class="scene-desc">Your day, but the kids are with your co-parent tonight.</span></span>
+    <span class="decision-copy"><span class="scene-title">With co-parent</span><span class="scene-desc">Some or all kids stayed with your co-parent tonight.</span></span>
     <span class="decision-chevron">›</span>
+  </div>
+</div>
+
+<!-- DAD WK: DID CO-PARENT HELP? -->
+<div class="screen" id="s-dad-help-choice">
+  <div class="top-bar">
+    <button class="back-btn" onclick="show('s-kids-confirm')">← Back</button>
+    <div class="logo">My day</div>
+    <div class="back-spacer"></div>
+  </div>
+  <div class="progress" id="prog-dad-help-choice"></div>
+  <p class="q">Did your co-parent help with anything today?</p>
+  <p class="sub">Add help only if it is worth documenting.</p>
+  <div class="btn-row">
+    <button class="btn" id="dad-help-no" onclick="setDadHelpedChoice(false)">No</button>
+    <button class="btn" id="dad-help-yes" onclick="setDadHelpedChoice(true)">Yes</button>
   </div>
 </div>
 
@@ -568,27 +577,20 @@
     <div class="back-spacer"></div>
   </div>
   <div class="progress" id="prog-mom-mode"></div>
-  <p class="q">Were the kids with your co-parent today?</p>
-  <p class="sub">Choose what actually happened</p>
+  <p class="q">Where did the kids stay tonight?</p>
+  <p class="sub">Choose the overnight location first</p>
   <div class="scene-card" id="ft-easy" onclick="setMomMode('easy')">
     <span class="decision-icon">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M8 12.5l2.6 2.6L16.5 9"></path></svg>
     </span>
-    <span class="decision-copy"><span class="scene-title">Co-parent had the kids</span><span class="scene-desc">Normal day, with little or no involvement from you.</span></span>
-    <span class="decision-chevron">›</span>
-  </div>
-  <div class="scene-card" id="ft-helped" onclick="setMomMode('helped')">
-    <span class="decision-icon">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12.5l2.7 2.7c.8.8 2.1.8 2.9 0l4.4-4.4c.8-.8.8-2.1 0-2.9s-2.1-.8-2.9 0l-1 1"></path><path d="M10.5 9.5l-1-1c-.8-.8-2.1-.8-2.9 0s-.8 2.1 0 2.9l1 1"></path><path d="M8.5 16.5l-2 2"></path><path d="M15.5 16.5l2 2"></path></svg>
-    </span>
-    <span class="decision-copy"><span class="scene-title">I helped</span><span class="scene-desc">Your co-parent had them, but you helped with one or more kids.</span></span>
+    <span class="decision-copy"><span class="scene-title">With co-parent</span><span class="scene-desc">Some or all kids stayed with your co-parent tonight.</span></span>
     <span class="decision-chevron">›</span>
   </div>
   <div class="scene-card" id="ft-dad" onclick="setMomMode('dad-had')">
     <span class="decision-icon">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3L12 4z"></path><path d="M12 9v5"></path><path d="M12 17.5h.01"></path></svg>
     </span>
-    <span class="decision-copy"><span class="scene-title">Kids ended up with me</span><span class="scene-desc">Co-parent's day, but you had some or all of the kids overnight.</span></span>
+    <span class="decision-copy"><span class="scene-title">With me</span><span class="scene-desc">Some or all kids stayed with you tonight.</span></span>
     <span class="decision-chevron">›</span>
   </div>
 </div>
@@ -601,16 +603,15 @@
     <div class="back-spacer"></div>
   </div>
   <div class="progress" id="prog-mom-easy"></div>
-  <p class="q" id="mom-easy-q">Did you do anything at all today?</p>
-  <p class="sub" id="mom-easy-sub">If you had a call or anything else worth noting, add it in the diary below.</p>
+  <p class="q" id="mom-easy-q">Did you help with anything today?</p>
+  <p class="sub" id="mom-easy-sub">Add help only if it is worth documenting.</p>
   <div class="option-list" id="easy-opts">
-    <div class="opt" onclick="toggleEasyOpt(this,'none')"><span class="chk">✓</span>No — completely their day</div>
-    <div class="opt" onclick="toggleEasyOpt(this,'pickup')"><span class="chk">✓</span>Drop-off or pick-up</div>
-    <div class="opt" onclick="toggleEasyOpt(this,'brief')"><span class="chk">✓</span>Brief visit</div>
+    <div class="opt" onclick="toggleEasyOpt(this,'none')"><span class="chk">✓</span>No</div>
+    <div class="opt" onclick="toggleEasyOpt(this,'helped')"><span class="chk">✓</span>Yes</div>
   </div>
   <p class="sec-lbl">Quick note (optional)</p>
   <input type="text" id="easy-note" placeholder="Anything worth recording...">
-  <button class="btn primary" id="easy-review-btn" onclick="goToReview()" style="width:100%" disabled>Review &amp; save →</button>
+  <button class="btn primary" id="easy-review-btn" onclick="continueMomEasy()" style="width:100%" disabled>Continue →</button>
 </div>
 
 <!-- MOM HELPED: which kids -->
@@ -1015,6 +1016,6 @@
   </div>
 </div>
 </div><!-- end .app -->
-<script src="app.js?v=remove-special-day-1"></script>
+<script src="app.js?v=nested-help-tree-1"></script>
 </body>
 </html>

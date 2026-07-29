@@ -551,7 +551,7 @@ const CHECKIN_FLOW_SCREENS=new Set([
   's-week','s-dad-mode','s-allkids','s-whichkids','s-absent','s-mom-helped-kids',
   's-mom-helped-activity','s-dad-wk-mom-had','s-mom-mode','s-mom-easy',
   's-mom-helped-kids2','s-helped-activity','s-mom-dad-had','s-kids-confirm',
-  's-change-context','s-diary','s-review'
+  's-dad-help-choice','s-change-context','s-diary','s-review'
 ]);
 let screenStack=[];
 
@@ -849,10 +849,10 @@ function setWeek(w){
 function setDadMode(mode){
   S.dadMode=mode;
   document.querySelectorAll('#s-dad-mode .scene-card').forEach(c=>c.className='scene-card');
-  const idMap={'normal':'sc-dad-normal','dad-helped-mom':'sc-dad-helped','mom-had':'sc-dad-momhad'};
+  const idMap={'normal':'sc-dad-normal','dad-helped-mom':'sc-dad-normal','mom-had':'sc-dad-momhad'};
   document.getElementById(idMap[mode]).classList.add(mode==='mom-had'?'sel-warn':'sel-dad');
   if(mode==='normal')setTimeout(()=>{goToAllKidsStep('s-dad-mode')},250);
-  else if(mode==='dad-helped-mom')setTimeout(()=>{KIDS.forEach(k=>kidBtn('mhk',k).className='kid-btn');S.momHelpedOnDadWeek={};S.momHadKidsOnDadWeek=[];document.getElementById('mom-helped-next').disabled=true;updateMomHelpedSummary();setProg('prog-mom-helped-kids',1,5);show('s-mom-helped-kids')},250);
+  else if(mode==='dad-helped-mom')setTimeout(()=>{showDadHelpChoice()},250);
   else setTimeout(()=>{KIDS.forEach(k=>kidBtn('dwm',k).className='kid-btn');document.getElementById('dwm-all').className='kid-btn';S.momHadKidsOnDadWeek=[];updateDadWkMomSummary();document.getElementById('dwm-next').disabled=true;setProg('prog-dad-wk-mom-had',2,5);show('s-dad-wk-mom-had')},250);
 }
 
@@ -864,9 +864,7 @@ function toggleMomHelpedKid(name){
 function updateMomHelpedSummary(){const el=document.getElementById('mom-helped-summary');if(!S.momHadKidsOnDadWeek.length){el.textContent='Tap the kids '+coParent()+' was involved with';return}el.innerHTML='<strong style="color:#993c1d">'+coParent()+' helped with:</strong> '+S.momHadKidsOnDadWeek.join(', ')}
 function startMomHelpedLoop(){
   momHelpedQueue=[...S.momHadKidsOnDadWeek];momHelpedIdx=0;
-  S._afterMomHelped=true;
-  // Ask kid location first before activities
-  goToAllKidsStep('s-mom-helped-kids');
+  startMomHelpedActivities();
 }
 function startMomHelpedActivities(){
   momHelpedIdx=0;showMomHelpedStep();
@@ -892,7 +890,7 @@ function toggleMomAct(el,key){
 function nextMomHelpedKid(){
   const kid=momHelpedQueue[momHelpedIdx];S.momHelpedOnDadWeek[kid].note=document.getElementById('mha-note').value.trim();momHelpedIdx++;
   if(momHelpedIdx<momHelpedQueue.length)showMomHelpedStep();
-  else{goToAllKidsStep('s-mom-helped-activity')}
+  else{goToDiary('s-mom-helped-activity','Anything else to note?','A quick diary — how was today?',4,5)}
 }
 function goBackFromMomHelped(){if(momHelpedIdx>0){momHelpedIdx--;showMomHelpedStep()}else show('s-mom-helped-kids')}
 
@@ -1037,16 +1035,38 @@ function goBackFromKidsConfirm(){
 }
 
 function confirmKidsAndContinue(){
-  // Proceed to diary
-  diaryOrigin='s-kids-confirm';
-  document.getElementById('diary-q').textContent='Anything else to note?';
-  document.getElementById('diary-sub').textContent='A quick diary — how was today?';
-  document.getElementById('diary-input').value=S.diary||'';
-  document.getElementById('diary-next-btn').textContent='Review & save →';
-  setProg('prog-diary',4,5);
-  show('s-diary');
+  if(S.week==='dad'&&(S.dadMode==='normal'||S.dadMode==='dad-helped-mom')){
+    showDadHelpChoice();
+    return;
+  }
+  goToDiary('s-kids-confirm','Anything else to note?','A quick diary — how was today?',4,5);
 }
 // ── END KIDS CONFIRM ──────────────────────────────────────────
+
+function showDadHelpChoice(){
+  document.getElementById('dad-help-no').classList.remove('sel');
+  document.getElementById('dad-help-yes').classList.remove('sel');
+  setProg('prog-dad-help-choice',4,5);
+  show('s-dad-help-choice');
+}
+function setDadHelpedChoice(helped){
+  document.getElementById('dad-help-no').classList.toggle('sel',!helped);
+  document.getElementById('dad-help-yes').classList.toggle('sel',helped);
+  if(!helped){
+    S.dadMode='normal';
+    S.momHadKidsOnDadWeek=[];
+    S.momHelpedOnDadWeek={};
+    setTimeout(()=>goToDiary('s-dad-help-choice','Anything else to note?','A quick diary — how was today?',4,5),180);
+    return;
+  }
+  S.dadMode='dad-helped-mom';
+  KIDS.forEach(k=>kidBtn('mhk',k).className='kid-btn');
+  S.momHadKidsOnDadWeek=[];
+  S.momHelpedOnDadWeek={};
+  document.getElementById('mom-helped-next').disabled=true;
+  updateMomHelpedSummary();
+  setTimeout(()=>{setProg('prog-mom-helped-kids',4,5);show('s-mom-helped-kids')},180);
+}
 
 
 // MOM MODE
@@ -1056,10 +1076,27 @@ function toggleEasyOpt(el,key){
   el.classList.toggle('sel');const i=easyOpts.indexOf(key);if(i>=0)easyOpts.splice(i,1);else easyOpts.push(key);
   document.getElementById('easy-review-btn').disabled=easyOpts.length===0;
 }
+function continueMomEasy(){
+  S.diary=document.getElementById('easy-note').value.trim();
+  if(easyOpts.includes('helped')){
+    S.momMode='helped';
+    KIDS.forEach(k=>kidBtn('hk',k).classList.remove('with-dad'));
+    S.helpedKids=[];
+    S.helpedData={};
+    document.getElementById('helped-kids-next').disabled=true;
+    updateHelpedSummary();
+    setProg('prog-mom-helped-kids2',2,4);
+    show('s-mom-helped-kids2');
+    return;
+  }
+  S.momMode='easy';
+  S.momOpts=['none'];
+  goToReview();
+}
 function setMomMode(mode){
   S.momMode=mode;
   document.querySelectorAll('#s-mom-mode .scene-card').forEach(c=>c.className='scene-card');
-  const idMap={easy:'ft-easy',helped:'ft-helped','dad-had':'ft-dad'};
+  const idMap={easy:'ft-easy',helped:'ft-easy','dad-had':'ft-dad'};
   document.getElementById(idMap[mode]).classList.add(mode==='dad-had'?'sel-warn':'sel-dad');
   if(mode==='easy')setTimeout(()=>{setProg('prog-mom-easy',1,3);document.querySelectorAll('#easy-opts .opt').forEach(o=>o.classList.remove('sel'));easyOpts=[];document.getElementById('easy-note').value='';document.getElementById('easy-review-btn').disabled=true;show('s-mom-easy')},250);
   else if(mode==='helped')setTimeout(()=>{KIDS.forEach(k=>kidBtn('hk',k).classList.remove('with-dad'));S.helpedKids=[];document.getElementById('helped-kids-next').disabled=true;updateHelpedSummary();setProg('prog-mom-helped-kids2',1,3);show('s-mom-helped-kids2')},250);
@@ -1094,7 +1131,7 @@ function nextHelpedKid(){
   const kid=helpedQueue[helpedIdx];if(!S.helpedData[kid])S.helpedData[kid]={acts:[],note:''};
   S.helpedData[kid].note=document.getElementById('helped-note').value.trim();helpedIdx++;
   if(helpedIdx<helpedQueue.length)showHelpedStep();
-  else{showKidsConfirm('s-mom-helped-activity','helped')}
+  else{goToDiary('s-helped-activity','Anything else to note?','A quick diary — how was today?',3,4)}
 }
 function goBackFromHelped(){if(helpedIdx>0){helpedIdx--;showHelpedStep()}else show('s-mom-helped-kids2')}
 function toggleDadHadKid(name){
@@ -1135,12 +1172,23 @@ function setPressure(value){
   document.getElementById('change-context-next').disabled=false;
 }
 function goFromChangeContext(){
-  diaryOrigin='s-change-context';
-  document.getElementById('diary-q').textContent='Add a note about tonight';
-  document.getElementById('diary-sub').textContent=S.changeContextNext==='dad-to-mom'?'Why did the kids end up at '+coParentPoss()+' during your day?':'Why did you end up with the kids during '+coParentPoss()+' day?';
+  goToDiary(
+    's-change-context',
+    'Add a note about tonight',
+    S.changeContextNext==='dad-to-mom'?'Why did the kids end up at '+coParentPoss()+' during your day?':'Why did you end up with the kids during '+coParentPoss()+' day?',
+    3,
+    4
+  );
+}
+
+function goToDiary(origin,title,subtitle,step,total){
+  diaryOrigin=origin;
+  document.getElementById('diary-q').textContent=title;
+  document.getElementById('diary-sub').textContent=subtitle;
   document.getElementById('diary-input').value=S.diary||'';
   document.getElementById('diary-next-btn').textContent='Review & save →';
-  setProg('prog-diary',3,4);show('s-diary');
+  setProg('prog-diary',step,total);
+  show('s-diary');
 }
 
 function handleAttachment(input,origin){
