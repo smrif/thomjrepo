@@ -8,6 +8,10 @@ const DEFAULT_CONFIG={
   activityIds:null,
 };
 const CONFIG_KEY='custody_tracker_config';
+const SESSION_COUNT_KEY='custody_tracker_session_count';
+const SESSION_COUNTED_KEY='custody_tracker_session_counted';
+const ACTIVITY_PROMPT_SHOWN_KEY='activity_prompt_shown';
+const ACTIVITY_PROMPT_DISMISSED_KEY='activity_prompt_dismissed';
 const DEFAULT_ACTIVITIES=[
   {id:'school',label:'School pickup / dropoff'},
   {id:'afterschool',label:'After school program'},
@@ -58,6 +62,12 @@ function saveConfig(config){
   KIDS=[...APP_CONFIG.children];
   localStorage.setItem(CONFIG_KEY,JSON.stringify(APP_CONFIG));
 }
+function recordAppSession(){
+  if(!hasSavedConfig()||sessionStorage.getItem(SESSION_COUNTED_KEY))return;
+  const count=(parseInt(localStorage.getItem(SESSION_COUNT_KEY)||'0',10)||0)+1;
+  localStorage.setItem(SESSION_COUNT_KEY,String(count));
+  sessionStorage.setItem(SESSION_COUNTED_KEY,'1');
+}
 function cleanName(name){return String(name||'').trim().replace(/\s+/g,' ')}
 function possessive(label){return label.endsWith('s')?label+"'":label+"'s"}
 function currentParent(){return APP_CONFIG.currentParentLabel||DEFAULT_CONFIG.currentParentLabel}
@@ -94,7 +104,7 @@ function setupKidGrid(gridId,prefix,handlerName,extraButton){
     btn.onclick=()=>window[handlerName](k);
     grid.appendChild(btn);
   });
-  if(extraButton)grid.appendChild(extraButton());
+  if(extraButton&&KIDS.length>1)grid.appendChild(extraButton());
 }
 function allWithCoParentButton(id,handler,label){
   const btn=document.createElement('button');
@@ -523,14 +533,14 @@ function startBackfill(){
   document.getElementById('missed-prompt').style.display='none';
   localStorage.setItem('missed_dismissed_'+todayStr(),'1');
   BACKFILL_DATE=yesterdayStr();
-  startCheckin();
+  startCheckin({keepDate:true});
 }
 function startBackfillForDate(ds){
   if(isLockedDate(ds)&&ds!==yesterdayStr())return;
   if(ds!==yesterdayStr())return;
   localStorage.setItem('missed_dismissed_'+todayStr(),'1');
   BACKFILL_DATE=ds;
-  startCheckin();
+  startCheckin({keepDate:true});
 }
 // ── END MISSED DAY LOGIC ──────────────────────────────────────
 
@@ -546,6 +556,9 @@ function isLockedEntry(ds){
 // ── END ENTRY LOCK ─────────────────────────────────────────────
 function getEntries(){try{const r=localStorage.getItem('familylog_entries');return r?JSON.parse(r):{}}catch(e){return{}}}
 function putEntries(e){try{localStorage.setItem('familylog_entries',JSON.stringify(e));try{sessionStorage.setItem('familylog_backup',JSON.stringify(e))}catch(ex){}}catch(e){}}
+function loggedEntryCount(entries=getEntries()){
+  return Object.values(entries).filter(e=>e&&e.week&&e.week!=='not-logged').length;
+}
 
 const CHECKIN_FLOW_SCREENS=new Set([
   's-week','s-dad-mode','s-allkids','s-whichkids','s-absent','s-mom-helped-kids',
@@ -590,9 +603,43 @@ function show(id,direction){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     next.classList.add('active');
   }
+  if(id==='s-home')initHome();
   window.scrollTo(0,0);
 }
-function setProg(id,step,total){const el=document.getElementById(id);if(!el)return;el.innerHTML='';for(let i=0;i<total;i++){const d=document.createElement('div');d.className='pd'+(i<step?' done':'')+(i===step?' active':'');el.appendChild(d)}}
+function blankCheckinState(){
+  return {week:null,dadMode:null,momMode:null,kidsWithDad:[],absentData:{},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'',attachment:null,changeAgreed:null,changePressured:null,changeContextNext:null,changeContextBack:null};
+}
+const CHECKIN_PHASES=['Schedule','Kids','Details','Review'];
+const CHECKIN_PHASE_BY_PROGRESS={
+  'prog-week':'Schedule',
+  'prog-dad-mode':'Kids',
+  'prog-mom-mode':'Kids',
+  'prog-allkids':'Kids',
+  'prog-whichkids':'Kids',
+  'prog-absent':'Kids',
+  'prog-dad-wk-mom-had':'Kids',
+  'prog-mom-dad-had':'Kids',
+  'prog-kids-confirm':'Kids',
+  'prog-dad-help-choice':'Details',
+  'prog-mom-easy':'Details',
+  'prog-mom-helped-kids':'Details',
+  'prog-mom-helped-activity':'Details',
+  'prog-mom-helped-kids2':'Details',
+  'prog-helped-activity':'Details',
+  'prog-change-context':'Details',
+  'prog-diary':'Details',
+};
+function renderPhaseProgress(el,activePhase){
+  el.innerHTML=CHECKIN_PHASES.map(phase=>`<span class="${phase===activePhase?'active':''}">${phase}</span>`).join('');
+}
+function setProg(id,step,total){
+  const el=document.getElementById(id);if(!el)return;
+  if(el.classList.contains('phase-progress')){
+    renderPhaseProgress(el,CHECKIN_PHASE_BY_PROGRESS[id]||'Schedule');
+    return;
+  }
+  el.innerHTML='';for(let i=0;i<total;i++){const d=document.createElement('div');d.className='pd'+(i<step?' done':'')+(i===step?' active':'');el.appendChild(d)}
+}
 
 
 // ── MULTI-STEP ONBOARDING ─────────────────────────────────────────
@@ -639,6 +686,7 @@ function obSkip(){
   saveConfig(DEFAULT_CONFIG);
   setOnboardingMode(false);
   renderConfigurableUi();
+  recordAppSession();
   initHome();
   show('s-home');
 }
@@ -754,6 +802,7 @@ function obFinish(){
   });
   setOnboardingMode(false);
   renderConfigurableUi();
+  recordAppSession();
   initHome();
   show('s-home');
 }
@@ -766,24 +815,21 @@ function initOnboarding(){
 // ── END MULTI-STEP ONBOARDING ─────────────────────────────────────
 
 
-// ── 48-HOUR ACTIVITY PROMPT ──────────────────────────────────────
+// ── ACTIVITY PERSONALIZATION PROMPT ───────────────────────────────
 function checkActivityPrompt(){
-  if(localStorage.getItem('activity_prompt_dismissed'))return;
-  const entries=getEntries();
-  const dates=Object.keys(entries).sort();
-  if(dates.length<2)return; // need at least 2 days
-  const first=new Date(dates[0]);
-  const now=new Date();
-  const hours=(now-first)/(1000*60*60);
-  if(hours>=48){
+  if(localStorage.getItem(ACTIVITY_PROMPT_SHOWN_KEY)||localStorage.getItem(ACTIVITY_PROMPT_DISMISSED_KEY))return;
+  const sessions=parseInt(localStorage.getItem(SESSION_COUNT_KEY)||'0',10)||0;
+  if(sessions===3){
+    localStorage.setItem(ACTIVITY_PROMPT_SHOWN_KEY,'1');
     document.getElementById('activity-prompt').style.display='block';
   }
 }
 function dismissActivityPrompt(){
   document.getElementById('activity-prompt').style.display='none';
-  localStorage.setItem('activity_prompt_dismissed','1');
+  localStorage.setItem(ACTIVITY_PROMPT_SHOWN_KEY,'1');
+  localStorage.setItem(ACTIVITY_PROMPT_DISMISSED_KEY,'1');
 }
-// ── END 48-HOUR PROMPT ───────────────────────────────────────────
+// ── END ACTIVITY PERSONALIZATION PROMPT ───────────────────────────
 
 // ── WELCOME SCREEN ────────────────────────────────────
 function startWelcome(){initOnboarding();show('s-ob-welcome');}
@@ -803,32 +849,97 @@ function initHome(){
   const now=new Date();
   const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   document.getElementById('home-date').textContent=days[now.getDay()]+', '+MONTHS[now.getMonth()]+' '+now.getDate()+', '+now.getFullYear();
-  if(now.getDay()===0&&!localStorage.getItem('sunday_prompt_'+todayStr()))document.getElementById('sunday-prompt').style.display='block';
   const entries=getEntries(),dates=Object.keys(entries).sort().reverse();
+  const todayEntry=entries[todayStr()];
+  updateHomeTodayState(todayEntry);
+  const canShowWeeklyReport=loggedEntryCount(entries)>=2;
+  const weeklyRow=document.getElementById('weekly-report-row');
+  if(weeklyRow)weeklyRow.style.display=canShowWeeklyReport?'grid':'none';
+  const sundayPrompt=document.getElementById('sunday-prompt');
+  if(sundayPrompt)sundayPrompt.style.display='none';
+  if(sundayPrompt&&canShowWeeklyReport&&now.getDay()===0&&!localStorage.getItem('sunday_prompt_'+todayStr()))sundayPrompt.style.display='block';
   if(!dates.length)return;
   const last=dates[0],e=entries[last];
   let desc=describeEntry(e);
   document.getElementById('home-recent-inner').innerHTML=`<div class="entry-date-lbl">${fmtShort(last)}</div><div class="entry-row">${desc}</div>${e.diary?`<div class="entry-row" style="color:#666;font-style:italic;font-size:13px;margin-top:3px">"${e.diary.substring(0,90)}${e.diary.length>90?'…':''}"</div>`:''}`;
   document.getElementById('home-recent').style.display='block';
 }
+function updateHomeTodayState(entry){
+  const card=document.getElementById('home-checkin-card');
+  const title=document.getElementById('home-plan-title');
+  const sub=document.getElementById('home-plan-sub');
+  const button=document.getElementById('home-primary-btn');
+  const label=document.getElementById('home-primary-label');
+  const icon=document.getElementById('home-primary-icon');
+  if(!card||!title||!sub||!button||!label||!icon)return;
+  const hasLoggedToday=entry&&entry.week&&entry.week!=='not-logged';
+  card.classList.toggle('logged',!!hasLoggedToday);
+  if(hasLoggedToday){
+    title.textContent='Already logged';
+    sub.textContent=describeEntry(entry)+'. You can still update today if something changed.';
+    label.textContent='Edit today';
+    icon.textContent='↺';
+    button.onclick=startTodayEdit;
+  }else{
+    title.textContent='Ready to log today';
+    sub.textContent='Track actual custody time in under 30 seconds.';
+    label.textContent='Log today';
+    icon.textContent='✓';
+    button.onclick=startCheckin;
+  }
+}
 function describeEntry(e){
   if(e.week==='not-logged')return e.intentional?'Skipped intentionally':'Nothing logged';
   if(e.week==='other')return'Pre-agreed day note';
-  if(e.dadMode==='mom-had')return"Your week · Kids at "+coParentPoss()+': '+(e.momHadKidsOnDadWeek||[]).join(', ');
-  if(e.dadMode==='dad-helped-mom')return'Your week · '+coParent()+' helped: '+(e.momHadKidsOnDadWeek||[]).join(', ');
+  if(e.dadMode==='mom-had')return"Your day · Kids at "+coParentPoss()+': '+(e.momHadKidsOnDadWeek||[]).join(', ');
+  if(e.dadMode==='dad-helped-mom')return'Your day · '+coParent()+' helped: '+(e.momHadKidsOnDadWeek||[]).join(', ');
   if(e.momMode==='easy')return coParent()+' had kids';
   if(e.momMode==='helped')return'You helped: '+(e.helpedKids||[]).join(', ');
   if(e.momMode==='dad-had')return'You had: '+(e.dadHadKids||[]).join(', ');
   const n=(e.kidsWithDad||[]).length;return n===KIDS.length?kidsCountLabel()+' home':n===0?'No kids':(e.kidsWithDad||[]).join(', ')+' home';
 }
 
-function startCheckin(){
-  S={week:null,dadMode:null,momMode:null,kidsWithDad:[],absentData:{},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'',attachment:null,changeAgreed:null,changePressured:null,changeContextNext:null,changeContextBack:null};
+function startCheckin(options={}){
+  S=blankCheckinState();
+  if(!options.keepDate)BACKFILL_DATE=null;
   easyOpts=[];diaryOrigin='';
   removeAttachment('diary');
   resetWeekCards();
   document.getElementById('week-hint').style.display='none';
-  setProg('prog-week',0,5);show('s-week');
+  show('s-week');
+}
+
+function startTodayEdit(){
+  const entry=getEntries()[todayStr()];
+  if(!entry||!entry.week||entry.week==='not-logged'){startCheckin();return}
+  BACKFILL_DATE=todayStr();
+  S=entryToCheckinState(entry);
+  easyOpts=[...S.momOpts];
+  diaryOrigin='s-review';
+  buildReviewScreen();
+  show('s-review');
+}
+
+function entryToCheckinState(entry){
+  const state=blankCheckinState();
+  state.week=entry.week||null;
+  state.dadMode=entry.dadMode||null;
+  state.momMode=entry.momMode||null;
+  state.kidsWithDad=[...(entry.kidsWithDad||[])];
+  state.absentData={...(entry.absentData||{})};
+  state.momOpts=[...(entry.momOpts||[])];
+  state.helpedKids=[...(entry.helpedKids||[])];
+  state.helpedData={...(entry.helpedData||{})};
+  state.dadHadKids=[...(entry.dadHadKids||entry.kidsWithDad||[])];
+  state.momHadKidsOnDadWeek=[...(entry.momHadKidsOnDadWeek||[])];
+  state.momHelpedOnDadWeek={...(entry.momHelpedOnDadWeek||{})};
+  state.diary=entry.diary||'';
+  state.attachment=entry.attachment||null;
+  state.changeAgreed=entry.changeAgreed??null;
+  state.changePressured=entry.changePressured??null;
+  if(state.dadMode==='mom-had'){state.changeContextBack='s-dad-wk-mom-had';state.changeContextNext='dad-to-mom'}
+  if(state.momMode==='dad-had'){state.changeContextBack='s-mom-dad-had';state.changeContextNext='mom-to-dad'}
+  return state;
 }
 
 function setWeek(w){
@@ -853,7 +964,7 @@ function setDadMode(mode){
   document.getElementById(idMap[mode]).classList.add(mode==='mom-had'?'sel-warn':'sel-dad');
   if(mode==='normal')setTimeout(()=>{goToAllKidsStep('s-dad-mode')},250);
   else if(mode==='dad-helped-mom')setTimeout(()=>{showDadHelpChoice()},250);
-  else setTimeout(()=>{KIDS.forEach(k=>kidBtn('dwm',k).className='kid-btn');document.getElementById('dwm-all').className='kid-btn';S.momHadKidsOnDadWeek=[];updateDadWkMomSummary();document.getElementById('dwm-next').disabled=true;setProg('prog-dad-wk-mom-had',2,5);show('s-dad-wk-mom-had')},250);
+  else setTimeout(()=>{KIDS.forEach(k=>kidBtn('dwm',k).className='kid-btn');const all=document.getElementById('dwm-all');if(all)all.className='kid-btn';S.momHadKidsOnDadWeek=[];updateDadWkMomSummary();document.getElementById('dwm-next').disabled=true;setProg('prog-dad-wk-mom-had',2,5);show('s-dad-wk-mom-had')},250);
 }
 
 function toggleMomHelpedKid(name){
@@ -895,12 +1006,12 @@ function nextMomHelpedKid(){
 function goBackFromMomHelped(){if(momHelpedIdx>0){momHelpedIdx--;showMomHelpedStep()}else show('s-mom-helped-kids')}
 
 function toggleDadWkMomKid(name){
-  document.getElementById('dwm-all').classList.remove('with-mom');
+  const all=document.getElementById('dwm-all');if(all)all.classList.remove('with-mom');
   const btn=kidBtn('dwm',name),idx=S.momHadKidsOnDadWeek.indexOf(name);
   if(idx>=0){S.momHadKidsOnDadWeek.splice(idx,1);btn.classList.remove('with-mom')}else{S.momHadKidsOnDadWeek.push(name);btn.classList.add('with-mom')}
   document.getElementById('dwm-next').disabled=S.momHadKidsOnDadWeek.length===0;updateDadWkMomSummary();
 }
-function setDadWkMomAll(){S.momHadKidsOnDadWeek=[...KIDS];KIDS.forEach(k=>kidBtn('dwm',k).classList.add('with-mom'));document.getElementById('dwm-all').classList.add('with-mom');document.getElementById('dwm-next').disabled=false;updateDadWkMomSummary()}
+function setDadWkMomAll(){S.momHadKidsOnDadWeek=[...KIDS];KIDS.forEach(k=>kidBtn('dwm',k).classList.add('with-mom'));const all=document.getElementById('dwm-all');if(all)all.classList.add('with-mom');document.getElementById('dwm-next').disabled=false;updateDadWkMomSummary()}
 function updateDadWkMomSummary(){const el=document.getElementById('dad-wk-mom-summary');if(!S.momHadKidsOnDadWeek.length){el.textContent='Tap the kids who are at '+coParentPoss()+' tonight';return}el.innerHTML='<strong style="color:#993c1d">At '+coParentPoss()+':</strong> '+S.momHadKidsOnDadWeek.join(', ')}
 function goDadWkMomDiary(){showChangeContext('s-dad-wk-mom-had','dad-to-mom')}
 function goToDadWkViaContext(){goDadWkMomDiary()}
@@ -920,17 +1031,18 @@ function setAllKids(all,confirmBackTarget){
     if(S._afterMomHelped){S._afterMomHelped=false;startMomHelpedActivities();}
     else{showKidsConfirm(confirmBackTarget||'s-allkids');}
   },200)}
-  else{KIDS.forEach(k=>kidBtn('kb',k).classList.remove('with-dad'));document.getElementById('kb-allMom').classList.remove('all-mom');S.kidsWithDad=[];updateWhoSummary();setTimeout(()=>{setProg('prog-whichkids',2,4);show('s-whichkids')},200)}
+  else{KIDS.forEach(k=>kidBtn('kb',k).classList.remove('with-dad'));const allMom=document.getElementById('kb-allMom');if(allMom)allMom.classList.remove('all-mom');S.kidsWithDad=[];updateWhoSummary();setTimeout(()=>{setProg('prog-whichkids',2,4);show('s-whichkids')},200)}
 }
 function toggleKid(name){
-  document.getElementById('kb-allMom').classList.remove('all-mom');
+  const allMom=document.getElementById('kb-allMom');if(allMom)allMom.classList.remove('all-mom');
   const btn=kidBtn('kb',name),idx=S.kidsWithDad.indexOf(name);
   if(idx>=0){S.kidsWithDad.splice(idx,1);btn.classList.remove('with-dad')}else{S.kidsWithDad.push(name);btn.classList.add('with-dad')}
   updateWhoSummary();
 }
-function setAllMom(){S.kidsWithDad=[];KIDS.forEach(k=>kidBtn('kb',k).classList.remove('with-dad'));document.getElementById('kb-allMom').classList.toggle('all-mom');updateWhoSummary()}
+function setAllMom(){S.kidsWithDad=[];KIDS.forEach(k=>kidBtn('kb',k).classList.remove('with-dad'));const allMom=document.getElementById('kb-allMom');if(allMom)allMom.classList.toggle('all-mom');updateWhoSummary()}
 function updateWhoSummary(){
-  const el=document.getElementById('who-summary-text'),allMom=document.getElementById('kb-allMom').classList.contains('all-mom');
+  const allMomBtn=document.getElementById('kb-allMom');
+  const el=document.getElementById('who-summary-text'),allMom=allMomBtn&&allMomBtn.classList.contains('all-mom');
   if(allMom){el.innerHTML='<strong>'+kidsCountLabel()+'</strong> are at '+coParentPoss()+' tonight';return}
   if(!S.kidsWithDad.length){el.textContent='Tap the kids who are with you tonight';return}
   if(S.kidsWithDad.length===KIDS.length){el.innerHTML='<strong>'+kidsCountLabel()+'</strong> are with you tonight';return}
@@ -1100,7 +1212,7 @@ function setMomMode(mode){
   document.getElementById(idMap[mode]).classList.add(mode==='dad-had'?'sel-warn':'sel-dad');
   if(mode==='easy')setTimeout(()=>{setProg('prog-mom-easy',1,3);document.querySelectorAll('#easy-opts .opt').forEach(o=>o.classList.remove('sel'));easyOpts=[];document.getElementById('easy-note').value='';document.getElementById('easy-review-btn').disabled=true;show('s-mom-easy')},250);
   else if(mode==='helped')setTimeout(()=>{KIDS.forEach(k=>kidBtn('hk',k).classList.remove('with-dad'));S.helpedKids=[];document.getElementById('helped-kids-next').disabled=true;updateHelpedSummary();setProg('prog-mom-helped-kids2',1,3);show('s-mom-helped-kids2')},250);
-  else setTimeout(()=>{KIDS.forEach(k=>kidBtn('dh',k).classList.remove('with-dad'));document.getElementById('dh-allThree').classList.remove('with-dad');S.dadHadKids=[];updateDadHadSummary();document.getElementById('dad-had-next').disabled=true;setProg('prog-mom-dad-had',1,3);show('s-mom-dad-had')},250);
+  else setTimeout(()=>{KIDS.forEach(k=>kidBtn('dh',k).classList.remove('with-dad'));const all=document.getElementById('dh-allThree');if(all)all.classList.remove('with-dad');S.dadHadKids=[];updateDadHadSummary();document.getElementById('dad-had-next').disabled=true;setProg('prog-mom-dad-had',1,3);show('s-mom-dad-had')},250);
 }
 function toggleHelpedKid(name){
   const btn=kidBtn('hk',name),idx=S.helpedKids.indexOf(name);
@@ -1135,12 +1247,12 @@ function nextHelpedKid(){
 }
 function goBackFromHelped(){if(helpedIdx>0){helpedIdx--;showHelpedStep()}else show('s-mom-helped-kids2')}
 function toggleDadHadKid(name){
-  document.getElementById('dh-allThree').classList.remove('with-dad');
+  const all=document.getElementById('dh-allThree');if(all)all.classList.remove('with-dad');
   const btn=kidBtn('dh',name),idx=S.dadHadKids.indexOf(name);
   if(idx>=0){S.dadHadKids.splice(idx,1);btn.classList.remove('with-dad')}else{S.dadHadKids.push(name);btn.classList.add('with-dad')}
   document.getElementById('dad-had-next').disabled=S.dadHadKids.length===0;updateDadHadSummary();
 }
-function setDadHadAll(){S.dadHadKids=[...KIDS];KIDS.forEach(k=>kidBtn('dh',k).classList.add('with-dad'));document.getElementById('dh-allThree').classList.add('with-dad');document.getElementById('dad-had-next').disabled=false;updateDadHadSummary()}
+function setDadHadAll(){S.dadHadKids=[...KIDS];KIDS.forEach(k=>kidBtn('dh',k).classList.add('with-dad'));const all=document.getElementById('dh-allThree');if(all)all.classList.add('with-dad');document.getElementById('dad-had-next').disabled=false;updateDadHadSummary()}
 function updateDadHadSummary(){const el=document.getElementById('dad-had-summary');if(!S.dadHadKids.length){el.textContent='Tap the kids who were actually with you';return}el.innerHTML='<strong style="color:#3c3489">With you:</strong> '+S.dadHadKids.join(', ')}
 function goDadHadDiary(){showChangeContext('s-mom-dad-had','mom-to-dad')}
 function goToDadHadViaContext(){goDadHadDiary()}
@@ -1270,6 +1382,7 @@ function buildReviewScreen(){
 
   rc.innerHTML=[
     reviewReceiptHero(),
+    reviewTopAction(),
     reviewGroup('Schedule',schedule),
     reviewGroup('Kids & involvement',kids),
     context.length?reviewGroup('Change context',context):'',
@@ -1298,13 +1411,110 @@ function reviewReceiptHero(){
     <div><div class="review-receipt-title">Ready to log</div><div class="review-receipt-sub">Give this a quick scan before it joins your custody record.</div></div>
   </div>`;
 }
+function reviewTopAction(){
+  return`<button class="btn primary review-save-btn review-save-btn-top" onclick="saveEntry()">Log it — looks good</button>`;
+}
 function reviewLine(key,val){return`<div class="review-row"><span class="review-key">${escHtml(key)}</span><span class="review-val">${escHtml(val)}</span></div>`}
 function reviewNote(text){return`<div class="review-note">"${escHtml(text)}"</div>`}
 function reviewChips(chips){return`<div class="review-chip-row">${chips.map(c=>`<span class="review-tag ${c.cls||''}">${escHtml(c.label)}</span>`).join('')}</div>`}
 function actLabel(a){return ACT_LBL[a]||String(a).replace(/-/g,' ')}
 function escHtml(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 
-function goEditFromReview(target){show(target)}
+function goEditFromReview(target){
+  prepareEditTarget(target);
+  show(target);
+}
+function prepareEditTarget(target){
+  if(target==='s-week'){
+    resetWeekCards();
+    if(S.week){
+      const el=document.getElementById('wk-'+S.week);
+      if(el)el.classList.add(S.week==='mom'?'sel-mom':'sel');
+    }
+  }
+  if(target==='s-dad-mode'){
+    document.querySelectorAll('#s-dad-mode .scene-card').forEach(c=>c.className='scene-card');
+    const idMap={'normal':'sc-dad-normal','dad-helped-mom':'sc-dad-normal','mom-had':'sc-dad-momhad'};
+    const el=document.getElementById(idMap[S.dadMode]);
+    if(el)el.classList.add(S.dadMode==='mom-had'?'sel-warn':'sel-dad');
+    setProg('prog-dad-mode',0,4);
+  }
+  if(target==='s-mom-mode'){
+    document.querySelectorAll('#s-mom-mode .scene-card').forEach(c=>c.className='scene-card');
+    const idMap={easy:'ft-easy',helped:'ft-easy','dad-had':'ft-dad'};
+    const el=document.getElementById(idMap[S.momMode]);
+    if(el)el.classList.add(S.momMode==='dad-had'?'sel-warn':'sel-dad');
+    setProg('prog-mom-mode',0,3);
+  }
+  if(target==='s-allkids'){
+    const all=KIDS.length>0&&S.kidsWithDad.length===KIDS.length;
+    document.getElementById('ak-yes').classList.toggle('sel',all);
+    document.getElementById('ak-no').classList.toggle('sel',!all);
+    setProg('prog-allkids',1,4);
+  }
+  if(target==='s-whichkids'){
+    KIDS.forEach(k=>kidBtn('kb',k).classList.toggle('with-dad',S.kidsWithDad.includes(k)));
+    const allMom=document.getElementById('kb-allMom');
+    if(allMom)allMom.classList.toggle('all-mom',S.kidsWithDad.length===0);
+    updateWhoSummary();
+    setProg('prog-whichkids',2,4);
+  }
+  if(target==='s-dad-wk-mom-had'){
+    KIDS.forEach(k=>kidBtn('dwm',k).classList.toggle('with-mom',S.momHadKidsOnDadWeek.includes(k)));
+    const all=document.getElementById('dwm-all');
+    if(all)all.classList.toggle('with-mom',KIDS.length>0&&S.momHadKidsOnDadWeek.length===KIDS.length);
+    document.getElementById('dwm-next').disabled=S.momHadKidsOnDadWeek.length===0;
+    updateDadWkMomSummary();
+    setProg('prog-dad-wk-mom-had',2,5);
+  }
+  if(target==='s-mom-helped-kids'){
+    KIDS.forEach(k=>kidBtn('mhk',k).classList.toggle('with-mom',S.momHadKidsOnDadWeek.includes(k)));
+    document.getElementById('mom-helped-next').disabled=S.momHadKidsOnDadWeek.length===0;
+    updateMomHelpedSummary();
+    setProg('prog-mom-helped-kids',4,5);
+  }
+  if(target==='s-mom-easy'){
+    easyOpts=[...(S.momOpts.length?S.momOpts:['none'])];
+    document.querySelectorAll('#easy-opts .opt').forEach(o=>{
+      const key=(o.getAttribute('onclick')||'').match(/'([^']+)'/)?.[1];
+      o.classList.toggle('sel',easyOpts.includes(key));
+    });
+    document.getElementById('easy-note').value=S.diary||'';
+    document.getElementById('easy-review-btn').disabled=easyOpts.length===0;
+    setProg('prog-mom-easy',1,3);
+  }
+  if(target==='s-mom-helped-kids2'){
+    KIDS.forEach(k=>kidBtn('hk',k).classList.toggle('with-dad',S.helpedKids.includes(k)));
+    document.getElementById('helped-kids-next').disabled=S.helpedKids.length===0;
+    updateHelpedSummary();
+    setProg('prog-mom-helped-kids2',1,3);
+  }
+  if(target==='s-mom-dad-had'){
+    KIDS.forEach(k=>kidBtn('dh',k).classList.toggle('with-dad',S.dadHadKids.includes(k)));
+    const all=document.getElementById('dh-allThree');
+    if(all)all.classList.toggle('with-dad',KIDS.length>0&&S.dadHadKids.length===KIDS.length);
+    document.getElementById('dad-had-next').disabled=S.dadHadKids.length===0;
+    updateDadHadSummary();
+    setProg('prog-mom-dad-had',1,3);
+  }
+  if(target==='s-change-context'){
+    document.querySelectorAll('#s-change-context .change-yn-btn').forEach(b=>b.className='change-yn-btn');
+    document.getElementById('pressure-section').style.display=S.changeAgreed?'block':'none';
+    if(S.changeAgreed!==null)document.getElementById(S.changeAgreed?'agreed-yes':'agreed-no').classList.add(S.changeAgreed?'sel-yes':'sel-no');
+    if(S.changePressured!==null)document.getElementById(S.changePressured?'pressure-yes':'pressure-no').classList.add(S.changePressured?'sel-pressure':'sel-ok');
+    document.getElementById('change-context-next').disabled=S.changeAgreed===null||S.changeAgreed===true&&S.changePressured===null;
+    setProg('prog-change-context',2,4);
+  }
+  if(target==='s-diary'){
+    diaryOrigin='s-review';
+    document.getElementById('diary-q').textContent='Anything else to note?';
+    document.getElementById('diary-sub').textContent='A quick diary — how was today?';
+    document.getElementById('diary-input').value=S.diary||'';
+    document.getElementById('diary-next-btn').textContent='Review & save →';
+    renderAttachment('diary');
+    setProg('prog-diary',3,4);
+  }
+}
 function goBackFromReview(){
   // Go back to diary or last meaningful screen
   if(S.momMode==='easy')show('s-mom-easy');
@@ -1325,13 +1535,14 @@ function saveEntry(){
   if(isLockedEntry(saveDate)){alert('This entry is locked. Entries cannot be changed after 24 hours.');return;}
   entries[saveDate]=e;putEntries(entries);
   let ring='✅',summary='';
-  if(S.dadMode==='mom-had'){ring='🏡';summary="Your week · Kids at "+coParentPoss()+"\n"+S.momHadKidsOnDadWeek.join(', ')}
-  else if(S.dadMode==='dad-helped-mom'){summary="Your week · "+coParent()+" helped: "+S.momHadKidsOnDadWeek.join(', ')}
-  else if(S.momMode==='easy'){ring='✅';summary=coParentPoss()+" week · "+coParent()+" had the kids"}
-  else if(S.momMode==='helped'){ring='🤝';summary=coParentPoss()+" week · You helped: "+S.helpedKids.join(', ')}
-  else if(S.momMode==='dad-had'){ring='⚠️';summary=coParentPoss()+" week · You had: "+S.dadHadKids.join(', ')}
-  else{const n=e.kidsWithDad.length;summary=(S.week==='dad'?'Your week · ':'')+(n===KIDS.length?kidsCountLabel()+' home':n===0?'No kids':e.kidsWithDad.join(', ')+' home')}
-  document.getElementById('saved-ring').textContent=ring;
+  if(S.dadMode==='mom-had'){ring='🏡';summary="Your day · Kids at "+coParentPoss()+"\n"+S.momHadKidsOnDadWeek.join(', ')}
+  else if(S.dadMode==='dad-helped-mom'){summary="Your day · "+coParent()+" helped: "+S.momHadKidsOnDadWeek.join(', ')}
+  else if(S.momMode==='easy'){ring='✅';summary=coParentPoss()+" day · "+coParent()+" had the kids"}
+  else if(S.momMode==='helped'){ring='🤝';summary=coParentPoss()+" day · You helped: "+S.helpedKids.join(', ')}
+  else if(S.momMode==='dad-had'){ring='⚠️';summary=coParentPoss()+" day · You had: "+S.dadHadKids.join(', ')}
+  else{const n=e.kidsWithDad.length;summary=(S.week==='dad'?'Your day · ':'')+(n===KIDS.length?kidsCountLabel()+' home':n===0?'No kids':e.kidsWithDad.join(', ')+' home')}
+  const savedRing=document.getElementById('saved-ring');
+  if(savedRing)savedRing.textContent=ring;
   document.getElementById('saved-summary').textContent=summary;
   renderSavedReceipt(e,saveDate);
   show('s-saved');
@@ -1867,6 +2078,7 @@ if(DEMO_MODE==='june')seedJuneDemoData();
 if(DEMO_MODE==='july')seedJulyDemoData();
 renderConfigurableUi();
 if(hasSavedConfig()){
+  recordAppSession();
   initHome();
 }else{
   initOnboarding();show('s-ob-welcome');

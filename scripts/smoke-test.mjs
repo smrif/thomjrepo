@@ -217,7 +217,112 @@ try {
   await expectActive('s-home');
 
   await bootstrap();
+  if (await page.locator('#activity-prompt').isVisible()) {
+    throw new Error('Activity personalization prompt should not show on the first session.');
+  }
+  await page.evaluate(() => {
+    localStorage.setItem('custody_tracker_session_count', '2');
+    localStorage.removeItem('activity_prompt_shown');
+    localStorage.removeItem('activity_prompt_dismissed');
+    sessionStorage.removeItem('custody_tracker_session_counted');
+  });
+  await page.reload();
+  await expectActive('s-home');
+  if (!await page.locator('#activity-prompt').isVisible()) {
+    throw new Error('Activity personalization prompt should show on the third session.');
+  }
+  const promptShownFlag = await page.evaluate(() => localStorage.getItem('activity_prompt_shown'));
+  if (promptShownFlag !== '1') throw new Error('Activity personalization prompt should be marked shown as soon as it appears.');
+  await page.evaluate(() => {
+    sessionStorage.removeItem('custody_tracker_session_counted');
+  });
+  await page.reload();
+  await expectActive('s-home');
+  if (await page.locator('#activity-prompt').isVisible()) {
+    throw new Error('Activity personalization prompt should not show again after it has been seen once.');
+  }
+  await page.evaluate(today => {
+    localStorage.setItem('familylog_entries', JSON.stringify({
+      [today]: {
+        week: 'dad',
+        dadMode: 'normal',
+        momMode: null,
+        kidsWithDad: ['Ava', 'Ben'],
+        absentData: {},
+        momOpts: [],
+        helpedKids: [],
+        helpedData: {},
+        dadHadKids: [],
+        momHadKidsOnDadWeek: [],
+        momHelpedOnDadWeek: {},
+        diary: '',
+        attachment: null,
+        changeAgreed: null,
+        changePressured: null,
+        loggedAt: new Date().toISOString()
+      }
+    }));
+    initHome();
+  }, dateString(0));
+  if (await page.locator('#weekly-report-row').isVisible()) {
+    throw new Error('Weekly report home row should stay hidden until at least two user-logged days exist.');
+  }
+  await page.evaluate(({ yesterday }) => {
+    const entries = JSON.parse(localStorage.getItem('familylog_entries'));
+    entries[yesterday] = {
+      week: 'mom',
+      dadMode: null,
+      momMode: 'easy',
+      kidsWithDad: [],
+      absentData: {},
+      momOpts: ['none'],
+      helpedKids: [],
+      helpedData: {},
+      dadHadKids: [],
+      momHadKidsOnDadWeek: [],
+      momHelpedOnDadWeek: {},
+      diary: '',
+      attachment: null,
+      changeAgreed: null,
+      changePressured: null,
+      loggedAt: new Date().toISOString()
+    };
+    localStorage.setItem('familylog_entries', JSON.stringify(entries));
+    initHome();
+  }, { yesterday: dateString(-1) });
+  if (!await page.locator('#weekly-report-row').isVisible()) {
+    throw new Error('Weekly report home row should show after at least two user-logged days exist.');
+  }
 
+  await bootstrap({
+    currentParentLabel: 'Ryan',
+    coParentLabel: 'Laura',
+    children: ['Champ']
+  });
+  const singleChildShortcutState = await page.evaluate(() => ({
+    whichKidsButtons: [...document.querySelectorAll('#which-kids-grid .kid-btn')].map(btn => btn.textContent.trim()),
+    dadWeekMomButtons: [...document.querySelectorAll('#dad-wk-mom-grid .kid-btn')].map(btn => btn.textContent.trim()),
+    momWeekDadButtons: [...document.querySelectorAll('#dad-had-grid .kid-btn')].map(btn => btn.textContent.trim()),
+    hiddenShortcutCount: document.querySelectorAll('#kb-allMom,#dwm-all,#dh-allThree').length
+  }));
+  if (singleChildShortcutState.hiddenShortcutCount !== 0) {
+    throw new Error(`Single-child grids should not render all-kids shortcut buttons. Saw ${JSON.stringify(singleChildShortcutState)}.`);
+  }
+  for (const [grid, labels] of Object.entries(singleChildShortcutState).filter(([, value]) => Array.isArray(value))) {
+    if (labels.length !== 1 || labels[0] !== 'Champ') {
+      throw new Error(`Single-child ${grid} should only show the configured child. Saw ${labels.join(' | ')}.`);
+    }
+  }
+  await click('#s-home .home-primary');
+  await click('#wk-mom');
+  await expectActive('s-mom-mode');
+  await click('#ft-dad');
+  await expectActive('s-mom-dad-had');
+  const singleChildDadHadText = await page.locator('#dad-had-grid').innerText();
+  assertIncludes(singleChildDadHadText, 'Champ', 'Single-child co-parent day kid picker');
+  assertExcludes(singleChildDadHadText, 'one kid', 'Single-child co-parent day kid picker');
+
+  await bootstrap();
   await click('#s-home .bottom-nav-item[onclick="showSetup()"]');
   await assertSettingsScreen('Home Settings tab');
   await click(`#s-setup.screen.active .bottom-nav-item[onclick="show('s-home')"]`);
@@ -230,6 +335,7 @@ try {
   await click(`#s-setup.screen.active .bottom-nav-item[onclick="show('s-home')"]`);
   await expectActive('s-home');
 
+  await bootstrap();
   await click('#s-home .home-primary');
   await expectActive('s-week');
   const weekClasses = await page.locator('#s-week .checkin-decision-card').evaluateAll(nodes => nodes.map(n => n.className));
@@ -341,14 +447,36 @@ try {
   assertIncludesText(reviewText, "Kids at Laura's", 'Review label copy');
   assertExcludes(reviewText, "Mom's", 'Review label copy');
   assertExcludes(reviewText, "Dad's", 'Review label copy');
+  const reviewSaveButtons = await page.locator('#s-review .review-save-btn').count();
+  if (reviewSaveButtons !== 2) throw new Error(`Review should show top and bottom save actions, saw ${reviewSaveButtons}.`);
 
-  await click('#s-review button[onclick="saveEntry()"]');
+  await click('#s-review .review-save-btn-top');
   await expectActive('s-saved');
   const savedText = await page.locator('#saved-summary').innerText();
   assertIncludes(savedText, "Kids at Laura's", 'Saved summary label copy');
+  assertIncludes(savedText, 'Your day', 'Saved summary day copy');
   assertExcludes(savedText, "Mom's", 'Saved summary label copy');
+  assertExcludes(savedText, 'week', 'Saved summary day copy');
+  if (await page.locator('#saved-ring').count()) throw new Error('Saved screen should not show the old success ring.');
+  if (await page.locator('#s-saved .bottom-nav').count()) throw new Error('Saved screen should not show bottom nav.');
+  if ((await page.locator('#s-saved .logo').innerText()).trim()) throw new Error('Saved screen header label should be empty.');
 
-  await click('#s-saved .bottom-nav-item[onclick="showCal()"]');
+  await click('#s-saved .saved-actions > .btn.primary');
+  await expectActive('s-home');
+  const homeTitle = await page.locator('#home-plan-title').innerText();
+  const homeSub = await page.locator('#home-plan-sub').innerText();
+  const homePrimary = await page.locator('#home-primary-label').innerText();
+  if (homeTitle !== 'Already logged') throw new Error(`Home card should show already-logged state, saw "${homeTitle}".`);
+  assertIncludes(homeSub, 'Your day', 'Already-logged home summary');
+  if (homePrimary !== 'Edit today') throw new Error(`Home primary should become Edit today, saw "${homePrimary}".`);
+  if (!await page.locator('#home-checkin-card.logged').count()) throw new Error('Home check-in card should have logged styling after today is saved.');
+  await click('#s-home .home-primary');
+  await expectActive('s-review');
+  const editReviewText = await page.locator('#review-content').innerText();
+  assertIncludesText(editReviewText, "Kids at Laura's", 'Edit-today review label copy');
+  assertIncludes(editReviewText, 'Custom label smoke note.', 'Edit-today review diary copy');
+
+  await page.evaluate(() => showCal());
   await expectActive('s-cal');
   await page.evaluate(ds => {
     const entries = getEntries();
