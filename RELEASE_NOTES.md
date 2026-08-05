@@ -1,5 +1,25 @@
 # Release Notes
 
+## August 5, 2026
+
+- Removed the Special Day check-in path so pre-agreed schedule changes are recorded under either `My day` or `Co-parent's day`.
+- Simplified the decision tree so parents first choose whose scheduled day it was, then choose whether the kids stayed with them or with the co-parent.
+- Nested `I helped` / `co-parent helped` follow-ups under the appropriate custody-location branch instead of showing them as top-level custody outcomes.
+- Replaced inconsistent numeric check-in progress indicators with stable phase labels: Schedule, Kids, Details, and Review.
+- Updated schedule-change context screens to use the newer decision-card UI style.
+- Removed overnight-only activity copy from helped flows where the help may have been daytime involvement.
+- Added one-time home-screen personalization prompting on the third app session.
+- Hid Weekly report on the home screen until at least two real days have been logged.
+- Updated the home Today card so it changes from `Log today` to `Already logged` after today's entry is saved.
+- Added an `Edit today` path that opens the populated Review screen for today's existing entry instead of starting a blank check-in.
+- Tightened the Review and Logged screens so primary actions are easier to reach on mobile.
+- Changed logged-entry summary copy from `Your week` / co-parent week language to day-based language.
+- Improved Calendar changed-day visibility: actual custody stays represented by the main cell color, while changed days now get a stronger amber outline and corner marker.
+- Fixed Calendar legend colors so `You`, `Co-parent`, and `Changed` match the cells shown in the calendar.
+- Fixed single-child decision-tree pickers so redundant `one kid` shortcut buttons no longer appear.
+- Expanded smoke coverage for the new nested decision tree, one-time prompts, Weekly report gating, Already logged / Edit today behavior, compact saved screen, calendar layout, and single-child picker states.
+- Verified the update with contract tests and the browser smoke test suite.
+
 ## June 26, 2026
 
 - Added directional slide transitions across the daily check-in decision flow, with forward screens sliding in from the right and back navigation reversing direction.

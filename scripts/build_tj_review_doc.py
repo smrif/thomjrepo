@@ -172,9 +172,8 @@ def add_table(doc, headers, rows, widths):
 def add_decision_box(doc):
     add_h2(doc, "Decisions Needed From TJ")
     decisions = [
-        "Should 'My day -> Co-parent helped' ask about final overnight location before or after help details?",
-        "Should 'Other parent's day -> I helped' use a help confirmation screen instead of the sleeping-location confirmation screen?",
-        "For calls, pickups, and brief visits on the other parent's day, do we need to record which kid was involved?",
+        "Does the simplified two-choice location question feel clear after selecting whose scheduled day it was?",
+        "Is the nested help question lightweight enough, or should it be skippable from the diary/review screen?",
         "Should schedule-change context be captured only for overnight/custody deviations, or also for meaningful daytime changes?",
         "When should we begin backend planning for accounts, sync, screenshot storage, and privacy controls?"
     ]
@@ -207,7 +206,8 @@ def build():
     add_para(doc, "The app is currently optimized around quick, credible daily custody logging. The strongest product constraint is that users should not be able to backfill unlimited history, because that could weaken trust in the log.")
     add_bullet(doc, "Users can backfill only yesterday.")
     add_bullet(doc, "Older empty calendar days show \"Nothing logged\" and remain read-only.")
-    add_bullet(doc, "Schedule-change context is captured for true custody deviations, not ordinary calls, pickups, or brief visits.")
+    add_bullet(doc, "Help is captured after actual overnight location is selected.")
+    add_bullet(doc, "Schedule-change context is captured for true custody deviations, not ordinary help.")
     add_bullet(doc, "Each saved entry records a loggedAt timestamp.")
     add_bullet(doc, "Entries can include an optional screenshot attachment for context.")
 
@@ -215,16 +215,15 @@ def build():
     add_h2(doc, "Top-Level Choice")
     add_number(doc, "My day")
     add_number(doc, "Other parent's day")
-    add_number(doc, "Special day")
 
     add_h2(doc, "My Day Branch")
     add_table(
         doc,
         ["Path", "What the app asks", "Where it ends"],
         [
-            ["I had the kids", "Are all kids sleeping at your house? If no, select who is with you and where absent kids are.", "Kid location confirmation, diary, review, saved."],
-            ["Co-parent helped", "Pick the kids co-parent helped with, then record what co-parent did for each kid.", "Returns to the sleeping-location question, then diary/review."],
-            ["Kids ended up with co-parent", "Pick kids at co-parent's tonight, then answer schedule-change context questions.", "Diary, review, saved."]
+            ["With me", "Are all kids sleeping at your house? If no, select who is with you and where absent kids are.", "Kid location confirmation, optional co-parent help, diary, review, saved."],
+            ["With co-parent", "Pick kids at co-parent's tonight, then answer schedule-change context questions.", "Diary, review, saved."],
+            ["Co-parent helped", "If kids stayed with you, choose whether co-parent helped. If yes, pick kids and record what co-parent did.", "Diary, review, saved."]
         ],
         [2300, 4200, 2860]
     )
@@ -234,15 +233,11 @@ def build():
         doc,
         ["Path", "What the app asks", "Where it ends"],
         [
-            ["Co-parent had the kids", "Choose involvement: none, phone/FaceTime, drop-off or pickup, brief visit.", "Review, saved."],
-            ["I helped", "Pick kids you helped with, then record what you did for each kid.", "Kid location confirmation, diary/review."],
-            ["Kids ended up with me", "Pick kids who ended up with you, then answer schedule-change context questions.", "Diary, review, saved."]
+            ["With co-parent", "Choose whether you helped. If yes, pick kids and record what you did for each kid.", "Optional note, review, saved."],
+            ["With me", "Pick kids who ended up with you, then answer schedule-change context questions.", "Diary, review, saved."]
         ],
         [2300, 4200, 2860]
     )
-
-    add_h2(doc, "Special Day Branch")
-    add_para(doc, "Special days go directly to a special-day diary note with optional screenshot attachment, then Review and Saved.")
 
     add_h1(doc, "3. Schedule Change Context")
     add_para(doc, "This appears only when actual custody differs from the scheduled day.")
@@ -253,14 +248,13 @@ def build():
     add_number(doc, "If yes, did you feel pressured to agree?")
     add_para(doc, "Stored fields: changeAgreed and changePressured. These display in Review, Calendar details, log/report views, and exported report text.")
 
-    add_h1(doc, "4. Odd Paths To Review")
+    add_h1(doc, "4. Open Flow Questions")
     add_table(
         doc,
-        ["Flow", "Why it may feel odd", "Question for TJ"],
+        ["Flow", "Current behavior", "Question for TJ"],
         [
-            ["My day -> Co-parent helped", "The user records co-parent activity first, then returns to the sleeping-location question. It can feel like a loop.", "Should overnight location come before help details?"],
-            ["Other parent's day -> I helped", "The flow ends at the same kid confirmation screen used for sleeping-location confirmation.", "Should this branch get a different confirmation screen focused on help/involvement?"],
-            ["Other parent's day -> Co-parent had kids -> brief visit/call/pickup", "The app goes directly to Review without asking which kid was involved.", "Is lightweight logging enough, or should we record kid-level detail?"],
+            ["My day -> kids stayed with me -> co-parent helped", "Help is nested after overnight location and kid confirmation.", "Does this feel like the right order?"],
+            ["Other parent's day -> kids stayed with co-parent -> I helped", "Help is nested after overnight location and records kid-level help details.", "Is this too much detail for ordinary help?"],
             ["Progress indicators", "Some branches have different step totals, and schedule-change branches feel longer.", "Should all branches use a simpler progress model?"]
         ],
         [2300, 3600, 3460]
@@ -272,7 +266,6 @@ def build():
     add_bullet(doc, "Blue with diagonal stripes: your day, kids ended up with co-parent.")
     add_bullet(doc, "Soft green: other parent's scheduled day.")
     add_bullet(doc, "Green with diagonal stripes: other parent's day, kids ended up with you.")
-    add_bullet(doc, "White/outlined: special day.")
     add_bullet(doc, "Calendar detail shows logged timestamp, change-context badges, screenshot thumbnail/full image, and entry details.")
     add_bullet(doc, "Reports currently include summary stats, date-range filters, custody deviation report first, pressure/agreed flags, print, and preview auto-scroll.")
 
@@ -310,7 +303,7 @@ def build():
     add_h1(doc, "8. Suggested Review Agenda")
     add_number(doc, "Confirm whether the decision tree matches how TJ wants to think about custody documentation.")
     add_number(doc, "Resolve the three odd paths listed above.")
-    add_number(doc, "Decide what level of kid-specific detail is needed for brief visits, calls, and pickups.")
+    add_number(doc, "Validate whether nested help captures the right level of kid-specific detail.")
     add_number(doc, "Confirm backend timing and privacy expectations.")
     add_number(doc, "Choose the next product area to spec: Trends, Reports, or Settings.")
 
