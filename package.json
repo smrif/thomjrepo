@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build-static.mjs",
-    "deploy": "npx wrangler pages deploy dist --project-name=custody-tracker",
+    "deploy": "npx wrangler deploy",
     "test": "npm run test:contracts",
     "test:contracts": "node scripts/contract-test.mjs",
     "test:smoke": "node scripts/smoke-test.mjs"
