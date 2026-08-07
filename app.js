@@ -33,6 +33,7 @@ const MONTHS=['January','February','March','April','May','June','July','August',
 const ACT_LBL={school:'School pickup/dropoff',afterschool:'After school program',medical:'Doctor/medical',sports:'Sports/practice',dance:'Dance/gymnastics',music:'Music/tutoring',birthday:'Birthday party/playdate',camp:'Camp/day program',therapy:'Therapy/counseling',religious:'Religious service',volunteer:'Volunteering',tournament:'Tournament/competition',other:'Other'};
 const LOC_LBL={moms:"At Mom's",sleepover:'Sleepover',camp:'Overnight camp',activity:'Activity/event',other:'Other'};
 const MY_EMAIL='thomas.j.gamble@gmail.com';
+const FEEDBACK_FORM_URL='https://docs.google.com/forms/d/e/1FAIpQLSfvZbvGndLbr6mFadw9oJrI3dw9ebEmyRJCpjlgK5s3w8qxTw/viewform?usp=sharing&ouid=103902362441684971194';
 
 let S={week:null,dadMode:null,momMode:null,kidsWithDad:[],absentData:{},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'',attachment:null,changeAgreed:null,changePressured:null,changeContextNext:null,changeContextBack:null};
 let absentQueue=[],absentIdx=0,helpedQueue=[],helpedIdx=0,momHelpedQueue=[],momHelpedIdx=0;
@@ -431,6 +432,73 @@ function todayStr(){const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth
 function pad(n){return String(n).padStart(2,'0')}
 function fmtDate(ds){const[y,m,d]=ds.split('-');return MONTHS[parseInt(m)-1]+' '+parseInt(d)+', '+y}
 function fmtShort(ds){const[y,m,d]=ds.split('-');return MONTHS[parseInt(m)-1].slice(0,3)+' '+parseInt(d)+', '+y}
+function safeFilePart(value){
+  return String(value||'custody-tracker').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'custody-tracker';
+}
+function csvCell(value){
+  const text=value===null||value===undefined?'':String(value);
+  return /[",\n\r]/.test(text)?'"'+text.replace(/"/g,'""')+'"':text;
+}
+function csvJoin(value){
+  return Array.isArray(value)?value.join('; '):(value||'');
+}
+function exportAllData(){
+  const exportDate=todayStr();
+  const entries=getEntries();
+  const headers=[
+    'exported_at','alpha_note','user_label','co_parent_label','email','children',
+    'entry_date','scheduled_day','your_day_outcome','co_parent_day_outcome',
+    'kids_with_you','kids_with_co_parent_on_your_day','kids_you_helped',
+    'kids_you_had_on_co_parent_day','absent_details','helped_details',
+    'co_parent_helped_details','co_parent_options','change_agreed',
+    'felt_pressured','diary_note','attachment_name','attachment_type',
+    'attachment_data_url','logged_at','missed_entry','intentionally_skipped'
+  ];
+  const exportedAt=new Date().toISOString();
+  const alphaNote='Alpha export from local device storage. Keep this file as a backup while cloud sync is not available.';
+  const rows=Object.entries(entries).sort((a,b)=>a[0].localeCompare(b[0])).map(([date,e])=>[
+    exportedAt,
+    alphaNote,
+    currentParent(),
+    coParent(),
+    APP_CONFIG.email||'',
+    csvJoin(APP_CONFIG.children),
+    date,
+    e.week||'',
+    e.dadMode||'',
+    e.momMode||'',
+    csvJoin(e.kidsWithDad),
+    csvJoin(e.momHadKidsOnDadWeek),
+    csvJoin(e.helpedKids),
+    csvJoin(e.dadHadKids),
+    e.absentData?JSON.stringify(e.absentData):'',
+    e.helpedData?JSON.stringify(e.helpedData):'',
+    e.momHelpedOnDadWeek?JSON.stringify(e.momHelpedOnDadWeek):'',
+    csvJoin(e.momOpts),
+    e.changeAgreed===null||e.changeAgreed===undefined?'':String(e.changeAgreed),
+    e.changePressured===null||e.changePressured===undefined?'':String(e.changePressured),
+    e.diary||'',
+    e.attachment?.name||'',
+    e.attachment?.type||'',
+    e.attachment?.dataUrl||'',
+    e.loggedAt||'',
+    e.week==='not-logged'?'true':'',
+    e.intentional===undefined?'':String(e.intentional)
+  ]);
+  if(!rows.length){
+    rows.push([exportedAt,alphaNote,currentParent(),coParent(),APP_CONFIG.email||'',csvJoin(APP_CONFIG.children),'','','','','','','','','','','','','','','','','','','','','']);
+  }
+  const csv=[headers,...rows].map(row=>row.map(csvCell).join(',')).join('\n')+'\n';
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`${safeFilePart(currentParent())}-custody-tracker-backup-${exportDate}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
 function fmtLoggedAt(iso){
   if(!iso)return'';
   const d=new Date(iso);
@@ -566,7 +634,14 @@ const CHECKIN_FLOW_SCREENS=new Set([
   's-mom-helped-kids2','s-helped-activity','s-mom-dad-had','s-kids-confirm',
   's-dad-help-choice','s-change-context','s-diary','s-review'
 ]);
+const FEEDBACK_VISIBLE_SCREENS=new Set(['s-home','s-cal','s-export','s-setup']);
 let screenStack=[];
+
+function syncFeedbackButton(screenId){
+  const btn=document.getElementById('alpha-feedback-btn');
+  if(!btn)return;
+  btn.hidden=!FEEDBACK_VISIBLE_SCREENS.has(screenId);
+}
 
 function show(id,direction){
   const next=document.getElementById(id);
@@ -604,6 +679,7 @@ function show(id,direction){
     next.classList.add('active');
   }
   if(id==='s-home')initHome();
+  syncFeedbackButton(id);
   window.scrollTo(0,0);
 }
 function blankCheckinState(){
@@ -1905,6 +1981,35 @@ function shareReport(){
   if(navigator.share){navigator.share({title:'Custody Tracker',text:currentReportText}).catch(()=>{})}
   else window.location.href=`mailto:${MY_EMAIL}?subject=${subject}&body=${body}`;
 }
+function openFeedback(){
+  if(FEEDBACK_FORM_URL){
+    window.open(FEEDBACK_FORM_URL,'_blank','noopener');
+    return;
+  }
+  const active=document.querySelector('.screen.active:not(.screen-leave)')?.id||'unknown';
+  const entries=loggedEntryCount();
+  const subject=encodeURIComponent('Custody Tracker alpha feedback');
+  const body=encodeURIComponent(`Hi,
+
+I am testing the Custody Tracker alpha and wanted to share feedback.
+
+What I was trying to do:
+
+What worked well:
+
+What felt confusing or broken:
+
+Anything I expected but could not find:
+
+Context:
+- Screen: ${active}
+- Entries logged: ${entries}
+- User label: ${currentParent()}
+- Children count: ${KIDS.length}
+- Browser: ${navigator.userAgent}
+`);
+  window.location.href=`mailto:${MY_EMAIL}?subject=${subject}&body=${body}`;
+}
 async function copyReport(){
   if(!currentReportText)return;
   try{await navigator.clipboard.writeText(currentReportText);const el=document.getElementById('copy-toast');el.style.display='block';setTimeout(()=>el.style.display='none',2500)}catch(e){}
@@ -2074,12 +2179,18 @@ function seedJulyDemoData(){
 
 const DEMO_PARAMS=new URLSearchParams(window.location.search);
 const DEMO_MODE=DEMO_PARAMS.get('demo');
+if(DEMO_PARAMS.has('reset')){
+  localStorage.clear();
+  sessionStorage.clear();
+  window.history.replaceState(null,'',window.location.pathname);
+}
 if(DEMO_MODE==='june')seedJuneDemoData();
 if(DEMO_MODE==='july')seedJulyDemoData();
 renderConfigurableUi();
 if(hasSavedConfig()){
   recordAppSession();
   initHome();
+  syncFeedbackButton('s-home');
 }else{
   initOnboarding();show('s-ob-welcome');
 }

@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Custody Tracker">
 <title>Custody Tracker</title>
-<link rel="stylesheet" href="styles.css?v=calendar-changed-1">
+<link rel="stylesheet" href="styles.css?v=alpha-readiness-1">
 </head>
 <body>
 <div class="app" id="app" style="padding-bottom:80px">
@@ -33,6 +33,10 @@
 <!-- ONBOARDING STEP 1b: Promises (shown after tapping get started) -->
 <div class="screen" id="s-ob-promises">
   <div class="ob-shell">
+    <div class="alpha-notice alpha-notice-onboarding">
+      <strong>Alpha build</strong>
+      <span>Data is stored on this device only. Export regularly, and do not treat this as legal advice.</span>
+    </div>
     <div class="ob-promise-intro">Here's what you're signing up for</div>
     <div class="ob-promise-cards">
       <div class="ob-promise ob-promise-lg">
@@ -149,7 +153,7 @@
     <input class="ob-input" type="email" id="ob-email" placeholder="your@email.com" autocomplete="email" oninput="obValidateStep('s-ob-finish')">
     <div class="ob-terms-row">
       <input type="checkbox" id="ob-terms" onchange="obValidateStep('s-ob-finish')">
-      <label for="ob-terms">I agree to the <a href="#" onclick="return false">Terms of Use</a> and <a href="#" onclick="return false">Privacy Policy</a>.</label>
+      <label for="ob-terms">I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</label>
     </div>
     <div class="ob-error" id="ob-finish-error" style="display:none">Please enter a valid email and accept the terms.</div>
     <button class="ob-btn-primary ob-disabled" id="btn-ob-finish" onclick="obFinish()">Start tracking →</button>
@@ -242,7 +246,7 @@
     <div class="setup-field" id="setup-email-field" style="display:none"></div>
     <div class="setup-terms" id="setup-terms-field">
       <label><input type="checkbox" id="setup-terms" onchange="handleSetupInput()">
-      <span>I agree to the <a href="#" onclick="return false">Terms of Use</a> and <a href="#" onclick="return false">Privacy Policy</a>.</span></label>
+      <span>I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
       <div class="setup-error">Please accept the Terms of Use and Privacy Policy.</div>
     </div>
 
@@ -251,6 +255,23 @@
       <button class="btn primary setup-continue" id="setup-continue" onclick="saveSetup()">Save changes</button>
       <div class="setup-privacy">Your data stays on your device. Always.</div>
     </div>
+
+    <section class="settings-section settings-data-section">
+      <div class="settings-section-head">
+        <span class="settings-section-icon data-icon" aria-hidden="true"></span>
+        <div>
+          <h2>Data</h2>
+          <p>Keep a backup while this alpha runs without cloud sync.</p>
+        </div>
+      </div>
+      <div class="settings-card settings-data-card">
+        <div>
+          <strong>Export all data</strong>
+          <span>Downloads your settings, children, entries, notes, and attachment details as CSV.</span>
+        </div>
+        <button class="settings-export-btn" type="button" onclick="exportAllData()">Export CSV</button>
+      </div>
+    </section>
 
     <div class="child-modal-backdrop" id="child-modal" aria-hidden="true">
       <div class="child-modal-card" role="dialog" aria-modal="true" aria-labelledby="child-modal-title">
@@ -1027,7 +1048,11 @@
     </div>
   </div>
 </div>
+<button class="alpha-feedback-btn" id="alpha-feedback-btn" onclick="openFeedback()" hidden aria-label="Send alpha feedback">
+  <span class="alpha-feedback-icon" aria-hidden="true"></span>
+  <strong>Feedback</strong>
+</button>
 </div><!-- end .app -->
-<script src="app.js?v=single-child-kid-pickers-1"></script>
+<script src="app.js?v=alpha-readiness-1"></script>
 </body>
 </html>
