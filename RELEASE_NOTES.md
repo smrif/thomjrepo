@@ -1,5 +1,18 @@
 # Release Notes
 
+## August 7, 2026
+
+- Added an alpha feedback button that opens the Custody Tracker Google Form in a new tab.
+- Added an alpha notice during onboarding explaining that records are stored on-device during alpha, should be exported regularly, and are not legal advice.
+- Added a Settings Data section with CSV export for local backups, including profile labels, children, dated entries, notes, change context, attachment details, timestamps, and missed/skipped flags.
+- Added basic Terms of Use and Privacy Policy pages and wired the onboarding/settings agreement links to open them.
+- Added a local `?reset=1` helper for clearing app storage during testing and returning to onboarding.
+- Added a static build pipeline that copies the deployable app into `dist/`.
+- Added Cloudflare Worker static-assets deployment configuration and npm build/deploy scripts for production hosting.
+- Deployed the alpha build successfully through Cloudflare.
+- Improved iPhone/Safari touch handling by expanding bottom navigation hit targets, adding mobile tap behavior hints, preserving native checkbox styling, and cache-busting the Safari touch stylesheet update.
+- Verified the alpha updates with contract tests, browser smoke tests, static build checks, focused CSV export checks, and iPhone-sized bottom-nav hit target checks.
+
 ## August 5, 2026
 
 - Removed the Special Day check-in path so pre-agreed schedule changes are recorded under either `My day` or `Co-parent's day`.
