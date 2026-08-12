@@ -1,5 +1,19 @@
 # Release Notes
 
+## August 12, 2026
+
+- Removed the Review step from the daily check-in flow so entries save directly from the final Details/notes screen.
+- Updated the check-in progress header from four phases to three: Schedule, Kids, and Details.
+- Removed the old Review screen markup, styling, and review-specific routing now that the Logged screen handles post-save editing.
+- Updated the Logged screen primary action from `Back to today` to `Back to Home`.
+- Added a lightweight success overlay with small confetti after a fresh entry is logged, with auto-dismiss behavior and reduced-motion support.
+- Changed `Edit today` from the Home screen to reopen the saved entry at the Schedule step, with the saved day type selected, so users can adjust schedule, kids, or details from the top of the flow.
+- Changed the Logged screen `Edit` action to also reopen the saved entry at the Schedule step instead of dropping users into the diary/details screen.
+- Renamed the co-parent-day easy-flow internal continue button from review-oriented naming to continue-oriented naming.
+- Updated weekly/report email sharing to use the email address saved in Settings instead of the prior hardcoded recipient.
+- Expanded contract and browser smoke coverage for the removed Review screen, direct-save flow, success overlay, Logged/Home edit routes, and Settings email-based report sharing.
+- Verified the update with the contract test and browser smoke test suite.
+
 ## August 7, 2026
 
 - Added an alpha feedback button that opens the Custody Tracker Google Form in a new tab.

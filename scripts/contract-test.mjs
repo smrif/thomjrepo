@@ -44,7 +44,6 @@ for (const id of [
   's-absent',
   's-change-context',
   's-diary',
-  's-review',
   's-cal',
   's-export',
   's-setup'

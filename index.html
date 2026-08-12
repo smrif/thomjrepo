@@ -396,7 +396,6 @@
     <span class="active">Schedule</span>
     <span>Kids</span>
     <span>Details</span>
-    <span>Review</span>
   </div>
   <p class="q">What kind of day is it?</p>
   <p class="sub">Choose the scheduled custody context for today</p>
@@ -636,7 +635,7 @@
   </div>
   <p class="sec-lbl">Quick note (optional)</p>
   <input type="text" id="easy-note" placeholder="Anything worth recording...">
-  <button class="btn primary" id="easy-review-btn" onclick="continueMomEasy()" style="width:100%" disabled>Continue →</button>
+  <button class="btn primary" id="easy-continue-btn" onclick="continueMomEasy()" style="width:100%" disabled>Continue →</button>
 </div>
 
 <!-- MOM HELPED: which kids -->
@@ -823,28 +822,7 @@
     </label>
   </div>
 
-  <button class="btn primary" id="diary-next-btn" onclick="goToReview()" style="width:100%;margin-top:1rem">Review &amp; save →</button>
-</div>
-
-<!-- REVIEW & CONFIRM -->
-<div class="screen" id="s-review">
-  <div class="top-bar">
-    <button class="back-btn" id="review-back-btn" onclick="goBackFromReview()">← Edit</button>
-    <div class="logo">Review</div>
-    <div class="back-spacer"></div>
-  </div>
-  <div class="phase-progress" id="prog-review">
-    <span>Schedule</span>
-    <span>Kids</span>
-    <span>Details</span>
-    <span class="active">Review</span>
-  </div>
-  <p class="q">Does everything look right?</p>
-  <p class="sub">Review the day before saving it to your log.</p>
-  <div id="review-content"></div>
-  <button class="btn primary review-save-btn" onclick="saveEntry()">Log it — looks good</button>
-  <button class="btn" onclick="goBackFromReview()" style="width:100%;margin-top:10px">Edit something</button>
-  <div style="font-size:12px;color:#999;text-align:center;margin:12px 0 4px" id="review-timestamp-note"></div>
+  <button class="btn primary" id="diary-next-btn" onclick="saveEntry()" style="width:100%;margin-top:1rem">Log it →</button>
 </div>
 
 <!-- SAVED -->
@@ -862,11 +840,24 @@
     <div class="saved-receipt" id="saved-receipt"></div>
   </div>
   <div class="saved-actions">
-    <button class="btn primary" onclick="show('s-home')">Back to today</button>
+    <button class="btn primary" onclick="show('s-home')">Back to Home</button>
   <div class="saved-action-row">
       <button class="btn" onclick="showCal()">View calendar</button>
       <button class="btn" onclick="showExport()">Reports</button>
     </div>
+  </div>
+</div>
+
+<div class="success-overlay" id="success-overlay" aria-live="polite" aria-hidden="true" hidden>
+  <div class="success-pop">
+    <span class="success-confetti c1"></span>
+    <span class="success-confetti c2"></span>
+    <span class="success-confetti c3"></span>
+    <span class="success-confetti c4"></span>
+    <span class="success-confetti c5"></span>
+    <div class="success-mark">✓</div>
+    <div class="success-title">Logged</div>
+    <div class="success-copy">You're done for today.</div>
   </div>
 </div>
 

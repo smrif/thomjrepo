@@ -83,19 +83,6 @@ hr{border:none;border-top:1px solid #ebebeb;margin:1.25rem 0}
 .act-btn{padding:13px 10px;border-radius:12px;border:1.5px solid #e5e5e5;background:#fff;color:#1a1a1a;font-size:13px;font-weight:500;cursor:pointer;text-align:center;font-family:inherit}
 .act-btn:active{opacity:.7}
 .act-btn.sel{border-color:#3c3489;background:#eeedfe;color:#3c3489}
-/* Review screen */
-.review-section{margin-bottom:1rem}
-.review-label{font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
-.review-card{background:#fff;border:1px solid #ebebeb;border-radius:12px;padding:13px 15px;margin-bottom:6px}
-.review-row{font-size:14px;color:#1a1a1a;margin-bottom:4px;line-height:1.5;display:flex;gap:8px;align-items:flex-start}
-.review-row:last-child{margin-bottom:0}
-.review-key{font-size:13px;color:#999;min-width:80px;flex-shrink:0;padding-top:1px}
-.review-val{font-size:13px;color:#1a1a1a;flex:1;line-height:1.5}
-.review-edit-btn{background:none;border:none;color:#3c3489;font-size:13px;font-weight:600;cursor:pointer;padding:0;font-family:inherit}
-.review-edit-btn:active{opacity:.6}
-.review-tag{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;display:inline-block;margin-bottom:4px}
-.rt-dad{background:#eeedfe;color:#3c3489}.rt-mom{background:#faece7;color:#993c1d}
-.rt-other{background:#faeeda;color:#633806}.rt-warn{background:#faeeda;color:#633806}
 /* Calendar */
 .calendar-shell{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
 .calendar-top{display:flex;align-items:center;justify-content:space-between;margin:10px 0 28px}
@@ -387,7 +374,7 @@ select:focus{border-color:#6c63d4}
 #s-week .back-btn{background:none;border:none;box-shadow:none;color:#4430a0;font-size:20px;font-weight:800;padding:0}
 #s-week .logo{font-size:14px;font-weight:800;color:#8a8894;letter-spacing:.18em}
 #s-week .progress{gap:10px;margin-bottom:32px}
-.phase-progress{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:32px}
+.phase-progress{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:32px}
 .phase-progress span{min-width:0;border-bottom:3px solid #dfdfe0;padding-bottom:8px;color:#8a8894;font-size:11px;font-weight:800;text-align:center;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .phase-progress span.active{border-bottom-color:#4430a0;color:#4430a0}
 #s-week .pd{height:5px;border-radius:999px;background:#dfdfe0}
@@ -479,37 +466,6 @@ select:focus{border-color:#6c63d4}
 #s-kids-confirm .btn,#s-diary .btn{min-height:56px;border-radius:16px}
 #s-kids-confirm .btn.primary,#s-diary .btn.primary{background:#4430a0;border-color:#4430a0;box-shadow:0 10px 20px rgba(68,48,160,.16)}
 #s-diary textarea{border-radius:20px;border-color:#e1e0e5;background:#fff;min-height:170px;box-shadow:0 8px 18px rgba(28,22,48,.04);font-size:16px}
-#s-review{max-width:430px;margin:0 auto}
-#s-review .top-bar{margin:4px 0 24px}
-#s-review .back-btn{background:none;border:none;box-shadow:none;color:#4430a0;font-size:20px;font-weight:800;padding:0}
-#s-review .logo{font-size:14px;font-weight:800;color:#8a8894;letter-spacing:.18em}
-#s-review>.q{font-family:Georgia,'Times New Roman',serif;font-size:34px;font-weight:800;line-height:1.08;color:#11172f;letter-spacing:0;margin-bottom:14px}
-#s-review>.sub{font-size:18px;color:#70717a;line-height:1.35;margin-bottom:22px}
-#review-content{display:flex;flex-direction:column;gap:14px;margin-bottom:22px}
-#s-review .review-receipt{display:grid;grid-template-columns:auto minmax(0,1fr);gap:13px;align-items:center;background:#f7f5ff;border:1.5px solid #ddd8f4;border-radius:18px;padding:14px 15px;box-shadow:0 8px 18px rgba(68,48,160,.06)}
-#s-review .review-receipt-mark{width:36px;height:36px;border-radius:50%;background:#4430a0;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900}
-#s-review .review-receipt-title{font-size:16px;font-weight:900;color:#21175c;line-height:1.2}
-#s-review .review-receipt-sub{font-size:13px;color:#665f86;line-height:1.35;margin-top:2px}
-#s-review .review-group{border-top:1px solid #ebe8f1;padding-top:14px}
-#s-review .review-group-title{font-size:13px;font-weight:900;color:#11172f;letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px}
-#s-review .review-section{margin-bottom:0}
-#s-review .review-section+.review-section{margin-top:10px}
-#s-review .review-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
-#s-review .review-label{font-size:12px;font-weight:800;color:#8a8894;text-transform:uppercase;letter-spacing:.12em;margin-bottom:0;min-width:0;overflow-wrap:anywhere;line-height:1.3}
-#s-review .review-edit-btn{border:1px solid #ddd8ef;background:#fff;color:#4430a0;border-radius:999px;padding:7px 13px;font-size:13px;font-weight:800;box-shadow:0 6px 14px rgba(28,22,48,.04)}
-#s-review .review-card{background:#fff;border:1.5px solid #e1e0e5;border-radius:16px;padding:14px 15px;box-shadow:0 8px 18px rgba(28,22,48,.04);margin-bottom:0;min-width:0;overflow-wrap:anywhere}
-#s-review .review-row{font-size:15px;color:#11172f;line-height:1.45;margin-bottom:8px;display:flex;gap:12px;min-width:0;overflow-wrap:anywhere}
-#s-review .review-row:last-child{margin-bottom:0}
-#s-review .review-key{font-size:14px;color:#70717a;min-width:88px;padding-top:0}
-#s-review .review-val{font-size:15px;color:#11172f;line-height:1.45;min-width:0;overflow-wrap:anywhere}
-#s-review .review-note{font-size:15px;color:#11172f;line-height:1.55;font-style:italic}
-#s-review .review-chip-row,#s-review .review-badge-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
-#s-review .review-tag{font-size:12px;padding:5px 10px;border-radius:999px;font-weight:850;display:inline-flex;margin:0;line-height:1.2}
-#s-review #review-timestamp-note{display:block;border-top:1px solid #ebe8f1;padding:12px 8px 0;color:#8a8894!important;line-height:1.4}
-#s-review .btn{min-height:56px;border-radius:16px}
-#s-review .btn.primary{background:#4430a0;border-color:#4430a0;box-shadow:0 10px 20px rgba(68,48,160,.16)}
-#s-review .review-save-btn{width:100%;padding:16px;font-size:16px;font-weight:800;margin-top:.5rem}
-#s-review .review-save-btn-top{margin-top:-4px;margin-bottom:2px}
 #s-saved{max-width:430px;margin:0 auto}
 #s-saved .top-bar{margin:4px 0 18px}
 #s-saved .logo{font-size:14px;font-weight:800;color:#8a8894;letter-spacing:.18em}
@@ -528,6 +484,29 @@ select:focus{border-color:#6c63d4}
 .saved-action-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 #s-saved .btn{min-height:56px;border-radius:16px}
 #s-saved .btn.primary{background:#4430a0;border-color:#4430a0;box-shadow:0 10px 20px rgba(68,48,160,.16)}
+.success-overlay{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:92px 20px 0;background:rgba(17,23,47,0);pointer-events:none;opacity:0;transition:opacity .22s ease}
+.success-overlay.visible{opacity:1}
+.success-pop{position:relative;width:min(320px,100%);background:#fff;border:1px solid #e4e0f1;border-radius:22px;padding:24px 22px 22px;text-align:center;box-shadow:0 24px 60px rgba(28,22,48,.22);transform:translateY(-12px) scale(.96);transition:transform .24s cubic-bezier(.2,.9,.2,1)}
+.success-overlay.visible .success-pop{transform:translateY(0) scale(1)}
+.success-mark{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;background:#4430a0;color:#fff;font-size:26px;font-weight:900;box-shadow:0 12px 24px rgba(68,48,160,.22)}
+.success-title{font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:800;line-height:1.05;color:#11172f;margin-bottom:6px}
+.success-copy{font-size:15px;font-weight:650;color:#70717a;line-height:1.35}
+.success-confetti{position:absolute;width:9px;height:14px;border-radius:3px;opacity:0;transform:translateY(8px) rotate(0deg)}
+.success-overlay.visible .success-confetti{animation:confetti-pop 900ms ease-out forwards}
+.success-confetti.c1{left:40px;top:24px;background:#f3b23c;animation-delay:40ms}
+.success-confetti.c2{left:82px;top:12px;background:#2f9f83;animation-delay:110ms}
+.success-confetti.c3{right:72px;top:18px;background:#e86f51;animation-delay:70ms}
+.success-confetti.c4{right:42px;top:48px;background:#6b57c7;animation-delay:150ms}
+.success-confetti.c5{left:55%;top:6px;background:#55a6d9;animation-delay:20ms}
+@keyframes confetti-pop{
+  0%{opacity:0;transform:translateY(10px) scale(.8) rotate(0deg)}
+  35%{opacity:1}
+  100%{opacity:0;transform:translateY(-34px) scale(1) rotate(170deg)}
+}
+@media (prefers-reduced-motion:reduce){
+  .success-overlay,.success-pop{transition:none}
+  .success-overlay.visible .success-confetti{animation:none;opacity:1}
+}
 
 /* Co-parent day branch screens */
 #s-mom-easy,#s-mom-helped-kids2,#s-helped-activity,#s-mom-dad-had{max-width:430px;margin:0 auto}

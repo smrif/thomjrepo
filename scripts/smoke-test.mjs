@@ -124,7 +124,7 @@ async function assertNoHorizontalOverflow(context) {
   }
 }
 
-async function assertSettingsScreen(context) {
+async function assertSettingsScreen(context, expectedEmail = 'parent@example.com') {
   await expectActive('s-setup');
   const settingsNavVisible = await page.locator('#s-setup .bottom-nav').isVisible();
   if (!settingsNavVisible) throw new Error(`${context}: Settings should show the bottom navigation for returning users.`);
@@ -146,7 +146,7 @@ async function assertSettingsScreen(context) {
     hasEmojiActivityLabels: [...document.querySelectorAll('#setup-activity-chips .activity-chip')].some(node => /[\u{1F300}-\u{1FAFF}]/u.test(node.innerText))
   }));
   if (fieldState.currentParent !== 'Dad') throw new Error(`${context}: Settings did not populate the current parent field. Saw ${JSON.stringify(fieldState)}.`);
-  if (fieldState.email !== 'parent@example.com') throw new Error(`${context}: Settings did not populate the email field. Saw ${JSON.stringify(fieldState)}.`);
+  if (fieldState.email !== expectedEmail) throw new Error(`${context}: Settings did not populate the email field. Saw ${JSON.stringify(fieldState)}.`);
   if (fieldState.childCount !== 2) throw new Error(`${context}: Settings should render saved children. Saw ${JSON.stringify(fieldState)}.`);
   if (fieldState.childRows !== 2) throw new Error(`${context}: Settings should render children as clean rows. Saw ${JSON.stringify(fieldState)}.`);
   if (fieldState.activityGroups !== 1 || fieldState.childActivityGroups !== 0) {
@@ -325,13 +325,22 @@ try {
   await bootstrap();
   await click('#s-home .bottom-nav-item[onclick="showSetup()"]');
   await assertSettingsScreen('Home Settings tab');
-  await click(`#s-setup.screen.active .bottom-nav-item[onclick="show('s-home')"]`);
+  await page.locator('#setup-email').fill('weekly.user@example.com');
+  await click('#s-setup button[onclick="saveSetup()"]');
   await expectActive('s-home');
+  const weeklyMailto = await page.evaluate(() => {
+    const subject = encodeURIComponent('Custody Tracker — Weekly Report test');
+    return reportMailto(subject, encodeURIComponent(buildWeeklyReport()));
+  });
+  if (!weeklyMailto.startsWith('mailto:weekly.user%40example.com?')) {
+    throw new Error(`Weekly report should use the email saved in Settings. Saw "${weeklyMailto}".`);
+  }
+  assertIncludes(weeklyMailto, 'Custody%20Tracker', 'Weekly report mailto');
 
   await click('#s-home .bottom-nav-item[onclick="showExport()"]');
   await expectActive('s-export');
   await click('#s-export .bottom-nav-item[onclick="showSetup()"]');
-  await assertSettingsScreen('Reports Settings tab');
+  await assertSettingsScreen('Reports Settings tab', 'weekly.user@example.com');
   await click(`#s-setup.screen.active .bottom-nav-item[onclick="show('s-home')"]`);
   await expectActive('s-home');
 
@@ -365,10 +374,10 @@ try {
   await click('#ft-easy');
   await expectActive('s-mom-easy');
   await click('#s-mom-easy .opt[onclick*="helped"]');
-  if (await page.locator('#easy-review-btn').isDisabled()) {
+  if (await page.locator('#easy-continue-btn').isDisabled()) {
     throw new Error('Nested help choice should enable Continue.');
   }
-  await click('#easy-review-btn');
+  await click('#easy-continue-btn');
   await expectActive('s-mom-helped-kids2');
 
   await bootstrap();
@@ -440,18 +449,12 @@ try {
   await expectActive('s-diary');
   await page.locator('#diary-input').fill('Custom label smoke note.');
   await click('#diary-next-btn');
-  await expectActive('s-review');
-  const reviewText = await page.locator('#review-content').innerText();
-  assertIncludes(reviewText, "Ryan's scheduled day", 'Review label copy');
-  assertIncludes(reviewText, "Kids ended up at Laura's", 'Review label copy');
-  assertIncludesText(reviewText, "Kids at Laura's", 'Review label copy');
-  assertExcludes(reviewText, "Mom's", 'Review label copy');
-  assertExcludes(reviewText, "Dad's", 'Review label copy');
-  const reviewSaveButtons = await page.locator('#s-review .review-save-btn').count();
-  if (reviewSaveButtons !== 2) throw new Error(`Review should show top and bottom save actions, saw ${reviewSaveButtons}.`);
-
-  await click('#s-review .review-save-btn-top');
   await expectActive('s-saved');
+  await page.waitForSelector('#success-overlay.visible');
+  const successOverlayText = await page.locator('#success-overlay').innerText();
+  assertIncludes(successOverlayText, 'Logged', 'Success overlay copy');
+  assertIncludes(successOverlayText, "You're done for today.", 'Success overlay copy');
+  await page.waitForSelector('#success-overlay[hidden]', { timeout: 3000 });
   const savedText = await page.locator('#saved-summary').innerText();
   assertIncludes(savedText, "Kids at Laura's", 'Saved summary label copy');
   assertIncludes(savedText, 'Your day', 'Saved summary day copy');
@@ -471,10 +474,13 @@ try {
   if (homePrimary !== 'Edit today') throw new Error(`Home primary should become Edit today, saw "${homePrimary}".`);
   if (!await page.locator('#home-checkin-card.logged').count()) throw new Error('Home check-in card should have logged styling after today is saved.');
   await click('#s-home .home-primary');
-  await expectActive('s-review');
-  const editReviewText = await page.locator('#review-content').innerText();
-  assertIncludesText(editReviewText, "Kids at Laura's", 'Edit-today review label copy');
-  assertIncludes(editReviewText, 'Custom label smoke note.', 'Edit-today review diary copy');
+  await expectActive('s-week');
+  if (!await page.locator('#wk-dad.sel').count()) throw new Error('Edit today should return to Schedule with the saved day type selected.');
+  await page.evaluate(() => showSavedEntry(getEntries()[todayStr()], todayStr()));
+  await expectActive('s-saved');
+  await click('#s-saved .saved-card-edit');
+  await expectActive('s-week');
+  if (!await page.locator('#wk-dad.sel').count()) throw new Error('Edit from saved should return to Schedule with the saved day type selected.');
 
   await page.evaluate(() => showCal());
   await expectActive('s-cal');
