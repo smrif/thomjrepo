@@ -195,7 +195,7 @@ try {
   if (await page.locator('#s-ob-coparent .ob-examples').count() !== 0) throw new Error('Step 2 should not show parent shortcut chips.');
   if (await page.locator('#s-ob-coparent .ob-q').innerText() !== 'What should we call the other parent?') throw new Error('Step 2 heading should ask about the other parent label.');
   if (await page.locator('#s-ob-coparent .ob-label').innerText() !== 'Other parent name or label') throw new Error('Step 2 should label the co-parent field clearly.');
-  if (await page.locator('#ob-coparent').getAttribute('placeholder') !== 'e.g. Kelly, Mom, Dad, Co-parent') throw new Error('Step 2 placeholder should give neutral examples.');
+  if (await page.locator('#ob-coparent').getAttribute('placeholder') !== 'e.g. Taylor, Mom, Dad, Co-parent') throw new Error('Step 2 placeholder should give neutral examples.');
   await page.locator('#ob-coparent').fill('Laura');
   await click('#s-ob-coparent .ob-btn-primary');
   await expectActive('s-ob-kids');
