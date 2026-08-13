@@ -194,15 +194,15 @@ hr{border:none;border-top:1px solid #ebebeb;margin:1.25rem 0}
 .profile-chip:active{transform:scale(.97)}
 .home-greeting{font-size:34px;line-height:1.1;font-weight:800;letter-spacing:0;color:#11172f;margin:0 0 8px;font-family:Georgia,'Times New Roman',serif}
 .home-date{font-size:17px;color:#737382;margin-bottom:24px}
-.home-checkin{position:relative;overflow:hidden;background:linear-gradient(135deg,#fff 0%,#fff 48%,#f3f0ff 100%);border:1px solid #e4e0f1;border-radius:22px;padding:18px 18px 20px;margin-bottom:18px;box-shadow:0 14px 34px rgba(23,17,57,.08)}
+.home-checkin{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) minmax(118px,38%);column-gap:14px;align-items:center;background:linear-gradient(135deg,#fff 0%,#fff 48%,#f3f0ff 100%);border:1px solid #e4e0f1;border-radius:22px;padding:18px 18px 20px;margin-bottom:18px;box-shadow:0 14px 34px rgba(23,17,57,.08)}
 .home-checkin.logged{background:linear-gradient(135deg,#fff 0%,#fff 50%,#eefaf5 100%);border-color:#d7efe4}
 .home-checkin.logged .home-eyebrow{background:#e9f7f0;color:#227956}
-.home-eyebrow{display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:10px;background:#efebfb;color:#4430a0;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;margin-bottom:14px}
-.home-plan{position:relative;max-width:58%;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:800;color:#11172f;line-height:1.08;margin-bottom:10px;z-index:1}
-.home-plan-sub{position:relative;max-width:60%;font-size:15px;color:#737382;line-height:1.45;margin-bottom:24px;z-index:1}
-.home-card-art{position:absolute;right:10px;top:38px;width:172px;height:134px;pointer-events:none}
+.home-eyebrow{grid-column:1;justify-self:start;display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:10px;background:#efebfb;color:#4430a0;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;margin-bottom:14px}
+.home-plan{grid-column:1;position:relative;min-width:0;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:800;color:#11172f;line-height:1.08;margin-bottom:10px;z-index:1}
+.home-plan-sub{grid-column:1;position:relative;min-width:0;font-size:15px;color:#737382;line-height:1.45;margin-bottom:24px;z-index:1}
+.home-card-art{grid-column:2;grid-row:1 / span 3;justify-self:end;width:min(100%,172px);height:auto;pointer-events:none}
 .home-card-art img{width:100%;height:100%;object-fit:contain;display:block}
-.home-primary{position:relative;width:100%;padding:18px;font-size:17px;margin:0;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:12px;box-shadow:0 10px 20px rgba(68,48,160,.22);z-index:1}
+.home-primary{grid-column:1 / -1;position:relative;width:100%;padding:18px;font-size:17px;margin:0;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:12px;box-shadow:0 10px 20px rgba(68,48,160,.22);z-index:1}
 .btn-icon{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.9);display:inline-flex;align-items:center;justify-content:center;line-height:1}
 .home-section-card{background:rgba(255,255,255,.92);border:1px solid #ece9f3;border-radius:20px;padding:16px;margin-bottom:16px;box-shadow:0 12px 28px rgba(28,22,48,.06)}
 .section-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}

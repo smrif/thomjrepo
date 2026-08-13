@@ -953,7 +953,7 @@ function updateHomeTodayState(entry){
   card.classList.toggle('logged',!!hasLoggedToday);
   if(hasLoggedToday){
     title.textContent='Already logged';
-    sub.textContent=describeEntry(entry)+'. You can still update today if something changed.';
+    sub.textContent=homeLoggedSummary(entry)+' You can still update today if something changed.';
     label.textContent='Edit today';
     icon.textContent='↺';
     button.onclick=startTodayEdit;
@@ -964,6 +964,11 @@ function updateHomeTodayState(entry){
     icon.textContent='✓';
     button.onclick=startCheckin;
   }
+}
+function homeLoggedSummary(entry){
+  if(entry.dadMode==='mom-had'||entry.momMode==='dad-had')return'Schedule change logged.';
+  if(entry.week==='mom')return"Co-parent's scheduled day is logged.";
+  return'Your scheduled day is logged.';
 }
 function describeEntry(e){
   if(e.week==='not-logged')return e.intentional?'Skipped intentionally':'Nothing logged';

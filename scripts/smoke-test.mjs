@@ -470,7 +470,8 @@ try {
   const homeSub = await page.locator('#home-plan-sub').innerText();
   const homePrimary = await page.locator('#home-primary-label').innerText();
   if (homeTitle !== 'Already logged') throw new Error(`Home card should show already-logged state, saw "${homeTitle}".`);
-  assertIncludes(homeSub, 'Your day', 'Already-logged home summary');
+  assertIncludes(homeSub, 'Schedule change logged.', 'Already-logged home summary');
+  assertExcludes(homeSub, 'Laura', 'Already-logged home summary should avoid names');
   if (homePrimary !== 'Edit today') throw new Error(`Home primary should become Edit today, saw "${homePrimary}".`);
   if (!await page.locator('#home-checkin-card.logged').count()) throw new Error('Home check-in card should have logged styling after today is saved.');
   await click('#s-home .home-primary');
