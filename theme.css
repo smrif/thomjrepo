@@ -455,6 +455,22 @@ body:has(#s-setup.active) .app{
   color:var(--daily-primary-strong);
 }
 
+:is(#s-ob-welcome,#s-setup,#s-home,#s-cal,#s-export) .whose-day-logo .logo-tile{
+  fill:var(--daily-card);
+}
+
+:is(#s-ob-welcome,#s-setup,#s-home,#s-cal,#s-export) .whose-day-logo .logo-half-left{
+  fill:var(--daily-warning);
+}
+
+:is(#s-ob-welcome,#s-setup,#s-home,#s-cal,#s-export) .whose-day-logo .logo-half-right{
+  fill:var(--daily-primary);
+}
+
+:is(#s-ob-welcome,#s-setup,#s-home,#s-cal,#s-export) .whose-day-logo .logo-dot{
+  fill:var(--daily-bg);
+}
+
 #s-setup .btn.primary,
 #s-setup .settings-export-btn,
 #s-setup .child-modal-save,
@@ -615,6 +631,52 @@ body[data-active-screen] #app,
 
 #s-home .home-logo path[stroke="#4430a0"]{
   stroke:var(--daily-primary);
+}
+
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) :is(#s-ob-welcome,#s-setup,#s-home,#s-cal,#s-export) .whose-day-logo{
+    filter:drop-shadow(0 10px 22px rgba(0,0,0,.22));
+  }
+
+  :root:not([data-theme="light"]) :is(#s-ob-welcome,#s-setup,#s-home,#s-cal,#s-export) .whose-day-logo .logo-tile{
+    fill:var(--cream-card);
+    stroke:color-mix(in srgb,var(--cream) 72%,transparent);
+    stroke-width:1;
+  }
+
+  :root:not([data-theme="light"]) :is(#s-ob-welcome,#s-setup,#s-home,#s-cal,#s-export) .whose-day-logo .logo-half-left{
+    fill:var(--terracotta);
+  }
+
+  :root:not([data-theme="light"]) :is(#s-ob-welcome,#s-setup,#s-home,#s-cal,#s-export) .whose-day-logo .logo-half-right{
+    fill:var(--sage);
+  }
+
+  :root:not([data-theme="light"]) :is(#s-ob-welcome,#s-setup,#s-home,#s-cal,#s-export) .whose-day-logo .logo-dot{
+    fill:var(--cream);
+  }
+}
+
+:root[data-theme="dark"] :is(#s-ob-welcome,#s-setup,#s-home,#s-cal,#s-export) .whose-day-logo{
+  filter:drop-shadow(0 10px 22px rgba(0,0,0,.22));
+}
+
+:root[data-theme="dark"] :is(#s-ob-welcome,#s-setup,#s-home,#s-cal,#s-export) .whose-day-logo .logo-tile{
+  fill:var(--cream-card);
+  stroke:color-mix(in srgb,var(--cream) 72%,transparent);
+  stroke-width:1;
+}
+
+:root[data-theme="dark"] :is(#s-ob-welcome,#s-setup,#s-home,#s-cal,#s-export) .whose-day-logo .logo-half-left{
+  fill:var(--terracotta);
+}
+
+:root[data-theme="dark"] :is(#s-ob-welcome,#s-setup,#s-home,#s-cal,#s-export) .whose-day-logo .logo-half-right{
+  fill:var(--sage);
+}
+
+:root[data-theme="dark"] :is(#s-ob-welcome,#s-setup,#s-home,#s-cal,#s-export) .whose-day-logo .logo-dot{
+  fill:var(--cream);
 }
 
 #s-home .profile-chip{
