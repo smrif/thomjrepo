@@ -1,5 +1,20 @@
 # Release Notes
 
+## August 19, 2026
+
+- Renamed the app experience from Custody Tracker to Whose Day across visible app copy, reports, documents, and share/feedback text.
+- Added the new moodboard-driven visual direction as a shared `theme.css` layer with CSS custom properties for day, night, and legal-report modes.
+- Self-hosted Fraunces, DM Sans, and Source Serif 4 font files so the PWA can keep the new typography offline.
+- Added a Settings Appearance control for System, Light, and Dark theme testing.
+- Updated the daily check-in, Home, Calendar, Diary, Logged/Saved, Settings, Reports, and Onboarding screens to the new cream/sage/night visual system.
+- Improved Calendar deviation visibility with stronger changed-day treatment, clearer Trends flags, and refreshed calendar/report detail styling.
+- Reworked Reports with legal-report styling, clearer report period pills, brighter dark-mode report icons, and inline SVG icons for each report type.
+- Added an onboarding preview mode for safe first-run testing without overwriting saved local app data.
+- Fixed dark-mode app-frame/background leaks across Home, Calendar, Reports, Settings, Onboarding, and check-in screens.
+- Hardened check-in screen transitions so fast tapping cannot leave multiple decision screens visibly stacked.
+- Expanded smoke coverage for themed frame backgrounds, onboarding preview, report icons, report preview, fast check-in transitions, single-child/two-child flows, and saved/logged confirmation.
+- Verified the update with contract tests, browser smoke tests, static build checks, and broad light/dark visual audits across mobile and desktop preview widths.
+
 ## August 12, 2026
 
 - Removed the Review step from the daily check-in flow so entries save directly from the final Details/notes screen.
@@ -16,7 +31,7 @@
 
 ## August 7, 2026
 
-- Added an alpha feedback button that opens the Custody Tracker Google Form in a new tab.
+- Added an alpha feedback button that opens the Whose Day Google Form in a new tab.
 - Added an alpha notice during onboarding explaining that records are stored on-device during alpha, should be exported regularly, and are not legal advice.
 - Added a Settings Data section with CSV export for local backups, including profile labels, children, dated entries, notes, change context, attachment details, timestamps, and missed/skipped flags.
 - Added basic Terms of Use and Privacy Policy pages and wired the onboarding/settings agreement links to open them.

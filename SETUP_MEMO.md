@@ -1,4 +1,4 @@
-# Custody Tracker — New User Setup & Onboarding Memo
+# Whose Day — New User Setup & Onboarding Memo
 **Prepared for:** TJ & Ryan  
 **Date:** June 8, 2026  
 **Topic:** First-run experience, setup flow, and personalization
@@ -139,7 +139,7 @@ There are two ways someone finds this app:
 
 **Recommendation:** A single welcome screen before setup that says something like:
 
-> *"Custody Tracker is a private daily log for co-parents. It takes about 90 seconds each night to log, and builds a clear, timestamped record of your custody schedule over time. Your data stays on your device."*
+> *"Whose Day is a private daily log for co-parents. It takes about 90 seconds each night to log, and builds a clear, timestamped record of your custody schedule over time. Your data stays on your device."*
 
 Two buttons: **Get started** (goes to setup) and **Skip setup, start logging** (uses defaults, can configure later).
 

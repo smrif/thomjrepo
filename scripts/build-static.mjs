@@ -7,7 +7,7 @@ const outDir = join(root, 'dist');
 rmSync(outDir, { recursive: true, force: true });
 mkdirSync(outDir, { recursive: true });
 
-for (const file of ['index.html', 'app.js', 'styles.css', 'terms.html', 'privacy.html']) {
+for (const file of ['index.html', 'app.js', 'styles.css', 'theme.css', 'terms.html', 'privacy.html']) {
   cpSync(join(root, file), join(outDir, file));
 }
 

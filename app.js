@@ -6,6 +6,7 @@ const DEFAULT_CONFIG={
   purpose:'',
   termsAccepted:false,
   activityIds:null,
+  themeMode:'system',
 };
 const CONFIG_KEY='custody_tracker_config';
 const SESSION_COUNT_KEY='custody_tracker_session_count';
@@ -54,15 +55,32 @@ function loadConfig(){
     if(!saved)return{...DEFAULT_CONFIG,children:[...DEFAULT_CONFIG.children]};
     const parsed=JSON.parse(saved);
     const children=Array.isArray(parsed.children)&&parsed.children.length?parsed.children:DEFAULT_CONFIG.children;
-    return{...DEFAULT_CONFIG,...parsed,children:children.map(cleanName).filter(Boolean)};
+    return{...DEFAULT_CONFIG,...parsed,children:children.map(cleanName).filter(Boolean),themeMode:normalizeThemeMode(parsed.themeMode)};
   }catch(e){return{...DEFAULT_CONFIG,children:[...DEFAULT_CONFIG.children]}}
 }
 function hasSavedConfig(){return !!localStorage.getItem(CONFIG_KEY)}
-function saveConfig(config){
-  APP_CONFIG={...DEFAULT_CONFIG,...config,children:config.children.map(cleanName).filter(Boolean)};
+function saveConfig(config,persist=true){
+  APP_CONFIG={...DEFAULT_CONFIG,...config,themeMode:normalizeThemeMode(config.themeMode),children:config.children.map(cleanName).filter(Boolean)};
   if(!APP_CONFIG.children.length)APP_CONFIG.children=[...DEFAULT_CONFIG.children];
   KIDS=[...APP_CONFIG.children];
-  localStorage.setItem(CONFIG_KEY,JSON.stringify(APP_CONFIG));
+  if(persist)localStorage.setItem(CONFIG_KEY,JSON.stringify(APP_CONFIG));
+  applyThemeMode();
+}
+function normalizeThemeMode(mode){return ['system','light','dark'].includes(mode)?mode:'system'}
+function applyThemeMode(){
+  const mode=normalizeThemeMode(APP_CONFIG.themeMode);
+  if(mode==='system')document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.dataset.theme=mode;
+  document.querySelectorAll('.theme-mode-btn').forEach(btn=>{
+    const selected=btn.dataset.themeMode===mode;
+    btn.classList.toggle('active',selected);
+    btn.setAttribute('aria-pressed',String(selected));
+  });
+}
+function setThemeMode(mode,persist=true){
+  APP_CONFIG.themeMode=normalizeThemeMode(mode);
+  applyThemeMode();
+  if(persist&&hasSavedConfig())localStorage.setItem(CONFIG_KEY,JSON.stringify(APP_CONFIG));
 }
 function recordAppSession(){
   if(!hasSavedConfig()||sessionStorage.getItem(SESSION_COUNTED_KEY))return;
@@ -348,6 +366,7 @@ function initSetupForm(){
   const setupPurpose=document.getElementById('setup-purpose');
   if(setupPurpose)setupPurpose.value=onboarding?'':APP_CONFIG.purpose;
   document.getElementById('setup-terms').checked=onboarding?false:!!APP_CONFIG.termsAccepted;
+  setThemeMode(APP_CONFIG.themeMode,false);
   document.getElementById('setup-continue').textContent=onboarding?'Start tracking →':'Save changes';
   validateSetup(false);
 }
@@ -422,6 +441,7 @@ function saveSetup(){
     activityIds,
     purpose:document.getElementById('setup-purpose')?.value||APP_CONFIG.purpose,
     termsAccepted:APP_CONFIG.termsAccepted||document.getElementById('setup-terms').checked,
+    themeMode:APP_CONFIG.themeMode,
   });
   setOnboardingMode(false);
   renderConfigurableUi();
@@ -637,6 +657,7 @@ const CHECKIN_FLOW_SCREENS=new Set([
 ]);
 const FEEDBACK_VISIBLE_SCREENS=new Set(['s-home','s-cal','s-export','s-setup']);
 let screenStack=[];
+let screenTransitionTimer=null;
 
 function syncFeedbackButton(screenId){
   const btn=document.getElementById('alpha-feedback-btn');
@@ -644,10 +665,22 @@ function syncFeedbackButton(screenId){
   btn.hidden=!FEEDBACK_VISIBLE_SCREENS.has(screenId);
 }
 
+function setActiveScreenMeta(screenId){
+  const appEl=document.getElementById('app');
+  document.documentElement.dataset.activeScreen=screenId;
+  document.body.dataset.activeScreen=screenId;
+  if(appEl)appEl.dataset.activeScreen=screenId;
+}
+
 function show(id,direction){
   const next=document.getElementById(id);
   if(!next)return;
-  const current=document.querySelector('.screen.active');
+  if(screenTransitionTimer){
+    clearTimeout(screenTransitionTimer);
+    screenTransitionTimer=null;
+  }
+  setActiveScreenMeta(id);
+  const current=document.querySelector('.screen.active:not(.screen-leave)')||document.querySelector('.screen.active');
   const currentId=current?.id||null;
   let navDirection=direction;
   const isCheckinTransition=currentId&&CHECKIN_FLOW_SCREENS.has(currentId)&&CHECKIN_FLOW_SCREENS.has(id);
@@ -669,11 +702,13 @@ function show(id,direction){
   if(isCheckinTransition&&current&&current!==next&&navDirection){
     const enterClass=navDirection==='back'?'screen-enter-back':'screen-enter-forward';
     const leaveClass=navDirection==='back'?'screen-leave-back':'screen-leave-forward';
+    document.querySelectorAll('.screen.active').forEach(s=>{if(s!==current&&s!==next)s.classList.remove('active')});
     current.classList.add('screen-leave',leaveClass);
     next.classList.add('active','screen-enter',enterClass);
-    window.setTimeout(()=>{
+    screenTransitionTimer=window.setTimeout(()=>{
       current.classList.remove('active','screen-leave',leaveClass);
       next.classList.remove('screen-enter',enterClass);
+      screenTransitionTimer=null;
     },320);
   }else{
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -876,10 +911,10 @@ function obFinish(){
     email,
     termsAccepted:true,
     purpose:'',
-  });
+  },!ONBOARDING_PREVIEW);
   setOnboardingMode(false);
   renderConfigurableUi();
-  recordAppSession();
+  if(!ONBOARDING_PREVIEW)recordAppSession();
   initHome();
   show('s-home');
 }
@@ -1646,6 +1681,12 @@ function showEmptyDetail(ds){
     <div class="entry-row" style="color:#666">Nothing logged for this day.</div>
     ${(canBackfill&&!locked)?`<button class="btn primary" onclick="startBackfillForDate('${ds}')" style="width:100%;margin-top:12px">Log yesterday</button>`:''}
   </div>`;
+  revealCalendarDetail();
+}
+function revealCalendarDetail(){
+  const el=document.getElementById('cal-detail');
+  if(!el)return;
+  requestAnimationFrame(()=>el.scrollIntoView({behavior:'smooth',block:'center'}));
 }
 function showDetail(ds,e){
   selectedCalDate=ds;renderCal();
@@ -1655,6 +1696,7 @@ function showDetail(ds,e){
     tag='<span class="tag tag-missed">Nothing logged</span>';
     body='<div class="entry-row" style="color:#666">Nothing logged for this day.</div>';
     el.innerHTML=`<div class="entry-card"><div class="entry-date-lbl">${fmtDate(ds)} ${tag}</div>${body}</div>`;
+    revealCalendarDetail();
     return;
   }
   if(e.week==='other'){tag='<span class="tag tag-mom">Pre-agreed day note</span>';body=`<div class="entry-row" style="font-style:italic;color:#666">${e.diary||'No note'}</div>`}
@@ -1665,8 +1707,9 @@ function showDetail(ds,e){
   else if(e.momMode==='dad-had'){tag='<span class="tag tag-other">'+coParentPoss()+' day · You had</span>';body=`<div class="entry-row"><strong>You had: ${(e.dadHadKids||[]).join(', ')}</strong></div>${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
   else{tag='<span class="tag tag-dad">Your day</span>';const n=(e.kidsWithDad||[]).length;const kids=n===KIDS.length?kidsCountLabel()+' home':n===0?'All at '+coParentPoss():(e.kidsWithDad||[]).join(', ')+' home';body=`<div class="entry-row"><strong>${kids}</strong></div>${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
   const locked=isLockedDate(ds);
-  const lockBadge=locked?'<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;background:#f1eff0;color:#777;border-radius:8px;padding:2px 8px;margin-left:6px">🔒 Locked</span>':'';
-  el.innerHTML=`<div class="entry-card"><div class="entry-date-lbl">${fmtDate(ds)} ${tag}${lockBadge}</div>${body}${entryMetaHtml(e,{fullAttachment:true})}</div>`;
+  const lockBadge=locked?'<span class="cal-lock-badge">Locked</span>':'';
+  el.innerHTML=`<div class="entry-card"><div class="entry-date-lbl">${fmtDate(ds)} ${tag} ${lockBadge}</div>${body}${entryMetaHtml(e,{fullAttachment:true})}</div>`;
+  revealCalendarDetail();
 }
 
 // ── TRENDS STATE & NAVIGATION ────────────────────────────────
@@ -1755,9 +1798,9 @@ function renderStats(){
       const rows=deviations.map(([ds,e])=>{
         const kids=(e.dadHadKids||[]).join(', ')||'Kids';
         let flags='';
-        if(e.changePressured===true) flags+='<span class="flag-badge flag-pressured">😟 Felt pressured</span>';
-        else if(e.changeAgreed===true) flags+='<span class="flag-badge flag-agreed">✅ Agreed</span>';
-        else if(e.changeAgreed===false) flags+='<span class="flag-badge flag-unexpected">❌ Unexpected</span>';
+        if(e.changePressured===true) flags+='<span class="flag-badge flag-pressured">Felt pressured</span>';
+        else if(e.changeAgreed===true) flags+='<span class="flag-badge flag-agreed">Agreed</span>';
+        else if(e.changeAgreed===false) flags+='<span class="flag-badge flag-unexpected">Unexpected</span>';
         return `<div class="trends-deviation-row">
           <div class="trends-dev-date">${fmtShort(ds)}</div>
           <div class="trends-dev-kids">${kids}</div>
@@ -1767,9 +1810,9 @@ function renderStats(){
 
       // Footnote explaining the distinction
       const footnote=`<div class="trends-footnote">
-        ✅ <strong>Agreed</strong> — you agreed to take the kids and felt fine about it.<br>
-        😟 <strong>Felt pressured</strong> — you took the kids but felt pressured to agree.<br>
-        ❌ <strong>Unexpected</strong> — not agreed in advance, schedule was not followed.
+        <strong>Agreed</strong> — you agreed to take the kids and felt fine about it.<br>
+        <strong>Felt pressured</strong> — you took the kids but felt pressured to agree.<br>
+        <strong>Unexpected</strong> — not agreed in advance, schedule was not followed.
       </div>`;
 
       devDetail.innerHTML=`<div class="trends-deviation-card">
@@ -1859,7 +1902,7 @@ function buildReport(type){
   const gen='Generated: '+new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})+'\nNote: Entries are locked read-only after 24 hours and cannot be modified retroactively.';
   const D='─'.repeat(50);
   if(type==='full'){
-    let L=['CUSTODY TRACKER — FULL DIARY','Kids: '+kidsListLabel(),gen,'',D,''];
+    let L=['WHOSE DAY — FULL DIARY','Kids: '+kidsListLabel(),gen,'',D,''];
     for(const[ds,e]of sorted){
       L.push('DATE: '+fmtDate(ds));
       L.push(...reportMetaLines(e));
@@ -1876,13 +1919,13 @@ function buildReport(type){
   if(type==='dadactual'){
     const filt=sorted.filter(([,e])=>(e.week==='dad'&&e.dadMode!=='mom-had'&&(e.kidsWithDad||[]).length>0)||(e.week==='mom'&&e.momMode==='dad-had'));
     if(!filt.length)return'No entries found.';
-    let L=['CUSTODY TRACKER — '+currentParent().toUpperCase()+' ACTUAL TIME WITH KIDS','Includes '+currentParentPoss()+' scheduled days and '+coParentPoss()+' scheduled nights where the kids were with '+currentParent()+'.',gen,'Total: '+filt.length+' days','',D,''];
+    let L=['WHOSE DAY — '+currentParent().toUpperCase()+' ACTUAL TIME WITH KIDS','Includes '+currentParentPoss()+' scheduled days and '+coParentPoss()+' scheduled nights where the kids were with '+currentParent()+'.',gen,'Total: '+filt.length+' days','',D,''];
     for(const[ds,e]of filt){L.push('DATE: '+fmtDate(ds));L.push(...reportMetaLines(e));if(e.momMode==='dad-had'){L.push('*** '+coParent().toUpperCase()+'\'S WEEK — KIDS LEFT WITH '+currentParent().toUpperCase()+' ***');L.push('KIDS: '+(e.dadHadKids||[]).join(', '))}else{const n=(e.kidsWithDad||[]).length;L.push(currentParentPoss()+" scheduled week · "+(n===KIDS.length?kidsCountLabel():(e.kidsWithDad||[]).join(', ')))}if(e.diary)L.push('NOTE: '+e.diary);L.push(D,'');}return L.join('\n');
   }
   if(type==='honest'){
     const mhd=sorted.filter(([,e])=>e.week==='dad'&&e.dadMode==='mom-had');
     const dhm=sorted.filter(([,e])=>e.week==='mom'&&e.momMode==='dad-had');
-    let L=['CUSTODY TRACKER — FULL HONESTY REPORT',gen,'',D,currentParent().toUpperCase()+"'S WEEK — KIDS ENDED UP AT "+coParent().toUpperCase()+' ('+mhd.length+' nights)',D,''];
+    let L=['WHOSE DAY — FULL HONESTY REPORT',gen,'',D,currentParent().toUpperCase()+"'S WEEK — KIDS ENDED UP AT "+coParent().toUpperCase()+' ('+mhd.length+' nights)',D,''];
     if(!mhd.length)L.push('None logged.','');else for(const[ds,e]of mhd){L.push('DATE: '+fmtDate(ds));L.push(...reportMetaLines(e));L.push('AT '+coParent().toUpperCase()+': '+(e.momHadKidsOnDadWeek||[]).join(', '));if(e.diary)L.push('NOTE: '+e.diary);L.push('')}
     L.push(D,coParent().toUpperCase()+"'S WEEK — KIDS ENDED UP WITH "+currentParent().toUpperCase()+' ('+dhm.length+' nights)',D,'');
     if(!dhm.length)L.push('None logged.','');else for(const[ds,e]of dhm){L.push('DATE: '+fmtDate(ds));L.push(...reportMetaLines(e));L.push('WITH '+currentParent().toUpperCase()+': '+(e.dadHadKids||[]).join(', '));if(e.diary)L.push('NOTE: '+e.diary);L.push('')}
@@ -1891,12 +1934,12 @@ function buildReport(type){
   if(type==='momsweek'){
     const filt=sorted.filter(([,e])=>e.week==='mom'&&(e.momMode==='helped'||e.momMode==='dad-had'));
     if(!filt.length)return'No '+coParentPoss()+' week entries with '+currentParent()+' involvement found.';
-    let L=['CUSTODY TRACKER — '+coParent().toUpperCase()+"'S WEEK / "+currentParent().toUpperCase()+"'S INVOLVEMENT",gen,'Total: '+filt.length,'',D,''];
+    let L=['WHOSE DAY — '+coParent().toUpperCase()+"'S WEEK / "+currentParent().toUpperCase()+"'S INVOLVEMENT",gen,'Total: '+filt.length,'',D,''];
     for(const[ds,e]of filt){L.push('DATE: '+fmtDate(ds));L.push(...reportMetaLines(e));if(e.momMode==='dad-had'){L.push('Kids ended up with '+currentParent());L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(e.dadHadKids||[]).join(', '))}else{L.push(currentParent()+' helped out');Object.entries(e.helpedData||{}).forEach(([k,v])=>L.push('  '+k+': '+(v.acts||[]).map(a=>ACT_LBL[a]).join(', ')+(v.note?' — '+v.note:'')))}if(e.diary)L.push('NOTE: '+e.diary);L.push(D,'');}return L.join('\n');
   }
   if(type==='notes'){
     const filt=sorted.filter(([,e])=>e.diary&&e.diary.trim());if(!filt.length)return'No diary notes found.';
-    let L=['CUSTODY TRACKER — DIARY NOTES',gen,'',D,''];
+    let L=['WHOSE DAY — DIARY NOTES',gen,'',D,''];
     for(const[ds,e]of filt){
       let t='['+coParentPoss()+' day]';
       if(e.week==='other')t='[Pre-agreed day]';
@@ -1912,9 +1955,9 @@ function buildReport(type){
 function shareReport(){
   if(!currentReportText)return;
   const names={full:'Full Diary',dadactual:currentParentPoss()+' Actual Time',honest:'Honesty Report',momsweek:coParentPoss()+' Week',notes:'Diary Notes'};
-  const subject=encodeURIComponent('Custody Tracker — '+(names[currentExportType]||'Report')+' '+new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'}));
+  const subject=encodeURIComponent('Whose Day — '+(names[currentExportType]||'Report')+' '+new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'}));
   const body=encodeURIComponent(currentReportText);
-  if(navigator.share){navigator.share({title:'Custody Tracker',text:currentReportText}).catch(()=>{})}
+  if(navigator.share){navigator.share({title:'Whose Day',text:currentReportText}).catch(()=>{})}
   else window.location.href=reportMailto(subject,body);
 }
 function openFeedback(){
@@ -1924,10 +1967,10 @@ function openFeedback(){
   }
   const active=document.querySelector('.screen.active:not(.screen-leave)')?.id||'unknown';
   const entries=loggedEntryCount();
-  const subject=encodeURIComponent('Custody Tracker alpha feedback');
+  const subject=encodeURIComponent('Whose Day alpha feedback');
   const body=encodeURIComponent(`Hi,
 
-I am testing the Custody Tracker alpha and wanted to share feedback.
+I am testing the Whose Day alpha and wanted to share feedback.
 
 What I was trying to do:
 
@@ -1954,7 +1997,7 @@ function printReport(){
   if(!currentReportText)return;
   const w=window.open('','_blank');
   if(!w)return;
-  const reportTitle=document.getElementById('preview-title')?document.getElementById('preview-title').textContent:'Custody Tracker Report';
+  const reportTitle=document.getElementById('preview-title')?document.getElementById('preview-title').textContent:'Whose Day Report';
   const now=new Date();
   const printDate=now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const printTime=now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
@@ -1965,7 +2008,7 @@ function printReport(){
 
   const attestation=`ATTESTATION
 ${'─'.repeat(60)}
-This report was generated by Custody Tracker, a personal
+This report was generated by Whose Day, a personal
 custody documentation application.
 
 Reporting parent: ${parentName}
@@ -1974,8 +2017,8 @@ Report generated: ${printDate} at ${printTime}
 Total entries in record: ${totalEntries}
 Locked (read-only) entries: ${lockedEntries}
 
-All entries in this report were logged through the Custody
-Tracker application and timestamped at the time of logging.
+All entries in this report were logged through the Whose Day
+application and timestamped at the time of logging.
 Entries become permanently read-only after 24 hours and
 cannot be edited or deleted thereafter.
 
@@ -2008,7 +2051,7 @@ ${'─'.repeat(60)}`;
     <span style="font-size:13px;color:#666;margin-left:12px">To save as PDF, choose 'Save as PDF' in the print dialog</span>
   </div>
   <div class="cover">
-    <div class="cover-title">Custody Tracker — ${reportTitle}</div>
+    <div class="cover-title">Whose Day — ${reportTitle}</div>
     <div class="cover-sub">Personal custody documentation record</div>
     <div class="cover-meta">
       <strong>Reporting parent:</strong> ${parentName}<br>
@@ -2034,7 +2077,7 @@ function buildWeeklyReport(){
   const dadActual=week.filter(([,e])=>(e.week==='dad'&&e.dadMode!=='mom-had'&&(e.kidsWithDad||[]).length>0)||(e.week==='mom'&&e.momMode==='dad-had')).length;
   const momLeft=week.filter(([,e])=>e.week==='mom'&&e.momMode==='dad-had').length;
   const dadHelped=week.filter(([,e])=>e.week==='mom'&&e.momMode==='helped').length;
-  let L=['CUSTODY TRACKER — WEEKLY REPORT','Week ending: '+now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'}),'','SUMMARY','───────────────────','Days logged: '+week.length,'Days '+currentParent()+' had kids: '+dadActual,coParentPoss()+' scheduled nights with kids at '+currentParentPoss()+': '+momLeft,coParentPoss()+' scheduled days '+currentParent()+' helped out: '+dadHelped,'','DAILY BREAKDOWN','───────────────────',''];
+  let L=['WHOSE DAY — WEEKLY REPORT','Week ending: '+now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'}),'','SUMMARY','───────────────────','Days logged: '+week.length,'Days '+currentParent()+' had kids: '+dadActual,coParentPoss()+' scheduled nights with kids at '+currentParentPoss()+': '+momLeft,coParentPoss()+' scheduled days '+currentParent()+' helped out: '+dadHelped,'','DAILY BREAKDOWN','───────────────────',''];
   for(const[ds,e]of week){
     L.push(fmtDate(ds).toUpperCase());
     if(e.week==='other')L.push('  Pre-agreed day note: '+(e.diary||'—'));
@@ -2050,7 +2093,7 @@ function buildWeeklyReport(){
 }
 function sendWeeklyEmail(){
   const report=buildWeeklyReport();
-  const subject=encodeURIComponent('Custody Tracker — Weekly Report '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}));
+  const subject=encodeURIComponent('Whose Day — Weekly Report '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}));
   window.location.href=reportMailto(subject,encodeURIComponent(report));
   localStorage.setItem('sunday_prompt_'+todayStr(),'sent');
   document.getElementById('sunday-prompt').style.display='none';
@@ -2119,6 +2162,7 @@ function seedJulyDemoData(){
 
 const DEMO_PARAMS=new URLSearchParams(window.location.search);
 const DEMO_MODE=DEMO_PARAMS.get('demo');
+const ONBOARDING_PREVIEW=DEMO_PARAMS.has('onboarding-theme-preview');
 if(DEMO_PARAMS.has('reset')){
   localStorage.clear();
   sessionStorage.clear();
@@ -2127,9 +2171,13 @@ if(DEMO_PARAMS.has('reset')){
 if(DEMO_MODE==='june')seedJuneDemoData();
 if(DEMO_MODE==='july')seedJulyDemoData();
 renderConfigurableUi();
-if(hasSavedConfig()){
+applyThemeMode();
+if(ONBOARDING_PREVIEW){
+  initOnboarding();show('s-ob-welcome');
+}else if(hasSavedConfig()){
   recordAppSession();
   initHome();
+  setActiveScreenMeta('s-home');
   syncFeedbackButton('s-home');
 }else{
   initOnboarding();show('s-ob-welcome');

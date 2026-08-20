@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Custody Tracker">
-<title>Custody Tracker</title>
-<link rel="stylesheet" href="styles.css?v=safari-touch-1">
+<meta name="apple-mobile-web-app-title" content="Whose Day">
+<title>Whose Day</title>
+<link rel="stylesheet" href="styles.css?v=frame-smoke-1">
+<link rel="stylesheet" href="theme.css?v=full-audit-1">
 </head>
 <body>
 <div class="app" id="app" style="padding-bottom:80px">
@@ -24,7 +25,7 @@
         <path d="M8.5 20.5 21 9.8l12.5 10.7" fill="none" stroke="#fff8e8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
-    <h1 class="ob-title">Custody Tracker</h1>
+    <h1 class="ob-title">Whose Day</h1>
     <p class="ob-welcome-line">Your co-parenting schedule,<br>clearly documented.</p>
     <button class="ob-btn-primary ob-btn-xl" onclick="obShowPromises()">Get started →</button>
   </div>
@@ -40,21 +41,38 @@
     <div class="ob-promise-intro">Here's what you're signing up for</div>
     <div class="ob-promise-cards">
       <div class="ob-promise ob-promise-lg">
-        <span>🕐</span>
+        <span aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="2"/>
+            <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
         <div>
           <strong>2 minutes a night</strong>
           <p>A few taps. No essays, no forms. The app does the rest.</p>
         </div>
       </div>
       <div class="ob-promise ob-promise-lg">
-        <span>🔒</span>
+        <span aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <rect x="6.5" y="10" width="11" height="9" rx="2" stroke="currentColor" stroke-width="2"/>
+            <path d="M9 10V7.5a3 3 0 0 1 6 0V10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M12 14v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
         <div>
           <strong>Private and secure</strong>
           <p>Your data stays on your device. Nothing is ever shared without your action.</p>
         </div>
       </div>
       <div class="ob-promise ob-promise-lg">
-        <span>📋</span>
+        <span aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M8 5.5h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <rect x="6" y="4" width="12" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
+            <path d="M9 11h6M9 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
         <div>
           <strong>Built to stand up</strong>
           <p>Timestamped entries, locked after 24 hours. Reports ready to share with your attorney.</p>
@@ -63,9 +81,9 @@
       <div class="ob-promise ob-promise-lg">
         <span aria-hidden="true">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" stroke="#4430a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M14 3v5h5" stroke="#4430a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="m9 14 2 2 4-5" stroke="#4430a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M14 3v5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="m9 14 2 2 4-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </span>
         <div>
@@ -146,7 +164,7 @@
 <div class="screen" id="s-ob-finish">
   <div class="ob-shell">
     <div class="ob-progress-bar"><div class="ob-progress-fill" style="width:100%"></div></div>
-    <div class="ob-step-label">Last step ✨</div>
+    <div class="ob-step-label">Last step</div>
     <h2 class="ob-q">Almost there</h2>
     <p class="ob-sub">Just your email for weekly summary reports, and one quick agreement.</p>
     <label class="ob-label">Email address</label>
@@ -158,7 +176,7 @@
     <div class="ob-error" id="ob-finish-error" style="display:none">Please enter a valid email and accept the terms.</div>
     <button class="ob-btn-primary ob-disabled" id="btn-ob-finish" onclick="obFinish()">Start tracking →</button>
     <button class="ob-btn-back" onclick="obBack('s-ob-kids')">← Back</button>
-    <p class="ob-privacy-note">🔒 Your email is never shared. Your data stays on your device.</p>
+    <p class="ob-privacy-note">Your email is never shared. Your data stays on your device.</p>
   </div>
 </div>
 
@@ -173,7 +191,7 @@
           <path d="M16.3 24.1c-2.8-2.7-1.1-6.5 2-5.1 1.4.6 2.7 2.3 2.7 2.3s1.3-1.7 2.7-2.3c3.1-1.4 4.8 2.4 2 5.1L21 28.4l-4.7-4.3Z" fill="none" stroke="#4430a0" stroke-width="1.7" stroke-linejoin="round"/>
           <path d="M8.5 20.5 21 9.8l12.5 10.7" fill="none" stroke="#fff8e8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <span>Custody Tracker</span>
+        <span>Whose Day</span>
       </div>
       <div class="settings-title">Settings</div>
       <button class="profile-chip settings-profile" onclick="showSetup()" id="settings-profile">R</button>
@@ -200,6 +218,21 @@
           <input type="email" id="setup-email" placeholder="your@email.com" autocomplete="email" oninput="handleSetupInput()">
           <div class="setup-error">Please enter a valid email address.</div>
         </div>
+      </div>
+    </section>
+
+    <section class="settings-section">
+      <div class="settings-section-head">
+        <span class="settings-section-icon appearance-icon" aria-hidden="true"></span>
+        <div>
+          <h2>Appearance</h2>
+          <p>Switch the check-in theme while reviewing the new visual direction.</p>
+        </div>
+      </div>
+      <div class="settings-card appearance-card">
+        <button class="theme-mode-btn" type="button" data-theme-mode="system" onclick="setThemeMode('system')">System</button>
+        <button class="theme-mode-btn" type="button" data-theme-mode="light" onclick="setThemeMode('light')">Light</button>
+        <button class="theme-mode-btn" type="button" data-theme-mode="dark" onclick="setThemeMode('dark')">Dark</button>
       </div>
     </section>
 
@@ -307,7 +340,7 @@
           <path d="M16.3 24.1c-2.8-2.7-1.1-6.5 2-5.1 1.4.6 2.7 2.3 2.7 2.3s1.3-1.7 2.7-2.3c3.1-1.4 4.8 2.4 2 5.1L21 28.4l-4.7-4.3Z" fill="none" stroke="#4430a0" stroke-width="1.7" stroke-linejoin="round"/>
           <path d="M8.5 20.5 21 9.8l12.5 10.7" fill="none" stroke="#fff8e8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <span>Custody Tracker</span>
+        <span>Whose Day</span>
       </div>
       <button class="profile-chip" onclick="showSetup()" id="home-profile">R</button>
     </div>
@@ -810,7 +843,7 @@
   <textarea id="diary-input" placeholder="Quiet evening at home..."></textarea>
 
   <div class="attach-section" style="margin-top:1rem">
-    <div class="attach-label">📎 Attach a screenshot for context <span style="color:#aaa;font-weight:400;font-size:12px">optional</span></div>
+    <div class="attach-label">Attach a screenshot for context <span class="attach-optional">optional</span></div>
     <div class="attach-sub">Text message, email, or anything relevant to this entry</div>
     <div id="diary-attach-preview" class="attach-preview" style="display:none">
       <img id="diary-attach-img" src="" alt="Attached screenshot">
@@ -818,7 +851,7 @@
     </div>
     <label class="attach-btn" id="diary-attach-btn">
       <input type="file" id="diary-attach-input" accept="image/*" style="display:none" onchange="handleAttachment(this,'diary')">
-      📷 Add screenshot
+      Add screenshot
     </label>
   </div>
 
@@ -872,7 +905,7 @@
         <path d="M16.3 24.1c-2.8-2.7-1.1-6.5 2-5.1 1.4.6 2.7 2.3 2.7 2.3s1.3-1.7 2.7-2.3c3.1-1.4 4.8 2.4 2 5.1L21 28.4l-4.7-4.3Z" fill="none" stroke="#4430a0" stroke-width="1.7" stroke-linejoin="round"/>
         <path d="M8.5 20.5 21 9.8l12.5 10.7" fill="none" stroke="#fff8e8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <span>Custody Tracker</span>
+      <span>Whose Day</span>
     </div>
   </div>
   <div class="nav-tabs calendar-tabs">
@@ -948,9 +981,15 @@
           <path d="M16.3 24.1c-2.8-2.7-1.1-6.5 2-5.1 1.4.6 2.7 2.3 2.7 2.3s1.3-1.7 2.7-2.3c3.1-1.4 4.8 2.4 2 5.1L21 28.4l-4.7-4.3Z" fill="none" stroke="#4430a0" stroke-width="1.7" stroke-linejoin="round"/>
           <path d="M8.5 20.5 21 9.8l12.5 10.7" fill="none" stroke="#fff8e8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <span>Custody Tracker</span>
+        <span>Whose Day</span>
       </div>
       <button class="profile-chip" onclick="showSetup()" id="reports-profile">D</button>
+    </div>
+
+    <div class="reports-intro">
+      <div class="reports-kicker">Legal export</div>
+      <h1>Reports</h1>
+      <p>Formal summaries for review, backup, or sharing with counsel.</p>
     </div>
 
     <!-- SUMMARY STATS -->
@@ -971,7 +1010,15 @@
     <div class="report-list">
 
       <div class="export-card" id="exp-honest" onclick="selectExport('honest')">
-        <span class="export-icon export-balance"></span>
+        <span class="export-icon export-balance" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 4v16" />
+            <path d="M6 7h12" />
+            <path d="M7 7 4.5 13h5L7 7Z" />
+            <path d="M17 7 14.5 13h5L17 7Z" />
+            <path d="M9 20h6" />
+          </svg>
+        </span>
         <div>
           <div class="export-title">Custody deviation report</div>
           <div class="export-desc">Every night the schedule wasn't followed — both directions, with pressure flags</div>
@@ -980,7 +1027,14 @@
       </div>
 
       <div class="export-card" id="exp-dadactual" onclick="selectExport('dadactual')">
-        <span class="export-icon export-clock"></span>
+        <span class="export-icon export-clock" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="8" />
+            <path d="M12 8v4l3 2" />
+            <path d="M7 4.5 5.2 2.8" />
+            <path d="M17 4.5l1.8-1.7" />
+          </svg>
+        </span>
         <div>
           <div class="export-title" id="report-dadactual-title">Dad's actual time with kids</div>
           <div class="export-desc" id="report-dadactual-desc">All nights Dad had the kids — his week plus any schedule changes</div>
@@ -989,7 +1043,14 @@
       </div>
 
       <div class="export-card" id="exp-momsweek" onclick="selectExport('momsweek')">
-        <span class="export-icon export-person"></span>
+        <span class="export-icon export-person" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="8" r="3.2" />
+            <path d="M6.5 19c.8-3.3 2.6-5 5.5-5s4.7 1.7 5.5 5" />
+            <path d="M4 12.5h3" />
+            <path d="M17 12.5h3" />
+          </svg>
+        </span>
         <div>
           <div class="export-title" id="report-momsweek-title">Mom's week — Dad's involvement</div>
           <div class="export-desc" id="report-momsweek-desc">Her scheduled days where Dad helped or had the kids, with pressure notes</div>
@@ -998,7 +1059,15 @@
       </div>
 
       <div class="export-card" id="exp-full" onclick="selectExport('full')">
-        <span class="export-icon export-file"></span>
+        <span class="export-icon export-file" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M7 3.5h7l3 3V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" />
+            <path d="M14 3.5v4h4" />
+            <path d="M9 11h6" />
+            <path d="M9 14.5h6" />
+            <path d="M9 18h4" />
+          </svg>
+        </span>
         <div>
           <div class="export-title">Full diary</div>
           <div class="export-desc">Complete chronological log — every entry, every note</div>
@@ -1007,7 +1076,14 @@
       </div>
 
       <div class="export-card" id="exp-notes" onclick="selectExport('notes')">
-        <span class="export-icon export-note"></span>
+        <span class="export-icon export-note" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M7 4h10a1 1 0 0 1 1 1v14.5l-3-2-3 2-3-2-3 2V5a1 1 0 0 1 1-1Z" />
+            <path d="M9 9h6" />
+            <path d="M9 12.5h6" />
+            <path d="M9 16h3.5" />
+          </svg>
+        </span>
         <div>
           <div class="export-title">Diary notes only</div>
           <div class="export-desc">Just your written entries and dates — clean narrative format</div>
@@ -1021,14 +1097,14 @@
     <div id="export-preview-section" class="report-preview" style="display:none">
       <div class="report-preview-header">
         <div class="report-preview-title" id="preview-title">Preview</div>
-        <button class="report-print-btn" onclick="printReport()" title="Print">🖨️ Print</button>
+        <button class="report-print-btn" onclick="printReport()" title="Print">Print</button>
       </div>
       <div class="preview-box" id="preview-box"></div>
       <div class="report-actions">
-        <button class="btn primary" onclick="shareReport()">📤 Share / Email</button>
+        <button class="btn primary" onclick="shareReport()">Share / Email</button>
         <button class="btn" onclick="copyReport()">Copy</button>
       </div>
-      <div class="copy-toast" id="copy-toast">✓ Copied!</div>
+      <div class="copy-toast" id="copy-toast">Copied</div>
     </div>
 
     <div class="bottom-nav">
@@ -1044,6 +1120,6 @@
   <strong>Feedback</strong>
 </button>
 </div><!-- end .app -->
-<script src="app.js?v=alpha-readiness-1"></script>
+<script src="app.js?v=full-audit-2"></script>
 </body>
 </html>

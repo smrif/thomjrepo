@@ -134,7 +134,7 @@ def main():
     img = Image.new("RGB", (W, H), BG)
     draw = ImageDraw.Draw(img)
 
-    draw.text((90, 58), "Custody Tracker Decision Tree", font=TITLE, fill=INK)
+    draw.text((90, 58), "Whose Day Decision Tree", font=TITLE, fill=INK)
     draw.text(
         (92, 126),
         "Current check-in flow, including custody deviation context and diary/review endpoints.",

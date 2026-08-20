@@ -1,4 +1,4 @@
-# Custody Tracker — Onboarding Design Memo
+# Whose Day — Onboarding Design Memo
 **From:** TJ  
 **Date:** June 2026  
 **Topic:** New multi-step onboarding flow — what we built and why

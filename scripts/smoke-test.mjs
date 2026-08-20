@@ -124,6 +124,81 @@ async function assertNoHorizontalOverflow(context) {
   }
 }
 
+async function assertDarkThemeFrame(context, activeScreenId) {
+  await expectActive(activeScreenId);
+  await page.waitForTimeout(50);
+  const frame = await page.evaluate(() => {
+    const app = document.getElementById('app');
+    const active = document.querySelector('.screen.active');
+    const htmlStyle = getComputedStyle(document.documentElement);
+    const bodyStyle = getComputedStyle(document.body);
+    const appStyle = getComputedStyle(app);
+    const appRect = app.getBoundingClientRect();
+    const activeRect = active.getBoundingClientRect();
+    return {
+      active: active?.id || '',
+      htmlScreen: document.documentElement.dataset.activeScreen || '',
+      bodyScreen: document.body.dataset.activeScreen || '',
+      appScreen: app?.dataset.activeScreen || '',
+      htmlBg: htmlStyle.backgroundColor,
+      bodyBg: bodyStyle.backgroundColor,
+      appBg: appStyle.backgroundColor,
+      appPaddingLeft: appStyle.paddingLeft,
+      appPaddingRight: appStyle.paddingRight,
+      appPaddingBottom: appStyle.paddingBottom,
+      appRect: {
+        left: Math.round(appRect.left),
+        right: Math.round(appRect.right),
+        bottom: Math.round(appRect.bottom),
+        width: Math.round(appRect.width)
+      },
+      activeRect: {
+        left: Math.round(activeRect.left),
+        right: Math.round(activeRect.right),
+        bottom: Math.round(activeRect.bottom),
+        width: Math.round(activeRect.width)
+      }
+    };
+  });
+  const expectedBg = 'rgb(30, 37, 48)';
+  for (const [key, value] of Object.entries({
+    htmlBg: frame.htmlBg,
+    bodyBg: frame.bodyBg,
+    appBg: frame.appBg
+  })) {
+    if (value !== expectedBg) {
+      throw new Error(`${context}: ${key} should use night background ${expectedBg}. Saw ${JSON.stringify(frame)}.`);
+    }
+  }
+  for (const [key, value] of Object.entries({
+    htmlScreen: frame.htmlScreen,
+    bodyScreen: frame.bodyScreen,
+    appScreen: frame.appScreen
+  })) {
+    if (value !== activeScreenId) {
+      throw new Error(`${context}: ${key} should track active screen ${activeScreenId}. Saw ${JSON.stringify(frame)}.`);
+    }
+  }
+  if (activeScreenId.startsWith('s-ob-') && (frame.appPaddingLeft !== '0px' || frame.appPaddingRight !== '0px' || frame.appPaddingBottom !== '0px')) {
+    throw new Error(`${context}: onboarding should not leave app-frame gutters. Saw ${JSON.stringify(frame)}.`);
+  }
+}
+
+async function assertOnlyActiveScreen(context, activeScreenId) {
+  await page.waitForTimeout(700);
+  const state = await page.evaluate(() => ({
+    active: [...document.querySelectorAll('.screen.active')].map(screen => screen.id),
+    leaving: [...document.querySelectorAll('.screen-leave')].map(screen => screen.id),
+    entering: [...document.querySelectorAll('.screen-enter')].map(screen => screen.id),
+    visible: [...document.querySelectorAll('.screen')]
+      .filter(screen => getComputedStyle(screen).display !== 'none')
+      .map(screen => screen.id)
+  }));
+  if (state.active.length !== 1 || state.active[0] !== activeScreenId || state.leaving.length || state.entering.length || state.visible.length !== 1 || state.visible[0] !== activeScreenId) {
+    throw new Error(`${context}: expected only ${activeScreenId} to remain visible after transitions. Saw ${JSON.stringify(state)}.`);
+  }
+}
+
 async function assertSettingsScreen(context, expectedEmail = 'parent@example.com') {
   await expectActive('s-setup');
   const settingsNavVisible = await page.locator('#s-setup .bottom-nav').isVisible();
@@ -329,13 +404,13 @@ try {
   await click('#s-setup button[onclick="saveSetup()"]');
   await expectActive('s-home');
   const weeklyMailto = await page.evaluate(() => {
-    const subject = encodeURIComponent('Custody Tracker — Weekly Report test');
+    const subject = encodeURIComponent('Whose Day — Weekly Report test');
     return reportMailto(subject, encodeURIComponent(buildWeeklyReport()));
   });
   if (!weeklyMailto.startsWith('mailto:weekly.user%40example.com?')) {
     throw new Error(`Weekly report should use the email saved in Settings. Saw "${weeklyMailto}".`);
   }
-  assertIncludes(weeklyMailto, 'Custody%20Tracker', 'Weekly report mailto');
+  assertIncludes(weeklyMailto, 'Whose%20Day', 'Weekly report mailto');
 
   await click('#s-home .bottom-nav-item[onclick="showExport()"]');
   await expectActive('s-export');
@@ -343,6 +418,39 @@ try {
   await assertSettingsScreen('Reports Settings tab', 'weekly.user@example.com');
   await click(`#s-setup.screen.active .bottom-nav-item[onclick="show('s-home')"]`);
   await expectActive('s-home');
+
+  await page.setViewportSize({ width: 886, height: 768 });
+  await bootstrap({ themeMode: 'dark' });
+  await assertDarkThemeFrame('Dark theme Home frame', 's-home');
+  await click('#s-home .bottom-nav-item[onclick="showCal()"]');
+  await assertDarkThemeFrame('Dark theme Calendar frame', 's-cal');
+  await click('#s-cal .bottom-nav-item[onclick="showExport()"]');
+  await assertDarkThemeFrame('Dark theme Reports frame', 's-export');
+  await click('#s-export .bottom-nav-item[onclick="showSetup()"]');
+  await assertDarkThemeFrame('Dark theme Settings frame', 's-setup');
+  await click(`#s-setup.screen.active .bottom-nav-item[onclick="show('s-home')"]`);
+  await expectActive('s-home');
+  await click('#s-home .home-primary');
+  await assertDarkThemeFrame('Dark theme Check-in frame', 's-week');
+  await page.goto(`${baseUrl}?onboarding-theme-preview=smoke`);
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    localStorage.setItem('custody_tracker_config', JSON.stringify({
+      currentParentLabel: 'Dad',
+      coParentLabel: 'Mom',
+      email: 'parent@example.com',
+      children: ['Ava', 'Ben'],
+      purpose: '',
+      termsAccepted: true,
+      themeMode: 'dark'
+    }));
+  });
+  await page.reload();
+  await expectActive('s-ob-welcome');
+  await click('#s-ob-welcome .ob-btn-primary');
+  await assertDarkThemeFrame('Dark theme Onboarding frame', 's-ob-promises');
+  await page.setViewportSize({ width: 390, height: 844 });
 
   await bootstrap();
   await click('#s-home .home-primary');
@@ -595,6 +703,25 @@ try {
   assertIncludes(longKidGridText, 'Supercalifragilisticexpialidocious Junior', 'Long child-name grid');
   assertIncludes(longKidGridText, longCoParent, 'Long child-name grid');
   await assertNoHorizontalOverflow('Kid grid with long names');
+
+  await bootstrap({ themeMode: 'dark' });
+  await click('#s-home .home-primary');
+  await click('#wk-dad');
+  await page.waitForTimeout(340);
+  await click('#sc-dad-normal');
+  await page.waitForTimeout(340);
+  await click('#ak-no');
+  await assertOnlyActiveScreen('Fast-tap two-child check-in transition', 's-whichkids');
+  await assertDarkThemeFrame('Fast-tap two-child check-in frame', 's-whichkids');
+
+  await bootstrap({ themeMode: 'dark', children: ['Ava'] });
+  await click('#s-home .home-primary');
+  await page.waitForTimeout(340);
+  await click('#wk-mom');
+  await page.waitForTimeout(340);
+  await click('#ft-dad');
+  await assertOnlyActiveScreen('Fast-tap single-child check-in transition', 's-mom-dad-had');
+  await assertDarkThemeFrame('Fast-tap single-child check-in frame', 's-mom-dad-had');
 
   if (consoleErrors.length) {
     throw new Error(`Console errors detected:\n${consoleErrors.join('\n')}`);

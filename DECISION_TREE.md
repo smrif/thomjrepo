@@ -1,4 +1,4 @@
-# Custody Tracker Decision Tree
+# Whose Day Decision Tree
 
 This document describes the current check-in flow as implemented in `index.html` and `app.js`.
 
