@@ -124,7 +124,7 @@ async function assertNoHorizontalOverflow(context) {
   }
 }
 
-async function assertDarkThemeFrame(context, activeScreenId) {
+async function assertDarkThemeFrame(context, activeScreenId, expectedBg = 'rgb(30, 37, 48)') {
   await expectActive(activeScreenId);
   await page.waitForTimeout(50);
   const frame = await page.evaluate(() => {
@@ -160,7 +160,6 @@ async function assertDarkThemeFrame(context, activeScreenId) {
       }
     };
   });
-  const expectedBg = 'rgb(30, 37, 48)';
   for (const [key, value] of Object.entries({
     htmlBg: frame.htmlBg,
     bodyBg: frame.bodyBg,
@@ -199,6 +198,42 @@ async function assertOnlyActiveScreen(context, activeScreenId) {
   }
 }
 
+async function assertDarkDeviationChoicesReadable() {
+  await bootstrap();
+  await page.evaluate(() => {
+    document.documentElement.dataset.theme = 'dark';
+    APP_CONFIG.themeMode = 'dark';
+    localStorage.setItem('custody_tracker_config', JSON.stringify(APP_CONFIG));
+  });
+  await click('#s-home .home-primary');
+  await click('#wk-mom');
+  await click('#ft-dad');
+  await click('#dh-allThree');
+  await click('#dad-had-next');
+  await expectActive('s-change-context');
+  await click('#agreed-yes');
+  const state = await page.evaluate(() => {
+    const unselected = document.getElementById('agreed-no');
+    const label = unselected.querySelector('.change-yn-label');
+    const sub = unselected.querySelector('.change-yn-sub');
+    const selected = document.getElementById('agreed-yes');
+    const pressureHeading = document.querySelector('#pressure-section .q');
+    const app = document.getElementById('app');
+    return {
+      unselectedBg: getComputedStyle(unselected).backgroundColor,
+      labelColor: getComputedStyle(label).color,
+      subColor: getComputedStyle(sub).color,
+      pressureHeadingColor: getComputedStyle(pressureHeading).color,
+      appBg: getComputedStyle(app).backgroundColor,
+      selectedBg: getComputedStyle(selected).backgroundColor,
+      selectedPressed: selected.getAttribute('aria-pressed')
+    };
+  });
+  if (state.labelColor === state.unselectedBg || state.subColor === state.unselectedBg || state.pressureHeadingColor === state.appBg || state.selectedPressed !== 'true') {
+    throw new Error(`Dark deviation choices should keep readable unselected text and visible selected state. Saw ${JSON.stringify(state)}.`);
+  }
+}
+
 async function assertSettingsScreen(context, expectedEmail = 'parent@example.com') {
   await expectActive('s-setup');
   const settingsNavVisible = await page.locator('#s-setup .bottom-nav').isVisible();
@@ -227,10 +262,51 @@ async function assertSettingsScreen(context, expectedEmail = 'parent@example.com
   if (fieldState.activityGroups !== 1 || fieldState.childActivityGroups !== 0) {
     throw new Error(`${context}: Settings should render one shared activity group, not per-child groups. Saw ${JSON.stringify(fieldState)}.`);
   }
-  assertIncludes(fieldState.activityLabel, 'apply to every child', `${context}: Shared activity label`);
+  assertIncludes(fieldState.activityLabel, 'helps with plans', `${context}: Shared activity label`);
   if (fieldState.activeActivityCount === 0) throw new Error(`${context}: Shared activities should have default active options. Saw ${JSON.stringify(fieldState)}.`);
   if (!fieldState.activityListsMatch) throw new Error(`${context}: Activity changes should apply to every child. Saw ${JSON.stringify(fieldState)}.`);
   if (fieldState.hasEmojiActivityLabels) throw new Error(`${context}: Activity labels should not use emoji. Saw ${JSON.stringify(fieldState)}.`);
+}
+
+async function assertCustomActivityInDecisionTree() {
+  await bootstrap({
+    activityIds: ['school', 'afterschool', 'medical', 'practice', 'birthday', 'camp', 'therapy', 'religious']
+  });
+  await page.evaluate(() => showSetup());
+  await page.locator('#setup-custom-activity').fill('Karate and late afternoon practice');
+  await click('#setup-activities-container .activity-add-btn');
+  await click('#setup-continue');
+  await expectActive('s-home');
+
+  const state = await page.evaluate(() => {
+    renderConfigurableUi();
+    S.momHelpedOnDadWeek = { Ava: { acts: [], note: '' } };
+    momHelpedQueue = ['Ava'];
+    momHelpedIdx = 0;
+    showMomHelpedStep();
+    const coParentHelpLabels = [...document.querySelectorAll('#mha-acts .act-btn')].map(btn => btn.textContent.trim());
+
+    renderConfigurableUi();
+    S.helpedData = { Ava: { acts: [], note: '' } };
+    helpedQueue = ['Ava'];
+    helpedIdx = 0;
+    showHelpedStep();
+    const parentHelpLabels = [...document.querySelectorAll('#helped-acts .act-btn')].map(btn => btn.textContent.trim());
+
+    return {
+      saved: JSON.parse(localStorage.getItem('custody_tracker_config') || '{}').activityIds || [],
+      coParentHelpLabels,
+      parentHelpLabels
+    };
+  });
+
+  const expectedCustomActivity = 'Karate and late afternoon practi';
+  if (!state.saved.includes(expectedCustomActivity) || !state.coParentHelpLabels.includes(expectedCustomActivity) || !state.parentHelpLabels.includes(expectedCustomActivity)) {
+    throw new Error(`Custom activity should save and appear in decision-tree activity screens. Saw ${JSON.stringify(state)}.`);
+  }
+  if (state.saved.some(label => label.length > 32)) {
+    throw new Error(`Custom activity labels should be capped at 32 characters. Saw ${JSON.stringify(state)}.`);
+  }
 }
 
 try {
@@ -369,6 +445,56 @@ try {
     throw new Error('Weekly report home row should show after at least two user-logged days exist.');
   }
 
+  await bootstrap();
+  await page.evaluate(({ twoDaysAgo }) => {
+    localStorage.setItem('familylog_entries', JSON.stringify({
+      [twoDaysAgo]: {
+        week: 'dad',
+        dadMode: 'normal',
+        momMode: null,
+        kidsWithDad: ['Ava', 'Ben'],
+        absentData: {},
+        momOpts: [],
+        helpedKids: [],
+        helpedData: {},
+        dadHadKids: [],
+        momHadKidsOnDadWeek: [],
+        momHelpedOnDadWeek: {},
+        diary: '',
+        attachment: null,
+        changeAgreed: null,
+        changePressured: null,
+        loggedAt: new Date().toISOString()
+      }
+    }));
+    initHome();
+  }, { twoDaysAgo: dateString(-2) });
+  const missedHomeState = await page.evaluate(() => {
+    const missed = document.getElementById('missed-prompt');
+    const today = document.getElementById('home-checkin-card');
+    return {
+      missedVisible: getComputedStyle(missed).display !== 'none',
+      missedPromoted: missed.classList.contains('primary-missed'),
+      missedBeforeToday: !!(missed.compareDocumentPosition(today) & Node.DOCUMENT_POSITION_FOLLOWING)
+    };
+  });
+  if (!missedHomeState.missedVisible || !missedHomeState.missedPromoted || !missedHomeState.missedBeforeToday) {
+    throw new Error(`Missed check-in should become the primary home CTA before today's card. Saw ${JSON.stringify(missedHomeState)}.`);
+  }
+  await click('#missed-prompt button[onclick="dismissMissedPrompt()"]');
+  const skippedMissedHomeState = await page.evaluate(() => {
+    const missed = document.getElementById('missed-prompt');
+    const today = document.getElementById('home-checkin-card');
+    return {
+      missedVisible: getComputedStyle(missed).display !== 'none',
+      missedPromoted: missed.classList.contains('primary-missed'),
+      todayBeforeMissed: !!(today.compareDocumentPosition(missed) & Node.DOCUMENT_POSITION_FOLLOWING)
+    };
+  });
+  if (skippedMissedHomeState.missedVisible || skippedMissedHomeState.missedPromoted || !skippedMissedHomeState.todayBeforeMissed) {
+    throw new Error(`Completed missed check-in should restore today's card as the first home CTA. Saw ${JSON.stringify(skippedMissedHomeState)}.`);
+  }
+
   await bootstrap({
     currentParentLabel: 'Ryan',
     coParentLabel: 'Laura',
@@ -400,6 +526,9 @@ try {
   await bootstrap();
   await click('#s-home .bottom-nav-item[onclick="showSetup()"]');
   await assertSettingsScreen('Home Settings tab');
+  await assertCustomActivityInDecisionTree();
+  await bootstrap();
+  await click('#s-home .bottom-nav-item[onclick="showSetup()"]');
   await page.locator('#setup-email').fill('weekly.user@example.com');
   await click('#s-setup button[onclick="saveSetup()"]');
   await expectActive('s-home');
@@ -432,6 +561,7 @@ try {
   await expectActive('s-home');
   await click('#s-home .home-primary');
   await assertDarkThemeFrame('Dark theme Check-in frame', 's-week');
+  await assertDarkDeviationChoicesReadable();
   await page.goto(`${baseUrl}?onboarding-theme-preview=smoke`);
   await page.evaluate(() => {
     localStorage.clear();
@@ -449,7 +579,7 @@ try {
   await page.reload();
   await expectActive('s-ob-welcome');
   await click('#s-ob-welcome .ob-btn-primary');
-  await assertDarkThemeFrame('Dark theme Onboarding frame', 's-ob-promises');
+  await assertDarkThemeFrame('Dark theme Onboarding frame', 's-ob-promises', 'rgb(250, 246, 240)');
   await page.setViewportSize({ width: 390, height: 844 });
 
   await bootstrap();
@@ -498,9 +628,33 @@ try {
   await click('#dad-had-next');
   await expectActive('s-change-context');
   await click('#agreed-no');
+  const unexpectedChoiceState = await page.evaluate(() => {
+    const selected = document.getElementById('agreed-no');
+    const other = document.getElementById('agreed-yes');
+    return {
+      selectedPressed: selected.getAttribute('aria-pressed'),
+      selectedClass: selected.className,
+      otherPressed: other.getAttribute('aria-pressed')
+    };
+  });
+  if (unexpectedChoiceState.selectedPressed !== 'true' || !unexpectedChoiceState.selectedClass.includes('sel-no') || unexpectedChoiceState.otherPressed !== 'false') {
+    throw new Error(`Unexpected change choice should have a clear selected state. Saw ${JSON.stringify(unexpectedChoiceState)}.`);
+  }
   if (await page.locator('#change-context-next').isDisabled()) {
     throw new Error('Unexpected schedule changes should be able to continue without pressure answer.');
   }
+  await click('#change-context-next');
+  await expectActive('s-diary');
+  const deviationDiaryText = await page.locator('#s-diary').innerText();
+  assertIncludes(deviationDiaryText, 'Document the schedule change', 'Deviation diary screen');
+  assertIncludes(deviationDiaryText, 'Worth documenting', 'Deviation diary screen');
+  assertIncludes(deviationDiaryText, 'recommended', 'Deviation screenshot prompt');
+  await click('#diary-next-btn');
+  if (!await page.locator('#deviation-empty-confirm').isVisible()) {
+    throw new Error('Unexpected deviation with no note or screenshot should ask for confirmation before logging.');
+  }
+  await click('#deviation-empty-confirm button[onclick="saveEntry({allowEmptyDeviation:true})"]');
+  await expectActive('s-saved');
 
   await bootstrap();
   await click('#s-home .bottom-nav-item[onclick="showExport()"]');

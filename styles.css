@@ -373,6 +373,7 @@ select:focus{border-color:#6c63d4}
 .cal-cell.missed{background:#f6f4f5;color:#aaa;font-weight:500}
 .tag-missed{background:#f1eff0;color:#888}
 .missed-banner{background:#fff;border:2px solid #e0c84a;border-radius:16px;padding:18px;margin-bottom:1rem;display:none}
+.missed-banner.primary-missed{padding:20px;margin-bottom:18px;border-color:#e0c84a;box-shadow:0 14px 34px rgba(122,98,0,.12)}
 .missed-banner-title{font-size:15px;font-weight:700;color:#7a6200;margin-bottom:5px}
 .missed-banner-sub{font-size:14px;color:#a08400;margin-bottom:14px;line-height:1.4}
 
@@ -625,7 +626,7 @@ select:focus{border-color:#6c63d4}
 .change-yn-btn.sel-pressure .change-yn-label{color:#11172f}
 .change-yn-btn.sel-ok .change-yn-label{color:#11172f}
 #pressure-section{border-top:1px solid #efedf4;margin-top:6px!important;padding-top:20px}
-#pressure-section .q{font-family:Georgia,'Times New Roman',serif!important;font-size:26px!important;font-weight:800!important;line-height:1.12!important;color:#11172f!important;margin-bottom:10px!important}
+#pressure-section .q{font-family:Georgia,'Times New Roman',serif!important;font-size:26px!important;font-weight:800!important;line-height:1.12!important;color:var(--daily-ink)!important;margin-bottom:10px!important}
 #s-change-context .btn.primary{min-height:56px;border-radius:16px;background:#4430a0;border-color:#4430a0;box-shadow:0 10px 20px rgba(68,48,160,.16)}
 /* Diary badges for change context */
 .context-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:10px;margin-right:5px;margin-bottom:4px}
@@ -679,7 +680,7 @@ select:focus{border-color:#6c63d4}
 .trends-footnote{font-size:11px;color:#999;margin-top:10px;line-height:1.6;padding:10px 14px;background:#f2f2f0;border-radius:10px}
 
 /* ── Shared activities in setup ─────────────────────── */
-.activity-card-grid{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:12px;padding:18px}
+.activity-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:18px}
 .activity-chip{min-width:0;min-height:56px;padding:10px 12px;border-radius:12px;border:1.5px solid #dedbe4;background:#fff;color:#11172f;font-size:15px;font-weight:650;cursor:pointer;font-family:inherit;transition:all .15s;text-align:left;display:grid;grid-template-columns:34px minmax(0,1fr) 26px;align-items:center;gap:10px;box-shadow:0 7px 18px rgba(28,22,48,.035)}
 .activity-chip span:nth-child(2){min-width:0;overflow-wrap:anywhere;line-height:1.25}
 .activity-chip.active{background:#f3efff;border-color:#8c7bea;color:#3C3489;box-shadow:0 10px 22px rgba(68,48,160,.09)}
@@ -701,6 +702,7 @@ select:focus{border-color:#6c63d4}
 .activity-custom-input:focus{outline:none;box-shadow:0 0 0 3px rgba(127,119,221,.15)}
 .activity-add-btn{min-height:58px;border-radius:14px;border:1.5px solid #d7cdf8;background:#eee7ff;color:#2f247d;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap}
 .activity-add-btn:active{opacity:.7}
+.activity-limit-hint{margin-top:8px;color:#777;font-size:12px;line-height:1.35}
 @media(max-width:640px){
   .activity-card-grid{grid-template-columns:1fr;padding:14px;gap:10px}
   .activity-add-row{grid-template-columns:1fr}

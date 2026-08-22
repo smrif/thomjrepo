@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-title" content="Whose Day">
 <title>Whose Day</title>
 <link rel="icon" type="image/svg+xml" href="assets/whose-day-icon.svg">
-<link rel="stylesheet" href="styles.css?v=frame-smoke-1">
-<link rel="stylesheet" href="theme.css?v=brand-logo-1">
+<link rel="stylesheet" href="styles.css?v=deviation-docs-1">
+<link rel="stylesheet" href="theme.css?v=deviation-docs-1">
 </head>
 <body>
 <div class="app" id="app" style="padding-bottom:80px">
@@ -224,21 +224,6 @@
 
     <section class="settings-section">
       <div class="settings-section-head">
-        <span class="settings-section-icon appearance-icon" aria-hidden="true"></span>
-        <div>
-          <h2>Appearance</h2>
-          <p>Switch the check-in theme while reviewing the new visual direction.</p>
-        </div>
-      </div>
-      <div class="settings-card appearance-card">
-        <button class="theme-mode-btn" type="button" data-theme-mode="system" onclick="setThemeMode('system')">System</button>
-        <button class="theme-mode-btn" type="button" data-theme-mode="light" onclick="setThemeMode('light')">Light</button>
-        <button class="theme-mode-btn" type="button" data-theme-mode="dark" onclick="setThemeMode('dark')">Dark</button>
-      </div>
-    </section>
-
-    <section class="settings-section">
-      <div class="settings-section-head">
         <span class="settings-section-icon coparent-icon" aria-hidden="true"></span>
         <div>
           <h2>Co-parent</h2>
@@ -272,6 +257,21 @@
         <div class="setup-children-list" id="setup-children-list"></div>
       </div>
       <button class="setup-add-child" type="button" onclick="addChildField()">+ Add another child</button>
+    </section>
+
+    <section class="settings-section">
+      <div class="settings-section-head">
+        <span class="settings-section-icon appearance-icon" aria-hidden="true"></span>
+        <div>
+          <h2>Appearance</h2>
+          <p>Switch the check-in theme while reviewing the new visual direction.</p>
+        </div>
+      </div>
+      <div class="settings-card appearance-card">
+        <button class="theme-mode-btn" type="button" data-theme-mode="system" onclick="setThemeMode('system')">System</button>
+        <button class="theme-mode-btn" type="button" data-theme-mode="light" onclick="setThemeMode('light')">Light</button>
+        <button class="theme-mode-btn" type="button" data-theme-mode="dark" onclick="setThemeMode('dark')">Dark</button>
+      </div>
     </section>
 
     <div id="setup-activities-container" style="display:none"></div>
@@ -593,15 +593,7 @@
     <div><div class="step-lbl" id="mha-step-lbl">Kid 1 of 2</div><div style="font-size:17px;font-weight:600" id="mha-kid-name">Thomas</div></div>
   </div>
   <p class="q" id="mha-q">What did your co-parent do with Thomas?</p>
-  <div class="activity-grid" id="mha-acts">
-    <button class="act-btn" onclick="toggleMomAct(this,'sports')">Sports</button>
-    <button class="act-btn" onclick="toggleMomAct(this,'camp')">Camp / drop-off</button>
-    <button class="act-btn" onclick="toggleMomAct(this,'school')">School run</button>
-    <button class="act-btn" onclick="toggleMomAct(this,'food')">Meal / dinner</button>
-    <button class="act-btn" onclick="toggleMomAct(this,'medical')">Doctor / medical</button>
-    <button class="act-btn" onclick="toggleMomAct(this,'activity')">Activity / event</button>
-    <button class="act-btn" onclick="toggleMomAct(this,'other')">Other</button>
-  </div>
+  <div class="activity-grid" id="mha-acts"></div>
   <p class="sec-lbl">Quick note (optional)</p>
   <input type="text" id="mha-note" placeholder="e.g. Took Thomas to his Saturday match...">
   <button class="btn primary" id="mha-next-btn" onclick="nextMomHelpedKid()" style="width:100%" disabled>Next →</button>
@@ -703,15 +695,7 @@
     <div><div class="step-lbl" id="helped-step-lbl">Kid 1 of 2</div><div style="font-size:17px;font-weight:600" id="helped-kid-name">Thomas</div></div>
   </div>
   <p class="q" id="helped-q">What did you do with Thomas?</p>
-  <div class="activity-grid" id="helped-acts">
-    <button class="act-btn" onclick="toggleAct(this,'sports')">Sports</button>
-    <button class="act-btn" onclick="toggleAct(this,'camp')">Camp / drop-off</button>
-    <button class="act-btn" onclick="toggleAct(this,'school')">School run</button>
-    <button class="act-btn" onclick="toggleAct(this,'food')">Meal / dinner</button>
-    <button class="act-btn" onclick="toggleAct(this,'medical')">Doctor / medical</button>
-    <button class="act-btn" onclick="toggleAct(this,'activity')">Activity / event</button>
-    <button class="act-btn" onclick="toggleAct(this,'other')">Other</button>
-  </div>
+  <div class="activity-grid" id="helped-acts"></div>
   <p class="sec-lbl">Quick note (optional)</p>
   <input type="text" id="helped-note" placeholder="e.g. Sports tournament in San Diego...">
   <button class="btn primary" id="helped-act-next" onclick="nextHelpedKid()" style="width:100%" disabled>Next →</button>
@@ -841,11 +825,15 @@
   <div class="progress phase-progress" id="prog-diary"></div>
   <p class="q" id="diary-q">Anything else to note?</p>
   <p class="sub" id="diary-sub">A quick diary entry — how was today?</p>
+  <div class="deviation-doc-callout" id="deviation-doc-callout" style="display:none">
+    <div class="deviation-doc-title">Worth documenting</div>
+    <div class="deviation-doc-copy">Schedule changes are the days your lawyer may want to understand later. Add what happened while it's fresh.</div>
+  </div>
   <textarea id="diary-input" placeholder="Quiet evening at home..."></textarea>
 
   <div class="attach-section" style="margin-top:1rem">
-    <div class="attach-label">Attach a screenshot for context <span class="attach-optional">optional</span></div>
-    <div class="attach-sub">Text message, email, or anything relevant to this entry</div>
+    <div class="attach-label">Attach a screenshot for context <span class="attach-optional" id="diary-attach-optional">optional</span></div>
+    <div class="attach-sub" id="diary-attach-sub">Text message, email, or anything relevant to this entry</div>
     <div id="diary-attach-preview" class="attach-preview" style="display:none">
       <img id="diary-attach-img" src="" alt="Attached screenshot">
       <button class="attach-remove-btn" onclick="removeAttachment('diary')" title="Remove">✕</button>
@@ -857,6 +845,14 @@
   </div>
 
   <button class="btn primary" id="diary-next-btn" onclick="saveEntry()" style="width:100%;margin-top:1rem">Log it →</button>
+  <div class="deviation-empty-confirm" id="deviation-empty-confirm" style="display:none" role="alert">
+    <div class="deviation-empty-title">No details added yet</div>
+    <div class="deviation-empty-copy">This entry will be more useful if it explains what changed or includes a screenshot.</div>
+    <div class="deviation-empty-actions">
+      <button class="btn primary" onclick="returnToDeviationDocs()">Add details</button>
+      <button class="btn" onclick="saveEntry({allowEmptyDeviation:true})">Log without details</button>
+    </div>
+  </div>
 </div>
 
 <!-- SAVED -->
@@ -1121,6 +1117,6 @@
   <strong>Feedback</strong>
 </button>
 </div><!-- end .app -->
-<script src="app.js?v=full-audit-2"></script>
+<script src="app.js?v=deviation-docs-1"></script>
 </body>
 </html>

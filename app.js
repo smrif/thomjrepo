@@ -14,24 +14,23 @@ const SESSION_COUNTED_KEY='custody_tracker_session_counted';
 const ACTIVITY_PROMPT_SHOWN_KEY='activity_prompt_shown';
 const ACTIVITY_PROMPT_DISMISSED_KEY='activity_prompt_dismissed';
 const DEFAULT_ACTIVITIES=[
-  {id:'school',label:'School pickup / dropoff'},
-  {id:'afterschool',label:'After school program'},
-  {id:'medical',label:'Doctor / medical'},
-  {id:'sports',label:'Sports / practice'},
-  {id:'dance',label:'Dance / gymnastics'},
-  {id:'music',label:'Music / tutoring'},
-  {id:'birthday',label:'Birthday party / playdate'},
-  {id:'camp',label:'Camp / day program'},
-  {id:'therapy',label:'Therapy / counseling'},
-  {id:'religious',label:'Religious service / worship'},
-  {id:'volunteer',label:'Volunteering'},
-  {id:'tournament',label:'Tournament / competition'},
+  {id:'school',label:'School pickup'},
+  {id:'afterschool',label:'After school'},
+  {id:'medical',label:'Medical'},
+  {id:'practice',label:'Practice / lesson'},
+  {id:'birthday',label:'Playdate'},
+  {id:'camp',label:'Camp'},
+  {id:'therapy',label:'Therapy'},
+  {id:'religious',label:'Religious service'},
 ];
+const ACTIVITY_ID_ALIASES={sports:'practice',dance:'practice',music:'practice'};
+const REMOVED_DEFAULT_ACTIVITY_IDS=new Set(['volunteer','tournament']);
+const CUSTOM_ACTIVITY_MAX_LENGTH=32;
 
 let APP_CONFIG=loadConfig();
 let KIDS=[...APP_CONFIG.children];
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
-const ACT_LBL={school:'School pickup/dropoff',afterschool:'After school program',medical:'Doctor/medical',sports:'Sports/practice',dance:'Dance/gymnastics',music:'Music/tutoring',birthday:'Birthday party/playdate',camp:'Camp/day program',therapy:'Therapy/counseling',religious:'Religious service',volunteer:'Volunteering',tournament:'Tournament/competition',other:'Other'};
+const ACT_LBL={school:'School pickup',afterschool:'After school',medical:'Medical',practice:'Practice / lesson',sports:'Sports/practice',dance:'Dance/gymnastics',music:'Music/tutoring',birthday:'Playdate',camp:'Camp',therapy:'Therapy',religious:'Religious service',volunteer:'Volunteering',tournament:'Tournament/competition',other:'Other'};
 const LOC_LBL={moms:"At Mom's",sleepover:'Sleepover',camp:'Overnight camp',activity:'Activity/event',other:'Other'};
 const FEEDBACK_FORM_URL='https://docs.google.com/forms/d/e/1FAIpQLSfvZbvGndLbr6mFadw9oJrI3dw9ebEmyRJCpjlgK5s3w8qxTw/viewform?usp=sharing&ouid=103902362441684971194';
 const FEEDBACK_EMAIL='thomas.j.gamble@gmail.com';
@@ -246,14 +245,15 @@ function renderActivitySetup(){
       <span class="settings-section-icon activities-icon" aria-hidden="true"></span>
       <div>
         <h2>Common activities</h2>
-        <p>These apply to every child.</p>
+        <p>Used when a parent helps with plans.</p>
       </div>
     </div>
     <div class="settings-card activity-card-grid" id="setup-activity-chips"></div>
     <div class="activity-add-row">
-      <input type="text" class="activity-custom-input" placeholder="Add custom activity..." id="setup-custom-activity">
+      <input type="text" class="activity-custom-input" placeholder="Add custom activity..." id="setup-custom-activity" maxlength="${CUSTOM_ACTIVITY_MAX_LENGTH}" aria-describedby="setup-custom-activity-hint">
       <button type="button" class="activity-add-btn" onclick="addCustomActivity()">Add</button>
     </div>
+    <div class="activity-limit-hint" id="setup-custom-activity-hint">${CUSTOM_ACTIVITY_MAX_LENGTH} characters max.</div>
   </section>`;
 
   const chipsEl=document.getElementById('setup-activity-chips');
@@ -272,10 +272,22 @@ function renderActivitySetup(){
 }
 
 function getConfiguredActivityIds(){
-  if(Array.isArray(APP_CONFIG.activityIds)&&APP_CONFIG.activityIds.length)return APP_CONFIG.activityIds;
+  if(Array.isArray(APP_CONFIG.activityIds)&&APP_CONFIG.activityIds.length)return normalizeActivityIds(APP_CONFIG.activityIds);
   const legacy=APP_CONFIG.childActivities||{};
   const legacyIds=[...new Set(Object.values(legacy).flat().filter(Boolean))];
-  return legacyIds.length?legacyIds:DEFAULT_ACTIVITIES.map(a=>a.id);
+  return legacyIds.length?normalizeActivityIds(legacyIds):DEFAULT_ACTIVITIES.map(a=>a.id);
+}
+
+function normalizeActivityIds(ids){
+  const defaultIds=new Set(DEFAULT_ACTIVITIES.map(a=>a.id));
+  const normalized=[];
+  ids.forEach(id=>{
+    const next=ACTIVITY_ID_ALIASES[id]||id;
+    if(REMOVED_DEFAULT_ACTIVITY_IDS.has(next))return;
+    if(!defaultIds.has(next)&&REMOVED_DEFAULT_ACTIVITY_IDS.has(id))return;
+    if(next&&!normalized.includes(next))normalized.push(next);
+  });
+  return normalized.length?normalized:DEFAULT_ACTIVITIES.map(a=>a.id);
 }
 
 function addCustomChip(chipsEl, label, active=false){
@@ -290,7 +302,7 @@ function addCustomChip(chipsEl, label, active=false){
 
 function addCustomActivity(){
   const input=document.getElementById('setup-custom-activity');
-  const val=input?input.value.trim():'';
+  const val=input?input.value.trim().slice(0,CUSTOM_ACTIVITY_MAX_LENGTH):'';
   if(!val)return;
   const chipsEl=document.getElementById('setup-activity-chips');
   if(chipsEl)addCustomChip(chipsEl, val, true);
@@ -310,6 +322,38 @@ function getActivitiesForChild(childName){
     return def?{id,label:def.label}:{id,label:id};
   });
   return DEFAULT_ACTIVITIES;
+}
+
+function getDecisionTreeActivities(){
+  const activities=getActivitiesForChild('');
+  return activities.some(act=>act.id==='other')?activities:[...activities,{id:'other',label:'Other'}];
+}
+
+function activityLabel(id){
+  const normalized=ACTIVITY_ID_ALIASES[id]||id;
+  const def=DEFAULT_ACTIVITIES.find(act=>act.id===normalized);
+  return ACT_LBL[id]||ACT_LBL[normalized]||def?.label||id;
+}
+
+function activityButtonId(button){
+  if(button?.dataset?.actId)return button.dataset.actId;
+  const match=button?.getAttribute('onclick')?.match(/'([^']+)'/);
+  return match?match[1]:'';
+}
+
+function renderActivityChoiceGrid(gridId, handlerName){
+  const grid=document.getElementById(gridId);
+  if(!grid)return;
+  grid.innerHTML='';
+  getDecisionTreeActivities().forEach(act=>{
+    const btn=document.createElement('button');
+    btn.type='button';
+    btn.className='act-btn';
+    btn.dataset.actId=act.id;
+    btn.textContent=act.label;
+    btn.onclick=()=>window[handlerName](btn,act.id);
+    grid.appendChild(btn);
+  });
 }
 // ── END ACTIVITIES ───────────────────────────────────────────────
 
@@ -346,6 +390,8 @@ function renderConfigurableUi(){
   setupKidGrid('dad-wk-mom-grid','dwm','toggleDadWkMomKid',()=>allWithCoParentButton('dwm-all',setDadWkMomAll,kidsCountLabel()));
   setupKidGrid('helped-kids-grid','hk','toggleHelpedKid');
   setupKidGrid('dad-had-grid','dh','toggleDadHadKid',()=>allWithCoParentButton('dh-allThree',setDadHadAll,kidsCountLabel()));
+  renderActivityChoiceGrid('mha-acts','toggleMomAct');
+  renderActivityChoiceGrid('helped-acts','toggleAct');
   LOC_LBL.moms='At '+coParentPoss();
 }
 function initSetupForm(){
@@ -597,16 +643,29 @@ function checkMissedPrompt(){
   const yesterday=yesterdayStr();
   const entries=getEntries();
   const dismissKey='missed_dismissed_'+todayStr();
-  if(entries[yesterday])return; // already logged or marked
-  if(!Object.keys(entries).length)return; // brand-new app, no history yet
-  if(localStorage.getItem(dismissKey))return; // already asked today
+  const prompt=document.getElementById('missed-prompt');
+  const todayCard=document.getElementById('home-checkin-card');
+  if(!prompt)return false;
+  prompt.style.display='none';
+  prompt.classList.remove('primary-missed');
+  const promptBeforeToday=todayCard&&todayCard.parentNode&&prompt.parentNode===todayCard.parentNode&&
+    (prompt.compareDocumentPosition(todayCard)&Node.DOCUMENT_POSITION_FOLLOWING);
+  if(promptBeforeToday){
+    todayCard.insertAdjacentElement('afterend',prompt);
+  }
+  if(entries[yesterday])return false; // already logged or marked
+  if(!Object.keys(entries).length)return false; // brand-new app, no history yet
+  if(localStorage.getItem(dismissKey))return false; // already asked today
   // Find the first entry to make sure the app has been in use at least one day
   const allDates=Object.keys(entries).sort();
-  if(!allDates.length||allDates[0]>=yesterday)return;
+  if(!allDates.length||allDates[0]>=yesterday)return false;
   // Show it
   const yLabel=fmtShort(yesterday);
   document.getElementById('missed-date-label').textContent=yLabel;
-  document.getElementById('missed-prompt').style.display='block';
+  prompt.classList.add('primary-missed');
+  prompt.style.display='block';
+  if(todayCard&&todayCard.parentNode)todayCard.parentNode.insertBefore(prompt,todayCard);
+  return true;
 }
 function dismissMissedPrompt(){
   // Mark yesterday as intentionally skipped (not-logged sentinel)
@@ -616,6 +675,7 @@ function dismissMissedPrompt(){
   putEntries(entries);
   localStorage.setItem('missed_dismissed_'+todayStr(),'1');
   document.getElementById('missed-prompt').style.display='none';
+  initHome();
 }
 function startBackfill(){
   // Start check-in flow but target yesterday's date instead of today
@@ -1104,7 +1164,7 @@ function showMomHelpedStep(){
   document.getElementById('mha-q').textContent='What did '+coParent()+' do with '+kid+'?';
   if(!S.momHelpedOnDadWeek[kid])S.momHelpedOnDadWeek[kid]={acts:[],note:''};
   document.getElementById('mha-note').value=S.momHelpedOnDadWeek[kid].note||'';
-  document.querySelectorAll('#mha-acts .act-btn').forEach(b=>{b.classList.toggle('sel',S.momHelpedOnDadWeek[kid].acts.includes(b.getAttribute('onclick').match(/'(\w+)'/)[1]))});
+  document.querySelectorAll('#mha-acts .act-btn').forEach(b=>{b.classList.toggle('sel',S.momHelpedOnDadWeek[kid].acts.includes(activityButtonId(b)))});
   document.getElementById('mha-next-btn').disabled=S.momHelpedOnDadWeek[kid].acts.length===0;
   document.getElementById('mha-next-btn').textContent=momHelpedIdx<total-1?'Next kid →':'Continue →';
   setProg('prog-mom-helped-activity',2,5);show('s-mom-helped-activity');
@@ -1345,7 +1405,7 @@ function showHelpedStep(){
   document.getElementById('helped-q').textContent='What did you do with '+kid+'?';
   if(!S.helpedData[kid])S.helpedData[kid]={acts:[],note:''};
   document.getElementById('helped-note').value=S.helpedData[kid].note||'';
-  document.querySelectorAll('#helped-acts .act-btn').forEach(b=>{b.classList.toggle('sel',S.helpedData[kid].acts.includes(b.getAttribute('onclick').match(/'(\w+)'/)[1]))});
+  document.querySelectorAll('#helped-acts .act-btn').forEach(b=>{b.classList.toggle('sel',S.helpedData[kid].acts.includes(activityButtonId(b)))});
   document.getElementById('helped-act-next').disabled=S.helpedData[kid].acts.length===0;
   document.getElementById('helped-act-next').textContent=helpedIdx<total-1?'Next kid →':'Continue →';
   setProg('prog-helped-activity',2,3);show('s-helped-activity');
@@ -1376,7 +1436,7 @@ function goToDadHadViaContext(){goDadHadDiary()}
 
 function showChangeContext(backTarget,kind){
   S.changeContextBack=backTarget;S.changeContextNext=kind;S.changeAgreed=null;S.changePressured=null;
-  document.querySelectorAll('#s-change-context .change-yn-btn').forEach(b=>b.className='change-yn-btn');
+  resetChangeContextButtons();
   document.getElementById('pressure-section').style.display='none';
   document.getElementById('change-context-next').disabled=true;
   const dadToMom=kind==='dad-to-mom';
@@ -1385,26 +1445,46 @@ function showChangeContext(backTarget,kind){
   setProg('prog-change-context',2,4);show('s-change-context');
 }
 function goBackFromChangeContext(){show(S.changeContextBack||'s-week')}
+function resetChangeContextButtons(){
+  document.querySelectorAll('#s-change-context .change-yn-btn').forEach(b=>{
+    b.className='change-yn-btn';
+    b.setAttribute('aria-pressed','false');
+  });
+}
+function setChangeButtonSelected(id,selectedClass){
+  const btn=document.getElementById(id);
+  if(!btn)return;
+  btn.className='change-yn-btn '+selectedClass;
+  btn.setAttribute('aria-pressed','true');
+}
 function setAgreed(value){
   S.changeAgreed=value;S.changePressured=null;
-  document.getElementById('agreed-yes').className='change-yn-btn'+(value?' sel-yes':'');
-  document.getElementById('agreed-no').className='change-yn-btn'+(!value?' sel-no':'');
+  document.getElementById('agreed-yes').className='change-yn-btn';
+  document.getElementById('agreed-no').className='change-yn-btn';
+  document.getElementById('agreed-yes').setAttribute('aria-pressed','false');
+  document.getElementById('agreed-no').setAttribute('aria-pressed','false');
+  setChangeButtonSelected(value?'agreed-yes':'agreed-no',value?'sel-yes':'sel-no');
   document.getElementById('pressure-yes').className='change-yn-btn';
   document.getElementById('pressure-no').className='change-yn-btn';
+  document.getElementById('pressure-yes').setAttribute('aria-pressed','false');
+  document.getElementById('pressure-no').setAttribute('aria-pressed','false');
   document.getElementById('pressure-section').style.display=value?'block':'none';
   document.getElementById('change-context-next').disabled=value;
 }
 function setPressure(value){
   S.changePressured=value;
-  document.getElementById('pressure-yes').className='change-yn-btn'+(value?' sel-pressure':'');
-  document.getElementById('pressure-no').className='change-yn-btn'+(!value?' sel-ok':'');
+  document.getElementById('pressure-yes').className='change-yn-btn';
+  document.getElementById('pressure-no').className='change-yn-btn';
+  document.getElementById('pressure-yes').setAttribute('aria-pressed','false');
+  document.getElementById('pressure-no').setAttribute('aria-pressed','false');
+  setChangeButtonSelected(value?'pressure-yes':'pressure-no',value?'sel-pressure':'sel-ok');
   document.getElementById('change-context-next').disabled=false;
 }
 function goFromChangeContext(){
   goToDiary(
     's-change-context',
-    'Add a note about tonight',
-    S.changeContextNext==='dad-to-mom'?'Why did the kids end up at '+coParentPoss()+' during your day?':'Why did you end up with the kids during '+coParentPoss()+' day?',
+    'Document the schedule change',
+    S.changeContextNext==='dad-to-mom'?'Write why the kids ended up at '+coParentPoss()+' during your day.':'Write why you ended up with the kids during '+coParentPoss()+' day.',
     3,
     4
   );
@@ -1412,10 +1492,20 @@ function goFromChangeContext(){
 
 function goToDiary(origin,title,subtitle,step,total){
   diaryOrigin=origin;
+  const deviation=origin==='s-change-context';
   document.getElementById('diary-q').textContent=title;
   document.getElementById('diary-sub').textContent=subtitle;
   document.getElementById('diary-input').value=S.diary||'';
+  document.getElementById('diary-input').placeholder=deviation?'What changed? Who asked? What was said?':'Quiet evening at home...';
   document.getElementById('diary-next-btn').textContent='Log it →';
+  document.getElementById('s-diary').classList.toggle('deviation-doc-mode',deviation);
+  document.getElementById('deviation-doc-callout').style.display=deviation?'block':'none';
+  document.getElementById('deviation-empty-confirm').style.display='none';
+  const attachOptional=document.getElementById('diary-attach-optional');
+  const attachSub=document.getElementById('diary-attach-sub');
+  if(attachOptional)attachOptional.textContent=deviation?'recommended':'optional';
+  if(attachSub)attachSub.textContent=deviation?'Texts, emails, schedule messages, or anything that explains the change':'Text message, email, or anything relevant to this entry';
+  renderAttachment('diary');
   setProg('prog-diary',step,total);
   show('s-diary');
 }
@@ -1514,25 +1604,32 @@ function prepareEditTarget(target){
     setProg('prog-mom-dad-had',1,3);
   }
   if(target==='s-change-context'){
-    document.querySelectorAll('#s-change-context .change-yn-btn').forEach(b=>b.className='change-yn-btn');
+    resetChangeContextButtons();
     document.getElementById('pressure-section').style.display=S.changeAgreed?'block':'none';
-    if(S.changeAgreed!==null)document.getElementById(S.changeAgreed?'agreed-yes':'agreed-no').classList.add(S.changeAgreed?'sel-yes':'sel-no');
-    if(S.changePressured!==null)document.getElementById(S.changePressured?'pressure-yes':'pressure-no').classList.add(S.changePressured?'sel-pressure':'sel-ok');
+    if(S.changeAgreed!==null)setChangeButtonSelected(S.changeAgreed?'agreed-yes':'agreed-no',S.changeAgreed?'sel-yes':'sel-no');
+    if(S.changePressured!==null)setChangeButtonSelected(S.changePressured?'pressure-yes':'pressure-no',S.changePressured?'sel-pressure':'sel-ok');
     document.getElementById('change-context-next').disabled=S.changeAgreed===null||S.changeAgreed===true&&S.changePressured===null;
     setProg('prog-change-context',2,4);
   }
   if(target==='s-diary'){
     diaryOrigin='s-saved';
-    document.getElementById('diary-q').textContent='Anything else to note?';
-    document.getElementById('diary-sub').textContent='A quick diary — how was today?';
-    document.getElementById('diary-input').value=S.diary||'';
-    document.getElementById('diary-next-btn').textContent='Log it →';
-    renderAttachment('diary');
+    goToDiary('s-saved','Anything else to note?','A quick diary — how was today?',3,4);
     setProg('prog-diary',3,4);
   }
 }
-function saveEntry(){
+function needsDeviationDocumentationPrompt(){
+  return diaryOrigin==='s-change-context'&&(S.changeAgreed===false||S.changePressured===true)&&!S.diary.trim()&&!S.attachment;
+}
+function returnToDeviationDocs(){
+  document.getElementById('deviation-empty-confirm').style.display='none';
+  document.getElementById('diary-input').focus();
+}
+function saveEntry(options={}){
   captureEntryInputs();
+  if(!options.allowEmptyDeviation&&needsDeviationDocumentationPrompt()){
+    document.getElementById('deviation-empty-confirm').style.display='block';
+    return;
+  }
   const entries=getEntries();
   const e={week:S.week,dadMode:S.dadMode,momMode:S.momMode,
     kidsWithDad:S.dadMode==='mom-had'?[]:S.momMode==='dad-had'?[...S.dadHadKids]:[...S.kidsWithDad],
@@ -1701,9 +1798,9 @@ function showDetail(ds,e){
   }
   if(e.week==='other'){tag='<span class="tag tag-mom">Pre-agreed day note</span>';body=`<div class="entry-row" style="font-style:italic;color:#666">${e.diary||'No note'}</div>`}
   else if(e.dadMode==='mom-had'){tag='<span class="tag tag-teal">Your day · Kids at '+coParentPoss()+'</span>';body=`<div class="entry-row"><strong>At ${coParentPoss()}: ${(e.momHadKidsOnDadWeek||[]).join(', ')}</strong></div>${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
-  else if(e.dadMode==='dad-helped-mom'){tag='<span class="tag tag-dad">Your day</span>';const n=(e.kidsWithDad||[]).length;const acts=Object.entries(e.momHelpedOnDadWeek||{}).map(([k,v])=>`<div class="entry-row" style="color:#666">${k}: ${coParent()} — ${(v.acts||[]).map(a=>ACT_LBL[a]).join(', ')}</div>`).join('');body=`<div class="entry-row"><strong>${n===KIDS.length?kidsCountLabel()+' home':n===0?'No kids':(e.kidsWithDad||[]).join(', ')+' home'}</strong></div>${acts}${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
+  else if(e.dadMode==='dad-helped-mom'){tag='<span class="tag tag-dad">Your day</span>';const n=(e.kidsWithDad||[]).length;const acts=Object.entries(e.momHelpedOnDadWeek||{}).map(([k,v])=>`<div class="entry-row" style="color:#666">${k}: ${coParent()} — ${(v.acts||[]).map(activityLabel).join(', ')}</div>`).join('');body=`<div class="entry-row"><strong>${n===KIDS.length?kidsCountLabel()+' home':n===0?'No kids':(e.kidsWithDad||[]).join(', ')+' home'}</strong></div>${acts}${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
   else if(e.momMode==='easy'){tag='<span class="tag tag-mom">'+coParentPoss()+' day</span>';body=`<div class="entry-row">${coParent()} had ${kidsCountLabel()}</div>${e.diary?`<div class="entry-row" style="color:#666;margin-top:4px">${e.diary}</div>`:''}`}
-  else if(e.momMode==='helped'){tag='<span class="tag tag-mom">'+coParentPoss()+' day · You helped</span>';const acts=Object.entries(e.helpedData||{}).map(([k,v])=>`<div class="entry-row" style="color:#666">${k}: ${(v.acts||[]).map(a=>ACT_LBL[a]).join(', ')}${v.note?' — '+v.note:''}</div>`).join('');body=`<div class="entry-row"><strong>You helped: ${(e.helpedKids||[]).join(', ')}</strong></div>${acts}${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
+  else if(e.momMode==='helped'){tag='<span class="tag tag-mom">'+coParentPoss()+' day · You helped</span>';const acts=Object.entries(e.helpedData||{}).map(([k,v])=>`<div class="entry-row" style="color:#666">${k}: ${(v.acts||[]).map(activityLabel).join(', ')}${v.note?' — '+v.note:''}</div>`).join('');body=`<div class="entry-row"><strong>You helped: ${(e.helpedKids||[]).join(', ')}</strong></div>${acts}${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
   else if(e.momMode==='dad-had'){tag='<span class="tag tag-other">'+coParentPoss()+' day · You had</span>';body=`<div class="entry-row"><strong>You had: ${(e.dadHadKids||[]).join(', ')}</strong></div>${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
   else{tag='<span class="tag tag-dad">Your day</span>';const n=(e.kidsWithDad||[]).length;const kids=n===KIDS.length?kidsCountLabel()+' home':n===0?'All at '+coParentPoss():(e.kidsWithDad||[]).join(', ')+' home';body=`<div class="entry-row"><strong>${kids}</strong></div>${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
   const locked=isLockedDate(ds);
@@ -1908,9 +2005,9 @@ function buildReport(type){
       L.push(...reportMetaLines(e));
       if(e.week==='other'){L.push('TYPE: Pre-agreed day note');L.push('NOTE: '+(e.diary||'—'))}
       else if(e.dadMode==='mom-had'){L.push('WEEK: '+currentParentPoss()+' scheduled week — KIDS AT '+coParent().toUpperCase());L.push('KIDS AT '+coParent().toUpperCase()+': '+(e.momHadKidsOnDadWeek||[]).join(', '));if(e.diary)L.push('NOTE: '+e.diary)}
-      else if(e.dadMode==='dad-helped-mom'){L.push('WEEK: '+currentParentPoss()+' scheduled week');const n=(e.kidsWithDad||[]).length;L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(n===KIDS.length?kidsCountLabel():n===0?'None':(e.kidsWithDad||[]).join(', ')));L.push(coParent().toUpperCase()+' HELPED:');Object.entries(e.momHelpedOnDadWeek||{}).forEach(([k,v])=>L.push('  '+k+': '+(v.acts||[]).map(a=>ACT_LBL[a]).join(', ')+(v.note?' ('+v.note+')':'')));if(e.diary)L.push('NOTE: '+e.diary)}
+      else if(e.dadMode==='dad-helped-mom'){L.push('WEEK: '+currentParentPoss()+' scheduled week');const n=(e.kidsWithDad||[]).length;L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(n===KIDS.length?kidsCountLabel():n===0?'None':(e.kidsWithDad||[]).join(', ')));L.push(coParent().toUpperCase()+' HELPED:');Object.entries(e.momHelpedOnDadWeek||{}).forEach(([k,v])=>L.push('  '+k+': '+(v.acts||[]).map(activityLabel).join(', ')+(v.note?' ('+v.note+')':'')));if(e.diary)L.push('NOTE: '+e.diary)}
       else if(e.momMode==='easy'){L.push('WEEK: '+coParentPoss()+' scheduled week');L.push('STATUS: '+coParent()+' had the kids');if(e.diary)L.push('NOTE: '+e.diary)}
-      else if(e.momMode==='helped'){L.push('WEEK: '+coParentPoss()+' scheduled week');L.push(currentParent().toUpperCase()+' HELPED WITH: '+(e.helpedKids||[]).join(', '));Object.entries(e.helpedData||{}).forEach(([k,v])=>L.push('  '+k+': '+(v.acts||[]).map(a=>ACT_LBL[a]).join(', ')+(v.note?' ('+v.note+')':'')));if(e.diary)L.push('NOTE: '+e.diary)}
+      else if(e.momMode==='helped'){L.push('WEEK: '+coParentPoss()+' scheduled week');L.push(currentParent().toUpperCase()+' HELPED WITH: '+(e.helpedKids||[]).join(', '));Object.entries(e.helpedData||{}).forEach(([k,v])=>L.push('  '+k+': '+(v.acts||[]).map(activityLabel).join(', ')+(v.note?' ('+v.note+')':'')));if(e.diary)L.push('NOTE: '+e.diary)}
       else if(e.momMode==='dad-had'){L.push('WEEK: '+coParentPoss()+' scheduled week — KIDS WITH '+currentParent().toUpperCase());L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(e.dadHadKids||[]).join(', '));if(e.diary)L.push('NOTE: '+e.diary)}
       else{const n=(e.kidsWithDad||[]).length;L.push('WEEK: '+currentParentPoss()+' scheduled week');L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(n===KIDS.length?kidsCountLabel():n===0?'None':(e.kidsWithDad||[]).join(', ')));if(e.diary)L.push('NOTES: '+e.diary)}
       L.push(D,'');
@@ -1935,7 +2032,7 @@ function buildReport(type){
     const filt=sorted.filter(([,e])=>e.week==='mom'&&(e.momMode==='helped'||e.momMode==='dad-had'));
     if(!filt.length)return'No '+coParentPoss()+' week entries with '+currentParent()+' involvement found.';
     let L=['WHOSE DAY — '+coParent().toUpperCase()+"'S WEEK / "+currentParent().toUpperCase()+"'S INVOLVEMENT",gen,'Total: '+filt.length,'',D,''];
-    for(const[ds,e]of filt){L.push('DATE: '+fmtDate(ds));L.push(...reportMetaLines(e));if(e.momMode==='dad-had'){L.push('Kids ended up with '+currentParent());L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(e.dadHadKids||[]).join(', '))}else{L.push(currentParent()+' helped out');Object.entries(e.helpedData||{}).forEach(([k,v])=>L.push('  '+k+': '+(v.acts||[]).map(a=>ACT_LBL[a]).join(', ')+(v.note?' — '+v.note:'')))}if(e.diary)L.push('NOTE: '+e.diary);L.push(D,'');}return L.join('\n');
+    for(const[ds,e]of filt){L.push('DATE: '+fmtDate(ds));L.push(...reportMetaLines(e));if(e.momMode==='dad-had'){L.push('Kids ended up with '+currentParent());L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(e.dadHadKids||[]).join(', '))}else{L.push(currentParent()+' helped out');Object.entries(e.helpedData||{}).forEach(([k,v])=>L.push('  '+k+': '+(v.acts||[]).map(activityLabel).join(', ')+(v.note?' — '+v.note:'')))}if(e.diary)L.push('NOTE: '+e.diary);L.push(D,'');}return L.join('\n');
   }
   if(type==='notes'){
     const filt=sorted.filter(([,e])=>e.diary&&e.diary.trim());if(!filt.length)return'No diary notes found.';
