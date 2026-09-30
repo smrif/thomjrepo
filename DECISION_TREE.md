@@ -20,16 +20,14 @@ flowchart TD
   MyNormal --> AllKidsHome["Are all kids sleeping at your house?"]
   AllKidsHome --> AllYes["Yes, all kids"]
   AllKidsHome --> SplitNight["No, split night"]
-  AllYes --> KidsConfirm["Confirm each kid's location"]
+  AllYes --> CoParentHelped{"Did co-parent help?"}
   SplitNight --> PickKidsHome["Pick kids with you"]
   PickKidsHome --> AbsentLoop["For each absent kid: where are they?"]
-  AbsentLoop --> KidsConfirm
-  KidsConfirm --> CoParentHelped{"Did co-parent help?"}
+  AbsentLoop --> CoParentHelped
   CoParentHelped --> NoCoParentHelp["No"]
   CoParentHelped --> YesCoParentHelp["Yes"]
   NoCoParentHelp --> Diary["Diary + optional screenshot"]
-  YesCoParentHelp --> PickCoParentHelpedKids["Pick kids co-parent helped with"]
-  PickCoParentHelpedKids --> CoParentHelpedActivity["For each kid: what did co-parent do?"]
+  YesCoParentHelp --> CoParentHelpedActivity["For each kid already with you: what did co-parent do?"]
   CoParentHelpedActivity --> Diary
   Diary --> Review
 
@@ -45,8 +43,7 @@ flowchart TD
   IHelped --> NoIHelped["No"]
   IHelped --> YesIHelped["Yes"]
   NoIHelped --> Review
-  YesIHelped --> PickHelpedKids["Pick kids you helped with"]
-  PickHelpedKids --> HelpedActivity["For each kid: what did you do?"]
+  YesIHelped --> HelpedActivity["For each kid: what did you help with?"]
   HelpedActivity --> Diary
 
   KidsWithMe --> PickKidsWithMe["Pick kids who ended up with you"]
@@ -101,6 +98,8 @@ Core shape:
 - Users can backfill only yesterday.
 - Older empty calendar days show "Nothing logged" and remain read-only.
 - Help is captured only after actual overnight location is selected.
+- On your scheduled day, co-parent help uses the kids already confirmed as staying with you instead of asking a second kid-selection question.
+- On the co-parent's scheduled day, your help uses the kids already staying with the co-parent instead of asking a second kid-selection question.
 - Schedule-change context is captured only for true custody deviations, not ordinary help.
 - Legacy stored values such as `dad-helped-mom` and `momMode: helped` are still supported, but users now reach them through nested help questions.
 

@@ -388,7 +388,6 @@ function renderConfigurableUi(){
   setupKidGrid('which-kids-grid','kb','toggleKid',()=>allWithCoParentButton('kb-allMom',setAllMom,'All at '+coParentPoss()));
   setupKidGrid('mom-helped-grid','mhk','toggleMomHelpedKid');
   setupKidGrid('dad-wk-mom-grid','dwm','toggleDadWkMomKid',()=>allWithCoParentButton('dwm-all',setDadWkMomAll,kidsCountLabel()));
-  setupKidGrid('helped-kids-grid','hk','toggleHelpedKid');
   setupKidGrid('dad-had-grid','dh','toggleDadHadKid',()=>allWithCoParentButton('dh-allThree',setDadHadAll,kidsCountLabel()));
   renderActivityChoiceGrid('mha-acts','toggleMomAct');
   renderActivityChoiceGrid('helped-acts','toggleAct');
@@ -712,7 +711,7 @@ function loggedEntryCount(entries=getEntries()){
 const CHECKIN_FLOW_SCREENS=new Set([
   's-week','s-dad-mode','s-allkids','s-whichkids','s-absent','s-mom-helped-kids',
   's-mom-helped-activity','s-dad-wk-mom-had','s-mom-mode','s-mom-easy',
-  's-mom-helped-kids2','s-helped-activity','s-mom-dad-had','s-kids-confirm',
+  's-helped-activity','s-mom-dad-had',
   's-dad-help-choice','s-change-context','s-diary'
 ]);
 const FEEDBACK_VISIBLE_SCREENS=new Set(['s-home','s-cal','s-export','s-setup']);
@@ -791,12 +790,10 @@ const CHECKIN_PHASE_BY_PROGRESS={
   'prog-absent':'Kids',
   'prog-dad-wk-mom-had':'Kids',
   'prog-mom-dad-had':'Kids',
-  'prog-kids-confirm':'Kids',
   'prog-dad-help-choice':'Details',
   'prog-mom-easy':'Details',
   'prog-mom-helped-kids':'Details',
   'prog-mom-helped-activity':'Details',
-  'prog-mom-helped-kids2':'Details',
   'prog-helped-activity':'Details',
   'prog-change-context':'Details',
   'prog-diary':'Details',
@@ -1161,7 +1158,7 @@ function showMomHelpedStep(){
   const kid=momHelpedQueue[momHelpedIdx],total=momHelpedQueue.length;
   document.getElementById('mha-step-lbl').textContent='Kid '+(momHelpedIdx+1)+' of '+total;
   document.getElementById('mha-kid-name').textContent=kid;document.getElementById('mha-avatar').textContent=kid[0];
-  document.getElementById('mha-q').textContent='What did '+coParent()+' do with '+kid+'?';
+  document.getElementById('mha-q').textContent='What did '+coParent()+' help with?';
   if(!S.momHelpedOnDadWeek[kid])S.momHelpedOnDadWeek[kid]={acts:[],note:''};
   document.getElementById('mha-note').value=S.momHelpedOnDadWeek[kid].note||'';
   document.querySelectorAll('#mha-acts .act-btn').forEach(b=>{b.classList.toggle('sel',S.momHelpedOnDadWeek[kid].acts.includes(activityButtonId(b)))});
@@ -1180,7 +1177,7 @@ function nextMomHelpedKid(){
   if(momHelpedIdx<momHelpedQueue.length)showMomHelpedStep();
   else{goToDiary('s-mom-helped-activity','Anything else to note?','A quick diary — how was today?',4,5)}
 }
-function goBackFromMomHelped(){if(momHelpedIdx>0){momHelpedIdx--;showMomHelpedStep()}else show('s-mom-helped-kids')}
+function goBackFromMomHelped(){if(momHelpedIdx>0){momHelpedIdx--;showMomHelpedStep()}else show('s-dad-help-choice')}
 
 function toggleDadWkMomKid(name){
   const all=document.getElementById('dwm-all');if(all)all.classList.remove('with-mom');
@@ -1206,7 +1203,7 @@ function setAllKids(all,confirmBackTarget){
   document.getElementById('ak-yes').classList.toggle('sel',all);document.getElementById('ak-no').classList.toggle('sel',!all);
   if(all){S.kidsWithDad=[...KIDS];setTimeout(()=>{
     if(S._afterMomHelped){S._afterMomHelped=false;startMomHelpedActivities();}
-    else{showKidsConfirm(confirmBackTarget||'s-allkids');}
+    else{showDadHelpChoice(confirmBackTarget||'s-allkids');}
   },200)}
   else{KIDS.forEach(k=>kidBtn('kb',k).classList.remove('with-dad'));const allMom=document.getElementById('kb-allMom');if(allMom)allMom.classList.remove('all-mom');S.kidsWithDad=[];updateWhoSummary();setTimeout(()=>{setProg('prog-whichkids',2,4);show('s-whichkids')},200)}
 }
@@ -1232,7 +1229,7 @@ function startAbsentLoop(){
   absentQueue=KIDS.filter(k=>!S.kidsWithDad.includes(k));absentIdx=0;
   if(!absentQueue.length){
     if(S._afterMomHelped){S._afterMomHelped=false;startMomHelpedActivities();return;}
-    showKidsConfirm('s-whichkids');return;
+    showDadHelpChoice('s-whichkids');return;
   }
   showAbsentStep();
 }
@@ -1259,84 +1256,23 @@ function nextAbsent(){
   if(absentIdx<absentQueue.length)showAbsentStep();
   else{
     if(S._afterMomHelped){S._afterMomHelped=false;startMomHelpedActivities();}
-    else{showKidsConfirm('s-absent');}
+    else{showDadHelpChoice('s-absent');}
   }
 }
 function goBackFromAbsent(){if(absentIdx>0){absentIdx--;showAbsentStep()}else show('s-whichkids')}
 function goBackFromDiary(){show(diaryOrigin||'s-week')}
 
-// ── KIDS CONFIRM SCREEN ───────────────────────────────────────
-function showKidsConfirm(backTarget, context){
-  const list=document.getElementById('kids-confirm-list');
-  list.innerHTML='';
-
-  // Grid wrapper — same 2-col layout as the kid picker
-  const grid=document.createElement('div');
-  grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:10px';
-
-  KIDS.forEach(kid=>{
-    const withDad=S.kidsWithDad.includes(kid);
-    const absentData=S.absentData[kid];
-    const box=document.createElement('div');
-
-    if(withDad){
-      // Purple highlighted box — same style as .kid-btn.with-dad, plus checkmark corner
-      box.style.cssText='padding:18px 12px 14px;border-radius:14px;border:2.5px solid #3C3489;background:#EEEDFE;text-align:center;position:relative';
-      box.innerHTML=`
-        <div style="position:absolute;top:8px;right:10px;width:20px;height:20px;border-radius:50%;background:#3C3489;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">✓</div>
-        <div style="font-size:17px;font-weight:700;color:#3C3489;margin-bottom:5px">${kid}</div>
-        <div style="font-size:11px;font-weight:500;color:#534AB7;line-height:1.3" data-kid-with="dad">🏠 With you<br>tonight</div>`;
-    } else {
-      const locLabel=absentData?(LOC_LBL[absentData.location]||absentData.location):'Not set';
-      const noteStr=absentData&&absentData.note?absentData.note:'';
-      // Coral highlighted box — same style as absent/mom-side, plus location info
-      box.style.cssText='padding:18px 12px 14px;border-radius:14px;border:2.5px solid #993C1D;background:#FAECE7;text-align:center;position:relative';
-      box.innerHTML=`
-        <div style="position:absolute;top:8px;right:10px;width:20px;height:20px;border-radius:50%;background:#993C1D;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">✓</div>
-        <div style="font-size:17px;font-weight:700;color:#712B13;margin-bottom:5px">${kid}</div>
-        <div style="font-size:11px;font-weight:500;color:#993C1D;line-height:1.3">📍 ${locLabel}</div>
-        ${noteStr?`<div style="font-size:10px;color:#993C1D;margin-top:3px;font-style:italic;line-height:1.3">${noteStr}</div>`:''}`;
-    }
-    grid.appendChild(box);
-  });
-
-  list.appendChild(grid);
-
-  // Store where back should go
-  document.getElementById('kids-confirm-back-btn').dataset.back=backTarget||'s-whichkids';
-  // Context-aware language — 'helped' means daytime, not overnight
-  const isDay=(context==='helped');
-  const qEl=document.getElementById('kids-confirm-q');
-  const subEl=document.getElementById('kids-confirm-sub');
-  if(qEl)qEl.textContent=isDay?'Does this look right?':'Everyone accounted for tonight?';
-  if(subEl)subEl.textContent=isDay?'Confirm who you helped with today':'Confirm where each kid is — then continue to your diary';
-  // Also update "With you tonight" label for day-only context
-  list.querySelectorAll('[data-kid-with]').forEach(el=>{
-    if(el.dataset.kidWith==='dad') el.textContent=isDay?'You helped today':'With you tonight';
-  });
-  setProg('prog-kids-confirm',3,5);
-  show('s-kids-confirm');
-}
-
-function goBackFromKidsConfirm(){
-  const target=document.getElementById('kids-confirm-back-btn').dataset.back||'s-whichkids';
-  show(target);
-}
-
-function confirmKidsAndContinue(){
-  if(S.week==='dad'&&(S.dadMode==='normal'||S.dadMode==='dad-helped-mom')){
-    showDadHelpChoice();
-    return;
-  }
-  goToDiary('s-kids-confirm','Anything else to note?','A quick diary — how was today?',4,5);
-}
-// ── END KIDS CONFIRM ──────────────────────────────────────────
-
-function showDadHelpChoice(){
+function showDadHelpChoice(backTarget){
+  const backBtn=document.getElementById('dad-help-back-btn');
+  if(backBtn)backBtn.dataset.back=backTarget||'s-allkids';
   document.getElementById('dad-help-no').classList.remove('sel');
   document.getElementById('dad-help-yes').classList.remove('sel');
   setProg('prog-dad-help-choice',4,5);
   show('s-dad-help-choice');
+}
+function goBackFromDadHelpChoice(){
+  const target=document.getElementById('dad-help-back-btn')?.dataset.back||'s-allkids';
+  show(target);
 }
 function setDadHelpedChoice(helped){
   document.getElementById('dad-help-no').classList.toggle('sel',!helped);
@@ -1349,12 +1285,15 @@ function setDadHelpedChoice(helped){
     return;
   }
   S.dadMode='dad-helped-mom';
-  KIDS.forEach(k=>kidBtn('mhk',k).className='kid-btn');
-  S.momHadKidsOnDadWeek=[];
+  S.momHadKidsOnDadWeek=[...S.kidsWithDad];
   S.momHelpedOnDadWeek={};
-  document.getElementById('mom-helped-next').disabled=true;
-  updateMomHelpedSummary();
-  setTimeout(()=>{setProg('prog-mom-helped-kids',4,5);show('s-mom-helped-kids')},180);
+  setTimeout(()=>{
+    if(!S.momHadKidsOnDadWeek.length){
+      goToDiary('s-dad-help-choice','Anything else to note?','A quick diary — how was today?',4,5);
+      return;
+    }
+    startMomHelpedLoop();
+  },180);
 }
 
 
@@ -1369,13 +1308,9 @@ function continueMomEasy(){
   S.diary=document.getElementById('easy-note').value.trim();
   if(easyOpts.includes('helped')){
     S.momMode='helped';
-    KIDS.forEach(k=>kidBtn('hk',k).classList.remove('with-dad'));
-    S.helpedKids=[];
+    S.helpedKids=[...KIDS];
     S.helpedData={};
-    document.getElementById('helped-kids-next').disabled=true;
-    updateHelpedSummary();
-    setProg('prog-mom-helped-kids2',2,4);
-    show('s-mom-helped-kids2');
+    setTimeout(()=>startHelpedLoop(),180);
     return;
   }
   S.momMode='easy';
@@ -1388,21 +1323,15 @@ function setMomMode(mode){
   const idMap={easy:'ft-easy',helped:'ft-easy','dad-had':'ft-dad'};
   document.getElementById(idMap[mode]).classList.add(mode==='dad-had'?'sel-warn':'sel-dad');
   if(mode==='easy')setTimeout(()=>{setProg('prog-mom-easy',1,3);document.querySelectorAll('#easy-opts .opt').forEach(o=>o.classList.remove('sel'));easyOpts=[];document.getElementById('easy-note').value='';document.getElementById('easy-continue-btn').disabled=true;show('s-mom-easy')},250);
-  else if(mode==='helped')setTimeout(()=>{KIDS.forEach(k=>kidBtn('hk',k).classList.remove('with-dad'));S.helpedKids=[];document.getElementById('helped-kids-next').disabled=true;updateHelpedSummary();setProg('prog-mom-helped-kids2',1,3);show('s-mom-helped-kids2')},250);
+  else if(mode==='helped')setTimeout(()=>{S.helpedKids=[...KIDS];S.helpedData={};startHelpedLoop()},250);
   else setTimeout(()=>{KIDS.forEach(k=>kidBtn('dh',k).classList.remove('with-dad'));const all=document.getElementById('dh-allThree');if(all)all.classList.remove('with-dad');S.dadHadKids=[];updateDadHadSummary();document.getElementById('dad-had-next').disabled=true;setProg('prog-mom-dad-had',1,3);show('s-mom-dad-had')},250);
 }
-function toggleHelpedKid(name){
-  const btn=kidBtn('hk',name),idx=S.helpedKids.indexOf(name);
-  if(idx>=0){S.helpedKids.splice(idx,1);btn.classList.remove('with-dad')}else{S.helpedKids.push(name);btn.classList.add('with-dad')}
-  document.getElementById('helped-kids-next').disabled=S.helpedKids.length===0;updateHelpedSummary();
-}
-function updateHelpedSummary(){const el=document.getElementById('helped-summary');if(!S.helpedKids.length){el.textContent='Tap the kids you were involved with today';return}el.innerHTML='<strong style="color:#3c3489">You helped with:</strong> '+S.helpedKids.join(', ')}
 function startHelpedLoop(){helpedQueue=[...S.helpedKids];helpedIdx=0;showHelpedStep()}
 function showHelpedStep(){
   const kid=helpedQueue[helpedIdx],total=helpedQueue.length;
   document.getElementById('helped-step-lbl').textContent='Kid '+(helpedIdx+1)+' of '+total;
   document.getElementById('helped-kid-name').textContent=kid;document.getElementById('helped-avatar').textContent=kid[0];
-  document.getElementById('helped-q').textContent='What did you do with '+kid+'?';
+  document.getElementById('helped-q').textContent='What did you help with?';
   if(!S.helpedData[kid])S.helpedData[kid]={acts:[],note:''};
   document.getElementById('helped-note').value=S.helpedData[kid].note||'';
   document.querySelectorAll('#helped-acts .act-btn').forEach(b=>{b.classList.toggle('sel',S.helpedData[kid].acts.includes(activityButtonId(b)))});
@@ -1422,7 +1351,7 @@ function nextHelpedKid(){
   if(helpedIdx<helpedQueue.length)showHelpedStep();
   else{goToDiary('s-helped-activity','Anything else to note?','A quick diary — how was today?',3,4)}
 }
-function goBackFromHelped(){if(helpedIdx>0){helpedIdx--;showHelpedStep()}else show('s-mom-helped-kids2')}
+function goBackFromHelped(){if(helpedIdx>0){helpedIdx--;showHelpedStep()}else show('s-mom-easy')}
 function toggleDadHadKid(name){
   const all=document.getElementById('dh-allThree');if(all)all.classList.remove('with-dad');
   const btn=kidBtn('dh',name),idx=S.dadHadKids.indexOf(name);
@@ -1588,12 +1517,6 @@ function prepareEditTarget(target){
     document.getElementById('easy-note').value=S.diary||'';
     document.getElementById('easy-continue-btn').disabled=easyOpts.length===0;
     setProg('prog-mom-easy',1,3);
-  }
-  if(target==='s-mom-helped-kids2'){
-    KIDS.forEach(k=>kidBtn('hk',k).classList.toggle('with-dad',S.helpedKids.includes(k)));
-    document.getElementById('helped-kids-next').disabled=S.helpedKids.length===0;
-    updateHelpedSummary();
-    setProg('prog-mom-helped-kids2',1,3);
   }
   if(target==='s-mom-dad-had'){
     KIDS.forEach(k=>kidBtn('dh',k).classList.toggle('with-dad',S.dadHadKids.includes(k)));

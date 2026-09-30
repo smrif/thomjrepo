@@ -487,7 +487,7 @@
 <!-- DAD WK: DID CO-PARENT HELP? -->
 <div class="screen" id="s-dad-help-choice">
   <div class="top-bar">
-    <button class="back-btn" onclick="show('s-kids-confirm')">← Back</button>
+    <button class="back-btn" id="dad-help-back-btn" onclick="goBackFromDadHelpChoice()">← Back</button>
     <div class="logo">My day</div>
     <div class="back-spacer"></div>
   </div>
@@ -592,7 +592,7 @@
     <div class="avatar av-mom" id="mha-avatar">T</div>
     <div><div class="step-lbl" id="mha-step-lbl">Kid 1 of 2</div><div style="font-size:17px;font-weight:600" id="mha-kid-name">Thomas</div></div>
   </div>
-  <p class="q" id="mha-q">What did your co-parent do with Thomas?</p>
+  <p class="q" id="mha-q">What did your co-parent help with?</p>
   <div class="activity-grid" id="mha-acts"></div>
   <p class="sec-lbl">Quick note (optional)</p>
   <input type="text" id="mha-note" placeholder="e.g. Took Thomas to his Saturday match...">
@@ -664,24 +664,6 @@
   <button class="btn primary" id="easy-continue-btn" onclick="continueMomEasy()" style="width:100%" disabled>Continue →</button>
 </div>
 
-<!-- MOM HELPED: which kids -->
-<div class="screen" id="s-mom-helped-kids2">
-  <div class="top-bar">
-    <button class="back-btn" onclick="show('s-mom-mode')">← Back</button>
-    <div class="logo">Co-parent's day</div>
-    <div class="back-spacer"></div>
-  </div>
-  <div class="progress phase-progress" id="prog-mom-helped-kids2"></div>
-  <p class="q">Which kids did you help with today?</p>
-  <div class="kid-grid" id="helped-kids-grid">
-    <button class="kid-btn" id="hk-Thomas" onclick="toggleHelpedKid('Thomas')">Thomas</button>
-    <button class="kid-btn" id="hk-Presley" onclick="toggleHelpedKid('Presley')">Presley</button>
-    <button class="kid-btn" id="hk-Hayden" onclick="toggleHelpedKid('Hayden')">Hayden</button>
-  </div>
-  <div class="who-summary" id="helped-summary">Tap the kids you were involved with today</div>
-  <button class="btn primary" id="helped-kids-next" onclick="startHelpedLoop()" style="width:100%" disabled>Next →</button>
-</div>
-
 <!-- MOM HELPED: activity -->
 <div class="screen" id="s-helped-activity">
   <div class="top-bar">
@@ -694,7 +676,7 @@
     <div class="avatar av-dad" id="helped-avatar">T</div>
     <div><div class="step-lbl" id="helped-step-lbl">Kid 1 of 2</div><div style="font-size:17px;font-weight:600" id="helped-kid-name">Thomas</div></div>
   </div>
-  <p class="q" id="helped-q">What did you do with Thomas?</p>
+  <p class="q" id="helped-q">What did you help with?</p>
   <div class="activity-grid" id="helped-acts"></div>
   <p class="sec-lbl">Quick note (optional)</p>
   <input type="text" id="helped-note" placeholder="e.g. Sports tournament in San Diego...">
@@ -719,25 +701,6 @@
   </div>
   <div class="who-summary" id="dad-had-summary">Tap the kids who were actually with you</div>
   <button class="btn primary" id="dad-had-next" onclick="goToDadHadViaContext()" style="width:100%" disabled>Continue →</button>
-</div>
-
-<!-- KIDS CONFIRM -->
-<div class="screen" id="s-kids-confirm">
-  <div class="top-bar">
-    <button class="back-btn" id="kids-confirm-back-btn" onclick="goBackFromKidsConfirm()">← Back</button>
-    <div class="logo">All accounted for?</div>
-    <div class="back-spacer"></div>
-  </div>
-  <div class="progress phase-progress" id="prog-kids-confirm"></div>
-  <p class="q" id="kids-confirm-q">Everyone accounted for?</p>
-  <p class="sub" id="kids-confirm-sub">Confirm each kid's location — then continue to your diary</p>
-  <div id="kids-confirm-list"></div>
-  <button class="btn primary" onclick="confirmKidsAndContinue()" style="width:100%;padding:16px">
-    ✓ Yes, that's right — continue
-  </button>
-  <button class="btn" onclick="goBackFromKidsConfirm()" style="width:100%;margin-top:10px">
-    ← Something's wrong — go back
-  </button>
 </div>
 
 <!-- CHANGE CONTEXT -->

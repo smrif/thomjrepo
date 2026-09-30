@@ -604,6 +604,29 @@ try {
   if (absentSelected !== 0 || !absentNextDisabled) {
     throw new Error('Absent-kid location screen should start with no selected option and disabled Continue.');
   }
+  await click('#absent-opts .opt[data-loc="moms"]');
+  await click('#absent-next-btn');
+  await expectActive('s-dad-help-choice');
+
+  await bootstrap();
+  await click('#s-home .home-primary');
+  await click('#wk-dad');
+  await expectActive('s-dad-mode');
+  await click('#sc-dad-normal');
+  await expectActive('s-allkids');
+  await click('#ak-yes');
+  await expectActive('s-dad-help-choice');
+  await click('#dad-help-yes');
+  await expectActive('s-mom-helped-activity');
+  const coParentHelpState = await page.evaluate(() => ({
+    active: document.querySelector('.screen.active:not(.screen-leave)')?.id,
+    helpedKids: [...S.momHadKidsOnDadWeek],
+    prompt: document.getElementById('mha-q')?.textContent || '',
+    firstKid: document.getElementById('mha-kid-name')?.textContent || ''
+  }));
+  if (coParentHelpState.active === 's-mom-helped-kids' || coParentHelpState.helpedKids.join(',') !== 'Ava,Ben' || coParentHelpState.prompt !== 'What did Mom help with?' || coParentHelpState.firstKid !== 'Ava') {
+    throw new Error(`Co-parent help should skip helped-kid picker, use kids already with you, and show the generic help prompt. Saw ${JSON.stringify(coParentHelpState)}.`);
+  }
 
   await bootstrap();
   await click('#s-home .home-primary');
@@ -616,7 +639,16 @@ try {
     throw new Error('Nested help choice should enable Continue.');
   }
   await click('#easy-continue-btn');
-  await expectActive('s-mom-helped-kids2');
+  await expectActive('s-helped-activity');
+  const parentHelpState = await page.evaluate(() => ({
+    active: document.querySelector('.screen.active:not(.screen-leave)')?.id,
+    helpedKids: [...S.helpedKids],
+    prompt: document.getElementById('helped-q')?.textContent || '',
+    firstKid: document.getElementById('helped-kid-name')?.textContent || ''
+  }));
+  if (parentHelpState.active === 's-mom-helped-kids2' || parentHelpState.helpedKids.join(',') !== 'Ava,Ben' || parentHelpState.prompt !== 'What did you help with?' || parentHelpState.firstKid !== 'Ava') {
+    throw new Error(`Co-parent-day help should skip helped-kid picker and use the generic help prompt. Saw ${JSON.stringify(parentHelpState)}.`);
+  }
 
   await bootstrap();
   await click('#s-home .home-primary');
