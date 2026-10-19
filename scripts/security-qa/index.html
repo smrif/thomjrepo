@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Whose Day Security QA</title><link rel="stylesheet" href="/styles.css">
+  <script src="/vendor/supabase.js" defer></script><script src="/config.js" defer></script>
+  <script src="/qa.js" type="module"></script>
+</head>
+<body>
+  <main>
+    <header><h1>Whose Day Security QA</h1><p id="project"></p></header>
+    <section aria-labelledby="accounts-heading">
+      <h2 id="accounts-heading">Disposable Accounts</h2>
+      <div class="accounts">
+        <div><label for="email-a">Account A (deletion target later)</label><input id="email-a" type="email" autocomplete="off" value="ryanrifkin+whoseday-qa-a@gmail.com"><button id="signin-a">Send A sign-in link</button><p id="status-a">Not signed in</p></div>
+        <div><label for="email-b">Account B (unchanged control)</label><input id="email-b" type="email" autocomplete="off" value="ryanrifkin+whoseday-qa-b@gmail.com"><button id="signin-b">Send B sign-in link</button><p id="status-b">Not signed in</p></div>
+      </div>
+      <button id="cancel-pending" class="secondary">Cancel pending sign-in</button>
+    </section>
+    <section aria-labelledby="checks-heading">
+      <h2 id="checks-heading">Live Checks</h2>
+      <label class="check"><input type="checkbox" id="disposable">Both accounts are disposable and contain no records to keep</label>
+      <button id="prepare">Create synthetic fixtures</button>
+      <label class="check"><input type="checkbox" id="allow-delete">Allow cross-account DELETE attempts against these synthetic fixtures only</label>
+      <button id="isolation">Run account isolation checks</button>
+      <label class="check"><input type="checkbox" id="deleted">I separately deleted account A in Supabase and kept this QA page open</label>
+      <button id="post-delete">Check retained account A session</button>
+    </section>
+    <section aria-labelledby="results-heading">
+      <h2 id="results-heading">Results</h2><p id="message" role="status" aria-live="polite">Ready. No requests sent.</p><ol id="results"></ol>
+      <button id="clear" class="secondary">Clear QA sessions on this browser</button>
+    </section>
+  </main>
+</body>
+</html>

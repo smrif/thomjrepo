@@ -7,93 +7,72 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Whose Day">
 <title>Whose Day</title>
+<meta name="description" content="A clear, dated record of your time with your kids. Log parenting days, notes, and schedule changes in one calm place.">
+<link rel="canonical" href="https://whosedayapp.com/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Whose Day">
+<meta property="og:title" content="Whose Day">
+<meta property="og:description" content="A clear, dated record of your time with your kids. Log parenting days, notes, and schedule changes in one calm place.">
+<meta property="og:url" content="https://whosedayapp.com/">
+<meta property="og:image" content="https://whosedayapp.com/assets/homepage/share-preview-v1.jpg">
+<meta property="og:image:secure_url" content="https://whosedayapp.com/assets/homepage/share-preview-v1.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1536">
+<meta property="og:image:height" content="1024">
+<meta property="og:image:alt" content="An illustrated journal, phone, and cup of tea on a quiet evening table.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Whose Day">
+<meta name="twitter:description" content="A clear, dated record of your time with your kids. Log parenting days, notes, and schedule changes in one calm place.">
+<meta name="twitter:image" content="https://whosedayapp.com/assets/homepage/share-preview-v1.jpg">
+<meta name="twitter:image:alt" content="An illustrated journal, phone, and cup of tea on a quiet evening table.">
 <link rel="icon" type="image/svg+xml" href="assets/whose-day-icon.svg">
-<link rel="stylesheet" href="styles.css?v=deviation-docs-1">
-<link rel="stylesheet" href="theme.css?v=deviation-docs-1">
+<link rel="stylesheet" href="styles.css?v=separate-auth-1">
+<link rel="stylesheet" href="theme.css?v=cloud-disclosures-1">
 </head>
 <body>
 <div class="app" id="app" style="padding-bottom:80px">
 
+<div class="account-deleted-notice" id="account-deleted-notice" role="status" tabindex="-1" hidden>
+  <div><strong>Account deleted</strong><p>Your account and cloud records were deleted. Local records remain on this device.</p></div>
+  <button type="button" aria-label="Dismiss account deletion confirmation" onclick="dismissAccountDeletionNotice()">&times;</button>
+</div>
+
 <!-- SETUP -->
 <!-- ONBOARDING STEP 1: Welcome -->
 <div class="screen" id="s-ob-welcome">
-  <div class="ob-shell ob-welcome-shell">
-    <div class="ob-logo">
-      <svg class="whose-day-logo" width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
-        <rect class="logo-tile" width="64" height="64" rx="18"/>
-        <path class="logo-half-left" d="M32 16a16 16 0 0 0 0 32V16Z"/>
-        <path class="logo-half-right" d="M32 16a16 16 0 0 1 0 32V16Z"/>
-        <circle class="logo-dot" cx="32" cy="32" r="4.2"/>
-      </svg>
-    </div>
-    <h1 class="ob-title">Whose Day</h1>
-    <p class="ob-welcome-line">Your co-parenting schedule,<br>clearly documented.</p>
-    <button class="ob-btn-primary ob-btn-xl" onclick="obShowPromises()">Get started →</button>
+  <div class="landing">
+    <header class="landing-nav"><a class="landing-brand" href="#landing-top"><img src="assets/whose-day-icon.svg" alt="" width="36" height="36">Whose Day</a><nav aria-label="Main navigation"><button class="landing-signin" onclick="showLoggedOutLogin()">Sign in</button><button class="landing-button" onclick="showLoggedOutSignup()">Sign up</button></nav></header>
+    <main id="landing-top">
+      <section class="landing-hero landing-section">
+        <div><p class="landing-eyebrow">A SMALL NIGHTLY HABIT</p><h1>A clear, dated record of your time with your kids.</h1><p class="landing-lead">Whether co-parenting is starting to feel rocky, or you're newly separated and just want peace of mind, Whose Day gives you one calm place to keep track. A few taps, a quick note, and you're done for the night.</p><div class="landing-actions"><button class="landing-button ob-btn-primary" onclick="showLoggedOutSignup()">Sign up</button><a class="landing-outline" href="#landing-how">See how it works</a></div><p class="landing-small">Sign up with your email. No password to remember.</p></div>
+        <figure class="landing-art"><img src="assets/homepage/evening-journal.webp" width="1536" height="1024" alt="An open journal and phone on a quiet evening table"></figure>
+      </section>
+      <section class="landing-section landing-family"><figure><img src="assets/homepage/family-walk.webp" alt="A parent and two children walking home together" width="1536" height="1024" loading="lazy"></figure><div><p class="landing-eyebrow">BUILT FOR TWO MOMENTS</p><h2>A little clarity, wherever you're starting.</h2><article><h3>When co-parenting feels difficult</h3><p>Keep a dated record of everyday moments and schedule changes, one entry at a time.</p></article><article><h3>Newly separated, wanting clarity</h3><p>See how a new parenting rhythm is going, with a personal record you can return to.</p></article></div></section>
+      <section class="landing-section" id="landing-how"><p class="landing-eyebrow">HOW IT WORKS</p><h2>Three steps. A few minutes a day.</h2><div class="landing-grid"><article><span class="landing-number">01</span><h3>Check in before bed</h3><p>Record who had the kids, what was scheduled, and anything that changed. Add a note or screenshot for context.</p></article><article><span class="landing-number">02</span><h3>See the picture build</h3><p>Your entries become a dated calendar and diary. Today and yesterday stay editable; older entries become read-only in the app.</p></article><article><span class="landing-number">03</span><h3>Ready when you need it</h3><p>Create a dated report to print or share with an attorney, a mediator, or just yourself. Download a CSV backup of your records, too.</p></article></div></section>
+      <section class="landing-section"><p class="landing-eyebrow">SEE IT IN ACTION</p><h2>A small habit. An organized record.</h2><p class="landing-small">Actual app screens with sample data.</p><div class="landing-grid landing-examples" tabindex="0" role="group" aria-label="App screen previews. Scroll horizontally on smaller screens to see all three."><figure><div class="landing-screen-image"><img src="assets/homepage/checkin-preview.png" alt="Check-in screen asking whether it was your scheduled parenting day" width="390" height="844" loading="lazy"></div><figcaption><h3>A few taps tonight</h3><p>Start with what was scheduled.</p></figcaption></figure><figure><div class="landing-screen-image"><img src="assets/homepage/calendar-preview.png" alt="June calendar showing parenting days and schedule changes using sample records" width="390" height="844" loading="lazy"></div><figcaption><h3>Your month, together</h3><p>See parenting time at a glance.</p></figcaption></figure><figure><div class="landing-screen-image"><img src="assets/homepage/reports-preview.png" alt="Reports screen showing sample logged days and report options" width="390" height="844" loading="lazy"></div><figcaption><h3>Ready to review</h3><p>Choose a summary to print or share.</p></figcaption></figure></div><aside class="landing-callout"><h3>Organized for a conversation with your attorney</h3><p>Review your own dated entries in one place instead of piecing together notes later. Whose Day is a personal record-keeping tool; it doesn't independently verify entries or guarantee acceptance in court.</p></aside></section>
+      <section class="landing-section landing-join"><p class="landing-eyebrow">START YOUR RECORD</p><h2>A little less to keep in your head.</h2><p>Create your account with a secure email link, then set up your parenting log.</p><button class="landing-button" onclick="showLoggedOutSignup()">Sign up</button><p>Already have an account? <button class="landing-text-button" onclick="showLoggedOutLogin()">Sign in</button></p></section>
+      <section class="landing-section landing-contact"><p class="landing-eyebrow">QUESTIONS FIRST?</p><h2>We're happy to walk you through it.</h2><p>Have a question about getting started?</p><a class="landing-outline" href="mailto:Team@whoseday.com">Email us</a></section>
+    </main>
+    <footer class="landing-footer"><span class="landing-brand">Whose Day</span><nav aria-label="Footer"><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Use</a><a href="mailto:Team@whoseday.com">Support</a></nav><p>© 2026 Pueblo Apps LLC. Whose Day is a personal record-keeping tool, not a substitute for legal advice.</p></footer>
   </div>
 </div>
 
-<!-- ONBOARDING STEP 1b: Promises (shown after tapping get started) -->
-<div class="screen" id="s-ob-promises">
-  <div class="ob-shell">
-    <div class="alpha-notice alpha-notice-onboarding">
-      <strong>Alpha build</strong>
-      <span>Data is stored on this device only. Export regularly, and do not treat this as legal advice.</span>
-    </div>
-    <div class="ob-promise-intro">Here's what you're signing up for</div>
-    <div class="ob-promise-cards">
-      <div class="ob-promise ob-promise-lg">
-        <span aria-hidden="true">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="2"/>
-            <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </span>
-        <div>
-          <strong>2 minutes a night</strong>
-          <p>A few taps. No essays, no forms. The app does the rest.</p>
-        </div>
-      </div>
-      <div class="ob-promise ob-promise-lg">
-        <span aria-hidden="true">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <rect x="6.5" y="10" width="11" height="9" rx="2" stroke="currentColor" stroke-width="2"/>
-            <path d="M9 10V7.5a3 3 0 0 1 6 0V10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            <path d="M12 14v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </span>
-        <div>
-          <strong>Private and secure</strong>
-          <p>Your data stays on your device. Nothing is ever shared without your action.</p>
-        </div>
-      </div>
-      <div class="ob-promise ob-promise-lg">
-        <span aria-hidden="true">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M8 5.5h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            <rect x="6" y="4" width="12" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
-            <path d="M9 11h6M9 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </span>
-        <div>
-          <strong>Built to stand up</strong>
-          <p>Timestamped entries, locked after 24 hours. Reports ready to share with your attorney.</p>
-        </div>
-      </div>
-      <div class="ob-promise ob-promise-lg">
-        <span aria-hidden="true">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M14 3v5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="m9 14 2 2 4-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </span>
-        <div>
-          <strong>Lawyer-ready records</strong>
-          <p>Timestamped summaries are organized so they’re easy to review, export, or share when needed.</p>
-        </div>
-      </div>
-    </div>
-    <button class="ob-btn-primary" onclick="obNext('s-ob-name')">Let's do it →</button>
+<!-- ONBOARDING: Existing account sign-in -->
+<div class="screen" id="s-ob-login">
+  <div class="ob-shell ob-login-shell">
+    <div class="ob-progress-bar"><div class="ob-progress-fill" style="width:100%"></div></div>
+    <div class="ob-step-label" id="ob-auth-label">Welcome back</div>
+    <h2 class="ob-q" id="ob-auth-title">Sign in</h2>
+    <p class="ob-sub" id="ob-auth-description">Use the email for your existing account. We'll send a secure link to restore your profile and records.</p>
+    <p class="ob-privacy-note">Your profile and logs sync automatically while signed in. See our <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a> for storage and email delivery details.</p>
+    <label class="ob-label" for="ob-login-email">Email address</label>
+    <input class="ob-input" type="email" id="ob-login-email" placeholder="your@email.com" autocomplete="email">
+    <button class="ob-btn-primary" type="button" id="ob-login-send" onclick="sendLoggedOutSignInLink()">Send sign-in link</button>
+    <button class="ob-btn-secondary" type="button" id="ob-login-restore" onclick="restoreLoggedOutCloudAccount()" hidden>Continue</button>
+    <p class="ob-privacy-note" id="ob-auth-switch-signup">New here? <button class="ob-auth-switch" type="button" onclick="showLoggedOutSignup()">Sign up</button></p>
+    <p class="ob-privacy-note" id="ob-auth-switch-login" hidden>Already have an account? <button class="ob-auth-switch" type="button" onclick="showLoggedOutLogin()">Sign in</button></p>
+    <button class="ob-btn-back" onclick="obBack('s-ob-welcome')">← Back</button>
+    <div class="ob-login-message" id="ob-login-message" role="status" aria-live="polite"></div>
   </div>
 </div>
 
@@ -167,17 +146,17 @@
     <div class="ob-progress-bar"><div class="ob-progress-fill" style="width:100%"></div></div>
     <div class="ob-step-label">Last step</div>
     <h2 class="ob-q">Almost there</h2>
-    <p class="ob-sub">Just your email for weekly summary reports, and one quick agreement.</p>
+    <p class="ob-sub">Confirm your email, then review the agreement.</p>
     <label class="ob-label">Email address</label>
     <input class="ob-input" type="email" id="ob-email" placeholder="your@email.com" autocomplete="email" oninput="obValidateStep('s-ob-finish')">
     <div class="ob-terms-row">
       <input type="checkbox" id="ob-terms" onchange="obValidateStep('s-ob-finish')">
-      <label for="ob-terms">I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</label>
+      <label for="ob-terms">I agree to the <a href="assets/legal/2026-10-13/terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="assets/legal/2026-10-13/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</label>
     </div>
     <div class="ob-error" id="ob-finish-error" style="display:none">Please enter a valid email and accept the terms.</div>
     <button class="ob-btn-primary ob-disabled" id="btn-ob-finish" onclick="obFinish()">Start tracking →</button>
     <button class="ob-btn-back" onclick="obBack('s-ob-kids')">← Back</button>
-    <p class="ob-privacy-note">Your email is never shared. Your data stays on your device.</p>
+    <p class="ob-privacy-note">Saved on this device and synced to your account while signed in, including notes and screenshots.</p>
   </div>
 </div>
 
@@ -219,6 +198,80 @@
           <input type="email" id="setup-email" placeholder="your@email.com" autocomplete="email" oninput="handleSetupInput()">
           <div class="setup-error">Please enter a valid email address.</div>
         </div>
+      </div>
+    </section>
+
+    <section class="settings-section settings-cloud-section" id="cloud-account-section" hidden>
+      <div class="settings-section-head">
+        <span class="settings-section-icon data-icon" aria-hidden="true"></span>
+        <div>
+          <h2>Cloud account</h2>
+          <p>Profile and logs sync automatically while signed in, including notes and screenshots.</p>
+        </div>
+      </div>
+      <div class="settings-card settings-auth-card">
+        <div class="auth-status-row">
+          <div>
+            <strong id="cloud-auth-title">Not signed in</strong>
+            <span id="cloud-auth-detail">Sign in to sync this device with your account.</span>
+          </div>
+          <span class="auth-status-pill" id="cloud-auth-pill">Local</span>
+        </div>
+        <div class="setup-field" id="cloud-auth-email-field">
+          <label for="cloud-auth-email">Email for sign-in link</label>
+          <input type="email" id="cloud-auth-email" placeholder="your@email.com" autocomplete="email">
+        </div>
+        <div class="auth-actions">
+          <button class="settings-export-btn" type="button" id="cloud-auth-send" onclick="sendCloudSignInLink()">Send sign-in link</button>
+          <button class="auth-secondary-btn" type="button" id="cloud-auth-refresh" onclick="refreshCloudAuthUi()">Refresh</button>
+          <button class="auth-secondary-btn" type="button" id="cloud-auth-signout" onclick="signOutCloudAccount()" hidden>Sign out</button>
+        </div>
+        <div class="profile-sync-panel sync-status-panel" id="cloud-sync-status-panel" hidden>
+          <div>
+            <strong>Sync status</strong>
+            <span id="cloud-sync-detail">Sync runs automatically when you are signed in.</span>
+            <span class="sync-conflict-note" id="cloud-sync-conflicts" hidden></span>
+          </div>
+          <span class="sync-status-pill" id="cloud-sync-status" data-state="idle">Ready</span>
+        </div>
+        <div class="profile-sync-panel conflict-review-panel" id="cloud-conflict-panel" hidden>
+          <div>
+            <strong>Review sync conflicts</strong>
+            <span>Choose which copy to keep for each date. Nothing will be overwritten until you choose.</span>
+          </div>
+          <div class="conflict-review-list" id="cloud-conflict-list"></div>
+        </div>
+        <div class="profile-sync-panel" id="profile-sync-panel" hidden>
+          <div>
+            <strong>Profile sync</strong>
+            <span id="profile-sync-detail">Settings sync automatically when you are signed in.</span>
+          </div>
+          <div class="auth-actions">
+            <button class="settings-export-btn" type="button" id="profile-backup-btn" onclick="backupCloudProfile()">Sync profile now</button>
+            <button class="auth-secondary-btn" type="button" id="profile-restore-btn" onclick="restoreCloudProfile()">Restore profile</button>
+          </div>
+        </div>
+        <div class="profile-sync-panel" id="entry-backup-panel" hidden>
+          <div>
+            <strong>Custody log sync</strong>
+            <span id="entry-backup-detail">Custody entries sync automatically when you are signed in.</span>
+          </div>
+          <div class="auth-actions">
+            <button class="settings-export-btn" type="button" id="entry-backup-btn" onclick="backupCustodyEntries()">Sync custody logs now</button>
+          </div>
+        </div>
+        <div class="profile-sync-panel cloud-delete-panel" id="cloud-delete-panel" hidden>
+          <div>
+            <strong>Delete account</strong>
+            <span>Permanently delete your sign-in account, cloud profile, custody logs, and device sync records. This cannot be undone. Local records and downloaded exports stay on your devices.</span>
+          </div>
+          <div class="setup-field cloud-delete-confirm">
+            <label for="cloud-delete-confirm">Type DELETE to confirm</label>
+            <input type="text" id="cloud-delete-confirm" autocomplete="off" inputmode="text" oninput="updateCloudDeleteButton()">
+          </div>
+          <button class="auth-danger-btn" type="button" id="cloud-delete-btn" onclick="deleteCloudAccount()" disabled>Delete account</button>
+        </div>
+        <div class="auth-message" id="cloud-auth-message" role="status" aria-live="polite"></div>
       </div>
     </section>
 
@@ -279,15 +332,15 @@
     <div class="setup-field" id="setup-name-field" style="display:none"></div>
     <div class="setup-field" id="setup-email-field" style="display:none"></div>
     <div class="setup-terms" id="setup-terms-field">
-      <label><input type="checkbox" id="setup-terms" onchange="handleSetupInput()">
-      <span>I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
+      <label><input type="checkbox" id="setup-terms" onchange="handlePolicyAcceptanceInput()">
+      <span>I agree to the <a href="assets/legal/2026-10-13/terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="assets/legal/2026-10-13/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
       <div class="setup-error">Please accept the Terms of Use and Privacy Policy.</div>
     </div>
 
     <div class="setup-actions">
       <div id="setup-progress-hint" style="display:none;font-size:12px;color:#993c1d;background:#faece7;border-radius:8px;padding:8px 12px;margin-bottom:8px;text-align:center"></div>
       <button class="btn primary setup-continue" id="setup-continue" onclick="saveSetup()">Save changes</button>
-      <div class="setup-privacy">Your data stays on your device. Always.</div>
+      <div class="setup-privacy">Saved on this device. Synced to your account while signed in.</div>
     </div>
 
     <section class="settings-section settings-data-section">
@@ -295,7 +348,7 @@
         <span class="settings-section-icon data-icon" aria-hidden="true"></span>
         <div>
           <h2>Data</h2>
-          <p>Keep a backup while this alpha runs without cloud sync.</p>
+          <p>Export a copy of your records.</p>
         </div>
       </div>
       <div class="settings-card settings-data-card">
@@ -1080,6 +1133,8 @@
   <strong>Feedback</strong>
 </button>
 </div><!-- end .app -->
-<script src="app.js?v=deviation-docs-1"></script>
+<script src="supabase-config.js?v=production-domain-1"></script>
+<script src="supabase-client.js?v=separate-auth-1"></script>
+<script src="app.js?v=onboarding-direct-1"></script>
 </body>
 </html>

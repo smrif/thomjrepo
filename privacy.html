@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="policy-version" content="2026-10-13">
 <title>Privacy Policy | Whose Day</title>
 <style>
   *{box-sizing:border-box}
@@ -24,21 +25,28 @@
 <main>
   <div class="brand">Whose Day</div>
   <h1>Privacy Policy</h1>
-  <p class="updated">Last updated: August 7, 2026</p>
+  <p class="updated">Last updated: October 13, 2026</p>
 
   <section class="notice">
     <h2>Alpha Privacy Summary</h2>
-    <p>During this alpha, Whose Day does not have user accounts or cloud sync. Your custody records are stored in your browser on your device unless you choose to export or share them.</p>
+    <p>Whose Day saves records in this browser on your device. While you are signed in, your profile and custody logs sync automatically to your Whose Day account using Supabase, including notes and attached screenshots. Offline changes stay on this device until the app is open with connectivity again. You choose when to export or share reports.</p>
   </section>
 
   <section>
     <h2>Information Stored in the App</h2>
-    <p>The app may store the information you enter, including your name or label, co-parent label, email address, children's names, custody entries, notes, timestamps, and attached screenshot data.</p>
+    <p>The app may store the information you enter, including your name or label, co-parent label, email address, children's names, activity labels, custody entries, notes, timestamps, and attached screenshot data. Account records also include agreement versions and acceptance times, theme preference, a randomly generated device identifier, last-sync time, and sync-version metadata.</p>
   </section>
 
   <section>
     <h2>Where Your Data Lives</h2>
-    <p>In this alpha version, app data is stored locally in your browser storage. We do not currently run a backend account system for syncing or backing up your custody records.</p>
+    <p>A local copy is stored in this browser. Signing in and completing setup enables automatic profile and custody-log sync; there is no separate backup opt-in. Only successfully synced records can restore on another browser or device. Differences that cannot be safely reconciled are held for review instead of silently overwritten.</p>
+    <p>Signing out stops future automatic sync on that device but does not erase its local records. Browser data and sign-in sessions do not automatically move between website domains. Opening the app on a new domain requires signing in there to restore cloud records.</p>
+  </section>
+
+  <section>
+    <h2>Service Providers and Access</h2>
+    <p>Supabase provides email-link authentication and cloud storage. Resend delivers sign-in emails and processes the recipient email address, sign-in message, and delivery information. Cloudflare hosts the app and handles account-deletion requests. These services process information needed to provide their respective functions.</p>
+    <p>Signed-in app users can access only their own cloud records through the app. Cloud sync is not end-to-end encrypted by Whose Day: Supabase processes record contents to provide storage and sync. Avoid entering unnecessary personal details in notes or screenshots.</p>
   </section>
 
   <section>
@@ -52,22 +60,27 @@
   </section>
 
   <section>
+    <h2>Deleting Your Account</h2>
+    <p>From Cloud account in Settings, type DELETE and choose Delete account to permanently remove your sign-in account and its active cloud profile, custody logs, and device sync records. This cannot be undone. Local records on your devices and previously downloaded or shared exports are not erased by this action. You can remove local records by clearing the app's browser data. Copies in service-provider backups or operational logs may remain subject to provider retention policies.</p>
+  </section>
+
+  <section>
     <h2>Data Loss Risk</h2>
-    <p>Because this alpha stores records locally, clearing browser data, changing devices, uninstalling the browser, or using private browsing may delete your records. Export regularly if you want a backup.</p>
+    <p>Clearing browser data, browser storage eviction, changing devices, or using private browsing may remove local records. Records that have not successfully synced may not be recoverable. Keep exports of important records and confirm they have restored before clearing data from an old browser or device. A prior online visit is required for offline app loading; a closed or suspended app does not continuously sync in the background.</p>
   </section>
 
   <section>
     <h2>What We Do Not Do</h2>
     <ul>
       <li>We do not sell your custody records.</li>
-      <li>We do not intentionally share your local app data with other parents, attorneys, or courts.</li>
-      <li>We do not currently provide cloud backup, cross-device sync, or account recovery.</li>
+      <li>We do not automatically share your records with other parents, attorneys, or courts. Cloud records are processed through Supabase to provide account and sync features.</li>
+      <li>Cloud restoration depends on successful sync and access to your sign-in email.</li>
     </ul>
   </section>
 
   <section>
     <h2>Future Changes</h2>
-    <p>If cloud accounts, payments, analytics, or attorney-sharing features are added later, this policy should be updated before those features are used by testers.</p>
+    <p>If payments, analytics, or attorney-sharing features are added later, this policy should be updated before those features are used by testers.</p>
   </section>
 
   <a class="back" href="index.html">Back to Whose Day</a>

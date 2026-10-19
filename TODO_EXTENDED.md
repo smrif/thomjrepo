@@ -1,4 +1,22 @@
 # Whose Day — TODO for Ryan
+
+> Historical June 2026 memo; reconciled October 13, 2026. Use [TODO.md](TODO.md)
+> for current release work and [the remaining product specification](docs/product/remaining-product-spec.md)
+> for proposed Trends, Reports, and Settings improvements. The original memo below
+> is retained for context and is not an accurate list of unbuilt features.
+>
+> Already implemented: welcome/demo and multi-step onboarding, configurable labels
+> and shared activities, Supabase email-link authentication, automatic profile/log
+> sync and restore, conflict handling, offline app shell, account deletion, dedicated
+> Settings with bottom navigation, CSV export, Reports, and a Calendar Trends subtab.
+> Authentication does not currently include a PIN/biometric gate; CSV is not a
+> restorable JSON backup. Server receipt timestamps do not independently verify
+> user-entered events or establish legal admissibility.
+>
+> Still proposals: reason-for-use personalization, per-child activity lists,
+> reminders/push, PIN/biometrics, read-only sharing, chart expansion, and portable
+> backup/import. Custody schedule configuration remains explicitly rejected.
+
 **From:** TJ  
 **Date:** June 2026  
 **Purpose:** Consolidated list of what's left to build, prioritized

@@ -1,0 +1,8 @@
+:root{font-family:system-ui,sans-serif;color:#202124;background:#fff;color-scheme:light;letter-spacing:0}
+*{box-sizing:border-box}body{margin:0}main{max-width:1000px;margin:0 auto;padding:28px 20px 60px}
+header,section{padding:20px 0;border-bottom:1px solid #dadce0}h1{font-size:26px;margin:0 0 10px}h2{font-size:18px;margin:0 0 16px}p{line-height:1.5;overflow-wrap:anywhere}
+.accounts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}label{display:block;font-size:14px;font-weight:600;margin:0 0 8px}input[type=email]{width:100%;height:44px;padding:10px;border:1px solid #85898d;border-radius:4px;font:inherit}
+button{display:inline-block;min-height:44px;margin:12px 8px 8px 0;padding:10px 14px;border:1px solid #137333;border-radius:4px;background:#137333;color:white;font:inherit;font-size:14px;font-weight:600;cursor:pointer;white-space:normal;text-align:left}
+button.secondary{background:white;color:#303134;border-color:#85898d}button:disabled{color:#5f6368;background:#e8eaed;border-color:#dadce0;cursor:default}
+button:focus-visible,input:focus-visible{outline:3px solid #1967d2;outline-offset:2px}.check{display:flex;align-items:flex-start;gap:10px;font-weight:400;line-height:1.5;margin:18px 0 0}.check input{width:18px;height:18px;flex:0 0 18px}li{line-height:1.5;margin:8px 0;overflow-wrap:anywhere}#message[data-tone=error]{color:#b3261e}#message[data-tone=success]{color:#137333}
+@media(max-width:620px){main{padding:16px}.accounts{grid-template-columns:1fr;gap:16px}button{max-width:100%}}

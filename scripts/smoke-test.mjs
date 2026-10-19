@@ -46,12 +46,29 @@ const { port } = server.address();
 const baseUrl = `http://127.0.0.1:${port}`;
 
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+// This source-only server has no generated worker; offline tests serve the built app.
+const page = await browser.newPage({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
 const consoleErrors = [];
 page.on('console', msg => {
   if (msg.type() === 'error') consoleErrors.push(msg.text());
 });
 page.on('pageerror', err => consoleErrors.push(err.message));
+
+// Keep UI smoke tests independent of external SDK loading and real auth sessions.
+let initialAuthSession = null;
+let initialAuthProfile = null;
+await page.route('**/supabase-client.js*', route => route.fulfill({
+  contentType: 'text/javascript',
+  body: `window.WhoseDayBackend = {
+    isEnabled: () => true,
+    getSession: async () => (${JSON.stringify(initialAuthSession)}),
+    getProfile: async () => (${JSON.stringify(initialAuthProfile)}),
+    getCustodyEntries: async () => [],
+    upsertProfile: async profile => { window.smokeCloudWrites = (window.smokeCloudWrites || 0) + 1; return profile; },
+    upsertCustodyEntries: async () => [],
+    upsertSyncDevice: async device => device
+  };`
+}));
 
 async function expectActive(id) {
   await page.waitForFunction(expected => document.querySelector('.screen.active')?.id === expected, id);
@@ -239,7 +256,8 @@ async function assertSettingsScreen(context, expectedEmail = 'parent@example.com
   const settingsNavVisible = await page.locator('#s-setup .bottom-nav').isVisible();
   if (!settingsNavVisible) throw new Error(`${context}: Settings should show the bottom navigation for returning users.`);
   const settingsTermsVisible = await page.locator('#s-setup .setup-terms').isVisible();
-  if (settingsTermsVisible) throw new Error(`${context}: Settings should not show onboarding terms acceptance.`);
+  const policyReviewAvailable = await page.evaluate(() => !hasCurrentPolicyAcceptance(APP_CONFIG));
+  if (settingsTermsVisible !== policyReviewAvailable) throw new Error(`${context}: Settings should offer policy review only for missing/stale acceptance, without forcing it.`);
   const settingsTitle = await page.locator('#s-setup .settings-title').innerText();
   if (settingsTitle.toLowerCase() !== 'settings') throw new Error(`${context}: Settings should use its own title, saw "${settingsTitle}".`);
   const fieldState = await page.evaluate(() => ({
@@ -310,6 +328,30 @@ async function assertCustomActivityInDecisionTree() {
 }
 
 try {
+  // A fresh email-link callback must route automatically, with no Continue click.
+  for (const state of ['new', 'incomplete', 'existing']) {
+    const existing = state === 'existing';
+    await page.goto(baseUrl);
+    await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+    initialAuthSession = { user: { id: 'smoke-return', email: 'parent@example.com' } };
+    initialAuthProfile = state !== 'new' ? {
+      user_id: 'smoke-return', current_parent_label: 'Dad', co_parent_label: 'Mom',
+      report_email: 'parent@example.com', children: ['Ava'], terms_accepted_at: existing ? '2026-10-12T12:00:00Z' : null
+    } : null;
+    await page.goto(`${baseUrl}/?code=mock-auth-callback`);
+    await expectActive(existing ? 's-home' : 's-ob-name');
+    if (!existing) {
+      if (await page.locator('#ob-email').inputValue() !== 'parent@example.com') throw new Error('Verified email must prefill setup.');
+      // Allow the existing startup-sync delay to expire before asserting no default profile was written.
+      await page.waitForTimeout(1500);
+      if (await page.evaluate(() => localStorage.getItem('custody_tracker_config') !== null || !!window.smokeCloudWrites)) {
+        throw new Error('New sign-in must not save or upload a default profile before setup is finished.');
+      }
+      await page.screenshot({ path: '/tmp/whose-day-auth-return-new.png' });
+    }
+  }
+  initialAuthSession = null;
+  initialAuthProfile = null;
   await page.goto(baseUrl);
   await page.evaluate(() => {
     localStorage.clear();
@@ -320,19 +362,6 @@ try {
   const firstRunNavCount = await page.locator('#s-ob-welcome .bottom-nav').count();
   if (firstRunNavCount !== 0) throw new Error('First-run onboarding should not show the bottom navigation.');
   await click('#s-ob-welcome .ob-btn-primary');
-  await expectActive('s-ob-promises');
-  const finalPromise = await page.evaluate(() => {
-    const card = document.querySelector('#s-ob-promises .ob-promise-cards .ob-promise:last-child');
-    return {
-      title: card?.querySelector('strong')?.textContent || '',
-      body: card?.querySelector('p')?.textContent || '',
-      hasSvgIcon: !!card?.querySelector('svg')
-    };
-  });
-  if (finalPromise.title !== 'Lawyer-ready records') throw new Error(`Final onboarding promise title is wrong: ${JSON.stringify(finalPromise)}.`);
-  if (finalPromise.body !== 'Timestamped summaries are organized so they’re easy to review, export, or share when needed.') throw new Error(`Final onboarding promise body is wrong: ${JSON.stringify(finalPromise)}.`);
-  if (!finalPromise.hasSvgIcon) throw new Error(`Final onboarding promise should use a professional line icon: ${JSON.stringify(finalPromise)}.`);
-  await click('#s-ob-promises .ob-btn-primary');
   await expectActive('s-ob-name');
   if (await page.locator('#s-ob-name .ob-examples').count() !== 0) throw new Error('Step 1 should not show role shortcut chips.');
   if (await page.locator('#s-ob-name .ob-label').innerText() !== 'Your name') throw new Error('Step 1 should label the name field clearly.');
@@ -579,7 +608,8 @@ try {
   await page.reload();
   await expectActive('s-ob-welcome');
   await click('#s-ob-welcome .ob-btn-primary');
-  await assertDarkThemeFrame('Dark theme Onboarding frame', 's-ob-promises', 'rgb(250, 246, 240)');
+  await expectActive('s-ob-name');
+  await assertDarkThemeFrame('Dark theme Onboarding frame', 's-ob-name', 'rgb(250, 246, 240)');
   await page.setViewportSize({ width: 390, height: 844 });
 
   await bootstrap();
@@ -687,6 +717,48 @@ try {
   }
   await click('#deviation-empty-confirm button[onclick="saveEntry({allowEmptyDeviation:true})"]');
   await expectActive('s-saved');
+
+  // Edit a saved deviation into the opposite scheduled-day branch. The final
+  // persisted record/receipt must not retain abandoned custody or pressure data.
+  for (const targetWeek of ['mom', 'dad']) {
+    await bootstrap();
+    await page.evaluate(target => {
+      const oldWeek=target==='mom'?'dad':'mom';
+      const old={...blankCheckinState(),week:oldWeek,
+        dadMode:oldWeek==='dad'?'mom-had':null,
+        momMode:oldWeek==='mom'?'dad-had':null,
+        kidsWithDad:['Ava'],dadHadKids:['Ava'],momHadKidsOnDadWeek:['Ben'],
+        changeAgreed:true,changePressured:true,diary:'Preserved note',
+        attachment:{name:'evidence.png',type:'image/png',dataUrl:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a6WQAAAAASUVORK5CYII='}};
+      putEntries({[todayStr()]:old},{skipSync:true});
+      startTodayEdit();
+    }, targetWeek);
+    await click('#wk-'+targetWeek);
+    await expectActive(targetWeek==='mom'?'s-mom-mode':'s-dad-mode');
+    if(targetWeek==='mom'){
+      await click('#ft-easy');
+      await expectActive('s-mom-easy');
+      await page.locator('#easy-note').fill('Preserved note');
+      await click('#s-mom-easy .opt[onclick*="none"]');
+      await click('#easy-continue-btn');
+    }else{
+      await click('#sc-dad-normal');
+      await expectActive('s-allkids');
+      await click('#ak-yes');
+      await expectActive('s-dad-help-choice');
+      await click('#dad-help-no');
+      await expectActive('s-diary');
+      await click('#diary-next-btn');
+    }
+    await expectActive('s-saved');
+    const saved=await page.evaluate(()=>getEntries()[todayStr()]);
+    if(saved.week!==targetWeek||saved.changeAgreed!==null||saved.changePressured!==null||
+       (targetWeek==='mom'?saved.dadMode!==null:saved.momMode!==null)||
+       saved.dadHadKids.length||saved.momHadKidsOnDadWeek.length||
+       saved.diary!=='Preserved note'||saved.attachment?.name!=='evidence.png'){
+      throw new Error('Changing scheduled-day branch retained stale answers or lost authored evidence.');
+    }
+  }
 
   await bootstrap();
   await click('#s-home .bottom-nav-item[onclick="showExport()"]');
