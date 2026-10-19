@@ -2179,7 +2179,15 @@ body:has(#s-cal.active) .app{
 
 #s-cal .trends-deviation-row{
   border-bottom-color:var(--daily-border);
+  flex-wrap:wrap;
 }
+
+#s-cal .trends-coverage,#s-cal .trends-empty{font-size:13px;line-height:1.6;color:var(--daily-ink-soft)}
+#s-cal .trends-deviation-title{overflow-wrap:anywhere;line-height:1.5}
+#s-cal .trends-dev-kids{min-width:0;overflow-wrap:anywhere}
+#s-cal button.trends-dev-date{font:inherit;font-size:12px;color:var(--daily-primary-strong);background:none;border:0;padding:4px 0;text-align:left;text-decoration:underline;cursor:pointer}
+#s-cal button.trends-dev-date:focus-visible{outline:2px solid var(--daily-primary-strong);outline-offset:3px}
+#s-cal .flag-unknown{background:var(--daily-card);color:var(--daily-ink-soft);border:1px solid var(--daily-border);white-space:normal}
 
 #s-cal .flag-badge{
   border-radius:var(--daily-pill-radius);

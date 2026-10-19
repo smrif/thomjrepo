@@ -170,6 +170,11 @@
 
 ## Future Product Areas
 
+- [x] Implement the first Trends clarity increment locally (October 19): separate
+  family-date coverage, both schedule-change directions, incomplete-context labels,
+  historical Calendar links and distinct empty states. Automated coverage includes
+  both themes/viewports and sync refresh. Review/release remains pending.
+
 - [x] Review the current decision tree in `DECISION_TREE.md`; corrected stale
   screen/progress descriptions and documented the remaining product decisions.
 - [x] Draft Trends, Reports, and Settings specifications from the implemented

@@ -2757,75 +2757,63 @@ function trendsFilterLabel(){
 }
 // ── END TRENDS STATE ─────────────────────────────────────────
 
+function trendsEscape(value){
+  return String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+}
+function trendsContext(entry){
+  if(entry.changePressured===true)return ['pressured','Felt pressured'];
+  if(entry.changeAgreed===false)return ['unexpected','Unexpected'];
+  if(entry.changeAgreed===true&&entry.changePressured===false)return ['agreed','Agreed'];
+  return ['unknown','Context not recorded'];
+}
+function trendsCustodyRecord(entry){
+  return entry?.week==='dad'&&['normal','mom-had','dad-helped-mom'].includes(entry.dadMode)||
+    entry?.week==='mom'&&['easy','helped','dad-had'].includes(entry.momMode);
+}
+function openTrendsDate(date){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return;
+  const entry=getEntries()[date];
+  if(!entry)return;
+  const [year,month]=date.split('-').map(Number);
+  calY=year;calM=month-1;
+  switchTab('cal');
+  showDetail(date,entry);
+}
 function renderStats(){
-  const me=getTrendsEntries();
+  const entries=getTrendsEntries();
+  const custody=entries.filter(([,e])=>trendsCustodyRecord(e));
+  const missed=entries.filter(([,e])=>e?.week==='not-logged').length;
+  const other=entries.length-custody.length-missed;
   const label=trendsFilterLabel();
-
-  const dadActual=me.filter(([,e])=>(e.week==='dad'&&e.dadMode!=='mom-had'&&(e.kidsWithDad||[]).length>0)||(e.week==='mom'&&e.momMode==='dad-had')).length;
-  const dadWkMomHad=me.filter(([,e])=>e.week==='dad'&&e.dadMode==='mom-had').length;
-  const momWkDadHad=me.filter(([,e])=>e.week==='mom'&&e.momMode==='dad-had').length;
-  const involvement=me.filter(([,e])=>(e.week==='mom'&&e.momMode==='helped')||(e.week==='dad'&&e.dadMode==='dad-helped-mom')).length;
-  const missedDays=me.filter(([,e])=>e.week==='not-logged').length;
-  const loggedDays=me.filter(([,e])=>e.week!=='not-logged').length;
-
-  // Deviation breakdown — split by agreed vs pressured vs unexpected
-  const deviations=me.filter(([,e])=>e.week==='mom'&&e.momMode==='dad-had');
-  const pressuredDev=deviations.filter(([,e])=>e.changePressured===true);
-  const agreedDev=deviations.filter(([,e])=>e.changeAgreed===true&&e.changePressured!==true);
-  const unexpectedDev=deviations.filter(([,e])=>e.changeAgreed===false);
-  const untaggedDev=deviations.filter(([,e])=>e.changeAgreed===null||e.changeAgreed===undefined);
-
-  // Update month nav label
+  const actual=custody.filter(([,e])=>(e.week==='dad'&&e.dadMode!=='mom-had'&&(e.kidsWithDad||[]).length>0)||(e.week==='mom'&&e.momMode==='dad-had')).length;
+  const withYou=custody.filter(([,e])=>e.week==='mom'&&e.momMode==='dad-had');
+  const withCoparent=custody.filter(([,e])=>e.week==='dad'&&e.dadMode==='mom-had');
+  const help=custody.filter(([,e])=>e.week==='mom'&&e.momMode==='helped'||e.week==='dad'&&e.dadMode==='dad-helped-mom').length;
   const navLbl=document.getElementById('trends-month-label');
-  if(navLbl)navLbl.textContent=MONTHS[trendsM]+' '+trendsY;
-
-  // Stat cards
+  if(navLbl)navLbl.textContent=label;
   document.getElementById('stats-lbl').textContent=label;
-  document.getElementById('stat-grid').innerHTML=`
-    <div class="stat-card"><div class="stat-num">${dadActual}</div><div class="stat-lbl">Days ${currentParent()} had kids</div></div>
-    <div class="stat-card"><div class="stat-num stat-num-red">${momWkDadHad}</div><div class="stat-lbl">${coParentPoss()} nights — kids with you</div></div>
-    <div class="stat-card"><div class="stat-num">${dadWkMomHad}</div><div class="stat-lbl">Your nights — kids at ${coParentPoss()}</div></div>
-    <div class="stat-card"><div class="stat-num">${involvement}</div><div class="stat-lbl">Cross-week help days</div></div>`;
-
-  // Deviation detail with pressure flags
-  const devDetail=document.getElementById('trends-deviation-detail');
-  if(devDetail){
-    if(!deviations.length){
-      devDetail.innerHTML='';
-    } else {
-      // Build rows for each deviation
-      const rows=deviations.map(([ds,e])=>{
-        const kids=(e.dadHadKids||[]).join(', ')||'Kids';
-        let flags='';
-        if(e.changePressured===true) flags+='<span class="flag-badge flag-pressured">Felt pressured</span>';
-        else if(e.changeAgreed===true) flags+='<span class="flag-badge flag-agreed">Agreed</span>';
-        else if(e.changeAgreed===false) flags+='<span class="flag-badge flag-unexpected">Unexpected</span>';
-        return `<div class="trends-deviation-row">
-          <div class="trends-dev-date">${fmtShort(ds)}</div>
-          <div class="trends-dev-kids">${kids}</div>
-          <div class="trends-dev-flags">${flags}</div>
-        </div>`;
-      }).join('');
-
-      // Footnote explaining the distinction
-      const footnote=`<div class="trends-footnote">
-        <strong>Agreed</strong> — you agreed to take the kids and felt fine about it.<br>
-        <strong>Felt pressured</strong> — you took the kids but felt pressured to agree.<br>
-        <strong>Unexpected</strong> — not agreed in advance, schedule was not followed.
-      </div>`;
-
-      devDetail.innerHTML=`<div class="trends-deviation-card">
-        <div class="trends-deviation-title">${coParentPoss()} nights — ${currentParent()} had kids (${deviations.length} total)</div>
-        ${rows}
-        ${footnote}
-      </div>`;
-    }
+  const cards=[[actual,'Days '+currentParent()+' had kids'],[withYou.length,coParentPoss()+' scheduled days — kids with you'],[withCoparent.length,'Your scheduled days — kids with '+coParent()],[help,'Help across scheduled days']];
+  document.getElementById('stat-grid').innerHTML=cards.map(([count,title])=>`<div class="stat-card"><div class="stat-num">${count}</div><div class="stat-lbl">${trendsEscape(title)}</div></div>`).join('');
+  const coverage=document.getElementById('trends-coverage');
+  coverage.hidden=!custody.length;
+  if(!custody.length){
+    coverage.textContent='';
+    document.getElementById('trends-deviation-detail').innerHTML='';
+    document.getElementById('summary-box').textContent='No custody records in this period. Log a day or choose another period to see trends.';
+    return;
   }
-
-  // Summary sentence
-  let summaryText=`${label}: ${loggedDays} day${loggedDays!==1?'s':''} logged. ${currentParent()} had the kids on ${dadActual} day${dadActual!==1?'s':''}. During ${coParentPoss()} scheduled days, kids were with ${currentParent()} ${momWkDadHad} time${momWkDadHad!==1?'s':''} (${pressuredDev.length} pressured, ${agreedDev.length} agreed, ${unexpectedDev.length} unexpected).`;
-  if(missedDays)summaryText+=` ${missedDays} day${missedDays!==1?'s were':' was'} not logged.`;
-  document.getElementById('summary-box').textContent=summaryText;
+  document.getElementById('trends-coverage').textContent=`${custody.length} custody ${custody.length===1?'record':'records'} · ${missed} not-logged ${missed===1?'marker':'markers'} · ${other} other or legacy ${other===1?'note':'notes'}. Each custody record counts as one family date, including split days; it does not count children or hours. Unrecorded dates, not-logged markers, and other notes do not establish custody.`;
+  const sections=[[withYou,coParentPoss()+' scheduled days — kids with '+currentParent(),'dadHadKids'],[withCoparent,'Your scheduled days — kids with '+coParent(),'momHadKidsOnDadWeek']];
+  document.getElementById('trends-deviation-detail').innerHTML=sections.filter(([rows])=>rows.length).map(([rows,title,kidsField])=>`<section class="trends-deviation-card"><h3 class="trends-deviation-title">${trendsEscape(title)} (${rows.length})</h3>${rows.map(([date,e])=>{
+    const [kind,context]=trendsContext(e);
+    const kids=(e[kidsField]||[]).join(', ')||'Children not recorded';
+    return `<div class="trends-deviation-row"><button class="trends-dev-date" type="button" onclick="openTrendsDate(this.dataset.date)" data-date="${trendsEscape(date)}" aria-label="View Calendar detail for ${trendsEscape(fmtDate(date))}">${trendsEscape(fmtDate(date))}</button><div class="trends-dev-kids">${trendsEscape(kids)}</div><div class="trends-dev-flags"><span class="flag-badge flag-${kind}">${context}</span></div></div>`;
+  }).join('')}</section>`).join('')+(withYou.length||withCoparent.length?'<p class="trends-footnote">Context is user-reported: Agreed means agreement with no pressure reported; Felt pressured means pressure was reported; Unexpected means not agreed in advance. Context not recorded means the available answers are incomplete.</p>':'');
+  const changes=[...withYou,...withCoparent];
+  const counts={pressured:0,agreed:0,unexpected:0,unknown:0};
+  changes.forEach(([,entry])=>counts[trendsContext(entry)[0]]++);
+  const summary=!custody.length?'No custody records in this period.':!changes.length?'No recorded schedule changes in this period.':`${changes.length} family dates with recorded schedule changes: ${withYou.length} on ${coParentPoss()} scheduled days and ${withCoparent.length} on your scheduled days. Context across both directions: ${counts.pressured} felt pressured, ${counts.agreed} agreed, ${counts.unexpected} unexpected, ${counts.unknown} context not recorded.`;
+  document.getElementById('summary-box').textContent=label+': '+summary;
 }
 function renderLog(){
   const entries=getEntries(),sorted=Object.entries(entries).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,30);

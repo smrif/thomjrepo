@@ -1,14 +1,15 @@
 # Trends, Reports, and Settings: Remaining Product Specification
 
-Prepared October 13, 2026 from the current app. Proposed additions below are a
-reviewable draft, not approved scope or a claim that they are implemented.
+Prepared October 13, 2026 from the current app. The owner approved the first
+Trends clarity increment October 19 and subsequently approved its production
+release with a compact empty state. Other proposed additions remain a reviewable draft.
 
 ## Existing foundation
 
 | Area | Already implemented | Remaining design/build work |
 | --- | --- | --- |
 | Onboarding | Welcome, demo, parent/child names, shared activities, email sign-in, explicit policy acceptance | Optional reason-for-use question and any adaptive home experience require a product decision. |
-| Trends | Calendar subtab, month/rolling/all-time filters, custody/help counts, one-direction deviation details and context summary | Balanced details for both directions, coverage explanation, optional time-series charts and child breakdown. |
+| Trends | Calendar subtab, month/rolling/all-time filters, custody/help counts; October 19 local increment adds both change directions, coverage, context labels and Calendar links | Optional time-series charts and child breakdown. |
 | Reports | Five report types, period filters, statistics, preview, copy/email/print, metadata and attestation | Clarify scope/count definitions, range coverage, attachment portability, and consistent neutral wording. |
 | Settings | Profile/co-parent/child editing, appearance, cloud sync/restore/conflicts/deletion, CSV export, policy review, bottom navigation | Clarify editable email purpose, activity editing, export limitations, and optional future preferences. |
 
@@ -36,6 +37,14 @@ Goal: let a user understand their recorded pattern and open the underlying dates
 Keep Trends within Calendar for now; no new navigation destination is required.
 
 Recommended first increment:
+
+Implemented October 19, 2026 at the owner's request. Empty periods show one short
+message; empty direction cards and the context legend are hidden when irrelevant.
+Context categories
+are exclusive: pressure takes precedence, explicit non-agreement is unexpected,
+agreement with explicit no-pressure is agreed, and incomplete answers remain
+unknown. Coverage counts recognized custody-flow records separately from
+not-logged markers and other/legacy notes. No coverage percentage is inferred.
 
 - Retain existing filters and four overview cards; use day-based wording throughout.
 - Add a coverage line: qualifying custody records, explicit not-logged markers,

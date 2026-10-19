@@ -120,3 +120,25 @@ intermittent timeout remains a monitoring item, not an established product bug.
 This evidence-only follow-up changes documentation and uses `[skip ci]` to avoid
 repeating the unchanged application/test suite.
 Production deployment and deferred owner QA are separate from this checkpoint.
+
+## October 19, 2026 Trends clarity
+
+The owner approved the first Trends increment. Added coverage by family date,
+separate lists for both schedule-change directions, explicit incomplete-context
+labels, date buttons opening the historical Calendar month/detail, and distinct
+no-custody/no-change empty states. Names are escaped in the new markup; filters
+and the four overview cards remain, with day-based labels and an accurate range
+heading. Trends refreshes through the existing cloud-receive hook.
+
+Added `scripts/trends-clarity-test.mjs` to the release suite. Browser coverage
+checks both themes/viewports, split-day counting, legacy notes/markers, exclusive
+context counts, incomplete answers, historical navigation, escaping, sync refresh,
+and empty states. The full local release suite passed all 31 results with zero
+failures/skips in about 88 seconds. Mobile/dark and desktop/light screenshots
+were inspected. App asset token: `trends-clarity-1`.
+
+The owner requested a shorter empty state and approved production release.
+Periods without custody records now hide coverage, empty direction cards and the
+context legend, leaving one message. Periods with custody but no changes retain
+coverage and a factual no-change message, with no empty cards or legend.
+Extended mobile/dark and desktop/light assertions cover both states.

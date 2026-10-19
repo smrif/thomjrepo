@@ -29,7 +29,8 @@
     "test:policy:ui": "node scripts/policy-acceptance-ui-test.mjs",
     "test:dates": "node scripts/date-filter-test.mjs",
     "test:checkin": "node scripts/checkin-branch-test.mjs",
-    "test:release": "node scripts/release-check.mjs"
+    "test:release": "node scripts/release-check.mjs",
+    "test:trends": "node scripts/trends-clarity-test.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
