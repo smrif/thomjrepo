@@ -1,9 +1,24 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "thomjrepo",
+  "main": "./src/worker.js",
   "compatibility_date": "2026-08-07",
+  "workers_dev": true,
+  "routes": [
+    { "pattern": "whosedayapp.com", "custom_domain": true },
+    { "pattern": "www.whosedayapp.com", "custom_domain": true }
+  ],
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": true
+  },
+  "vars": {
+    "SUPABASE_URL": "https://hdfuknggfkmaycnantxv.supabase.co",
+    "ACCOUNT_DELETION_ENABLED": "true",
+    "BACKEND_ENABLED": "false",
+    "AUTH_ENABLED": "false",
+    "SYNC_ENABLED": "false"
   }
 }

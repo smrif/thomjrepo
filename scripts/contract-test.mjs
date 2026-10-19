@@ -5,6 +5,8 @@ const root = resolve(import.meta.dirname, '..');
 const html = readFileSync(resolve(root, 'index.html'), 'utf8');
 const js = readFileSync(resolve(root, 'app.js'), 'utf8');
 const css = readFileSync(resolve(root, 'styles.css'), 'utf8');
+const supabaseConfig = readFileSync(resolve(root, 'supabase-config.js'), 'utf8');
+const supabaseClient = readFileSync(resolve(root, 'supabase-client.js'), 'utf8');
 
 const failures = [];
 
@@ -81,6 +83,23 @@ for (const fn of [
 
 assert(/styles\.css\?v=[^"]+/.test(html), 'Stylesheet is missing a cache-busting version token');
 assert(/app\.js\?v=[^"]+/.test(html), 'Script is missing a cache-busting version token');
+assert(/supabase-config\.js\?v=[^"]+/.test(html), 'Supabase config script is missing a cache-busting version token');
+assert(/supabase-client\.js\?v=[^"]+/.test(html), 'Supabase client script is missing a cache-busting version token');
+assert(supabaseConfig.includes('https://hdfuknggfkmaycnantxv.supabase.co'), 'Supabase project URL is missing from public config');
+assert(supabaseConfig.includes('sb_publishable_'), 'Supabase publishable key is missing from public config');
+assert(!/service_role|sb_secret_/i.test(supabaseConfig), 'Supabase public config must not include service-role or secret keys');
+assert(supabaseClient.includes('WhoseDayBackend'), 'Supabase client helper should expose WhoseDayBackend');
+assert(supabaseClient.includes("from('sync_devices')"), 'Supabase client should write sync device metadata');
+assert(js.includes('reconcileLocalAndCloudRows'), 'App should reconcile cloud rows before uploading local entries');
+assert(html.includes('cloud-sync-status-panel'), 'Settings should show cloud sync status');
+assert(html.includes('cloud-conflict-panel'), 'Settings should include sync conflict review UI');
+assert(functions.has('resolveCloudConflict'), 'App should expose a sync conflict resolver');
+assert(html.includes('cloud-delete-panel'), 'Settings should include cloud data deletion UI');
+assert(functions.has('deleteCloudAccount'), 'App should expose account deletion handler');
+assert(supabaseClient.includes('deleteAccount'), 'Supabase client should expose account deletion helper');
+assert(html.includes('s-ob-login'), 'Logged-out onboarding should include an existing-account login screen');
+assert(functions.has('sendLoggedOutSignInLink'), 'App should send sign-in links from logged-out login');
+assert(functions.has('restoreLoggedOutCloudAccount'), 'App should restore cloud account from logged-out login');
 
 if (failures.length) {
   console.error(`Contract test failed with ${failures.length} issue${failures.length === 1 ? '' : 's'}:`);

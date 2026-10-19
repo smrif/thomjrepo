@@ -1,0 +1,12 @@
+{
+  "terms": {
+    "version": "2026-10-13",
+    "path": "assets/legal/2026-10-13/terms.html",
+    "sha256": "b59ce1c860494dcf9b999dc306c092a2477e06da974eec93139c07ba4afa4634"
+  },
+  "privacy": {
+    "version": "2026-10-13",
+    "path": "assets/legal/2026-10-13/privacy.html",
+    "sha256": "d221a8ff858c17646ff5809014db7f533f24f3ff4a2f2d61961c1aff186d9b0c"
+  }
+}

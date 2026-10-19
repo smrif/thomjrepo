@@ -6,11 +6,36 @@
   "scripts": {
     "build": "node scripts/build-static.mjs",
     "deploy": "npx wrangler deploy",
-    "test": "npm run test:contracts",
+    "test": "npm run test:contracts && npm run test:api && npm run test:homepage && npm run test:account && npm run test:db && npm run test:sync && npm run test:domain",
     "test:contracts": "node scripts/contract-test.mjs",
-    "test:smoke": "node scripts/smoke-test.mjs"
+    "test:api": "node scripts/api-contract-test.mjs",
+    "test:smoke": "node scripts/smoke-test.mjs",
+    "test:homepage": "node scripts/homepage-auth-test.mjs",
+    "test:account": "node scripts/account-deletion-test.mjs",
+    "test:account:ui": "node scripts/account-deletion-ui-test.mjs",
+    "test:db": "node scripts/database-security-test.mjs",
+    "test:db:live-anon": "node scripts/live-anonymous-security-check.mjs --live",
+    "test:security:qa": "node --test scripts/security-qa/checks-test.mjs",
+    "test:security:qa:ui": "node scripts/security-qa/ui-test.mjs",
+    "security:qa": "node scripts/security-qa/server.mjs",
+    "test:sync": "node scripts/automatic-sync-test.mjs",
+    "test:sync:ui": "node scripts/automatic-sync-ui-test.mjs",
+    "test:sync:devices": "node scripts/multi-device-sync-test.mjs",
+    "test:offline": "npm run build && node scripts/offline-shell-test.mjs",
+    "test:signin:ui": "node scripts/signin-button-test.mjs",
+    "test:domain": "node scripts/domain-migration-test.mjs",
+    "test:disclosures": "node scripts/cloud-disclosures-test.mjs",
+    "test:policy": "node scripts/policy-acceptance-test.mjs",
+    "test:policy:ui": "node scripts/policy-acceptance-ui-test.mjs",
+    "test:dates": "node scripts/date-filter-test.mjs",
+    "test:checkin": "node scripts/checkin-branch-test.mjs",
+    "test:release": "node scripts/release-check.mjs"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "playwright": "^1.53.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.3"
   }
 }

@@ -2,6 +2,10 @@
 
 This document describes the current check-in flow as implemented in `index.html` and `app.js`.
 
+Reviewed October 13, 2026. “Save entry” below is the save action, not a separate
+pre-save Review screen. The app shows a receipt after saving; notes and screenshot
+prompts appear before save on the applicable branches.
+
 ## Main Flow
 
 ```mermaid
@@ -11,7 +15,7 @@ flowchart TD
   DayType --> MyDay["My day"]
   DayType --> TheirDay["Other parent's day"]
 
-  Review --> Saved["Saved"]
+  Review["Save entry"] --> Saved["Saved receipt"]
 
   MyDay --> MyDayActual["Where did the kids stay tonight?"]
   MyDayActual --> MyNormal["With me"]
@@ -69,7 +73,7 @@ flowchart TD
   No --> Notes["Continue to notes"]
   Pressured --> Notes
   Fine --> Notes
-  Notes --> Review["Review"]
+  Notes --> Review["Save entry"]
 ```
 
 ## Stored Entry Fields
@@ -102,15 +106,30 @@ Core shape:
 - On the co-parent's scheduled day, your help uses the kids already staying with the co-parent instead of asking a second kid-selection question.
 - Schedule-change context is captured only for true custody deviations, not ordinary help.
 - Legacy stored values such as `dad-helped-mom` and `momMode: helped` are still supported, but users now reach them through nested help questions.
+- Changing the scheduled parent or actual-custody branch clears answers from the
+  abandoned branch while retaining authored notes and screenshots. Reselecting
+  an unchanged branch preserves loaded edit details. Returning from split night
+  to all kids home clears obsolete absent-child details.
 
 ## Odd Paths To Review
 
 - Some internal state names still use Dad/Mom terminology. User-facing copy now mostly renders from the configured parent labels, but internal naming could be clarified later during a larger refactor.
-- The progress bars use different totals depending on branch. Some branches with schedule-change context may feel longer than the indicator suggests.
+- Visible progress already uses Schedule / Kids / Details phases. Numeric totals
+  remain in internal calls but do not drive the visible phase indicator.
+- Help on a co-parent day currently applies to all configured children. Optional
+  subset selection could improve accuracy, but changes the established flow and
+  should be a deliberate product decision.
+- The co-parent-day “no help” branch saves directly from its detail screen;
+  other paths save from notes. A universal pre-save review would add a step and
+  is proposed scope, not an existing screen or an automatic cleanup.
 
 ## Good Low-Oversight Cleanup Work
 
-- Split decision-tree state helpers into named sections without changing behavior.
-- Add browser smoke-test assertions for custom parent/co-parent labels in review, saved, calendar, and report views.
-- Add browser smoke-test assertions for the two schedule-change branches.
-- Add a small regression checklist to release notes before each push.
+- [x] Browser smoke coverage for configured labels, saved/calendar/report output,
+  both schedule-change directions, brief visits, and long names already exists.
+- [x] Fixed stale branch answers when changing schedule/custody, with local state
+  regressions and actual browser edit/save coverage in both directions.
+- [x] The automated release command covers the existing flows and the new branch
+  and date-filter regressions; owner-assisted/live checks remain separate.
+- [ ] Consider helper extraction during a dedicated maintainability pass; a broad
+  rename/refactor is unnecessary for the current behavior fixes.
