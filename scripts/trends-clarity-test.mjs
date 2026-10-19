@@ -56,8 +56,13 @@ try{
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     await page.evaluate(()=>{putEntries({'2026-06-01':{week:'other'}},{skipSync:true});renderStats()});
     assert.match(await page.locator('#summary-box').innerText(),/No custody records in this period/);
+    assert.equal(await page.locator('#trends-coverage').isVisible(),false);
+    assert.equal(await page.locator('.trends-deviation-card,.trends-footnote').count(),0);
+    await page.screenshot({path:`/tmp/whose-day-trends-empty-${theme}.png`,fullPage:true});
     await page.evaluate(()=>{putEntries({'2026-06-01':{week:'dad',dadMode:'normal',kidsWithDad:['Avery']}},{skipSync:true});renderStats()});
     assert.match(await page.locator('#summary-box').innerText(),/No recorded schedule changes in this period/);
+    assert.equal(await page.locator('#trends-coverage').isVisible(),true);
+    assert.equal(await page.locator('.trends-deviation-card,.trends-footnote').count(),0);
     assert.deepEqual(errors,[]);await context.close();
   }
   console.log('Trends clarity passed: family-date coverage, both directions, exclusive context counts, legacy unknowns, escaping, historical Calendar links, sync refresh, distinct empty states, mobile/dark and desktop/light.');

@@ -1,8 +1,8 @@
 # Trends, Reports, and Settings: Remaining Product Specification
 
 Prepared October 13, 2026 from the current app. The owner approved the first
-Trends clarity increment October 19; it is implemented locally and awaiting
-release. Other proposed additions remain a reviewable draft.
+Trends clarity increment October 19 and subsequently approved its production
+release with a compact empty state. Other proposed additions remain a reviewable draft.
 
 ## Existing foundation
 
@@ -38,7 +38,9 @@ Keep Trends within Calendar for now; no new navigation destination is required.
 
 Recommended first increment:
 
-Implemented locally October 19, 2026 at the owner's request. Context categories
+Implemented October 19, 2026 at the owner's request. Empty periods show one short
+message; empty direction cards and the context legend are hidden when irrelevant.
+Context categories
 are exclusive: pressure takes precedence, explicit non-agreement is unexpected,
 agreement with explicit no-pressure is agreed, and incomplete answers remain
 unknown. Coverage counts recognized custody-flow records separately from

@@ -2794,13 +2794,21 @@ function renderStats(){
   document.getElementById('stats-lbl').textContent=label;
   const cards=[[actual,'Days '+currentParent()+' had kids'],[withYou.length,coParentPoss()+' scheduled days — kids with you'],[withCoparent.length,'Your scheduled days — kids with '+coParent()],[help,'Help across scheduled days']];
   document.getElementById('stat-grid').innerHTML=cards.map(([count,title])=>`<div class="stat-card"><div class="stat-num">${count}</div><div class="stat-lbl">${trendsEscape(title)}</div></div>`).join('');
+  const coverage=document.getElementById('trends-coverage');
+  coverage.hidden=!custody.length;
+  if(!custody.length){
+    coverage.textContent='';
+    document.getElementById('trends-deviation-detail').innerHTML='';
+    document.getElementById('summary-box').textContent='No custody records in this period. Log a day or choose another period to see trends.';
+    return;
+  }
   document.getElementById('trends-coverage').textContent=`${custody.length} custody ${custody.length===1?'record':'records'} · ${missed} not-logged ${missed===1?'marker':'markers'} · ${other} other or legacy ${other===1?'note':'notes'}. Each custody record counts as one family date, including split days; it does not count children or hours. Unrecorded dates, not-logged markers, and other notes do not establish custody.`;
   const sections=[[withYou,coParentPoss()+' scheduled days — kids with '+currentParent(),'dadHadKids'],[withCoparent,'Your scheduled days — kids with '+coParent(),'momHadKidsOnDadWeek']];
-  document.getElementById('trends-deviation-detail').innerHTML=sections.map(([rows,title,kidsField])=>`<section class="trends-deviation-card"><h3 class="trends-deviation-title">${trendsEscape(title)} (${rows.length})</h3>${rows.length?rows.map(([date,e])=>{
+  document.getElementById('trends-deviation-detail').innerHTML=sections.filter(([rows])=>rows.length).map(([rows,title,kidsField])=>`<section class="trends-deviation-card"><h3 class="trends-deviation-title">${trendsEscape(title)} (${rows.length})</h3>${rows.map(([date,e])=>{
     const [kind,context]=trendsContext(e);
     const kids=(e[kidsField]||[]).join(', ')||'Children not recorded';
     return `<div class="trends-deviation-row"><button class="trends-dev-date" type="button" onclick="openTrendsDate(this.dataset.date)" data-date="${trendsEscape(date)}" aria-label="View Calendar detail for ${trendsEscape(fmtDate(date))}">${trendsEscape(fmtDate(date))}</button><div class="trends-dev-kids">${trendsEscape(kids)}</div><div class="trends-dev-flags"><span class="flag-badge flag-${kind}">${context}</span></div></div>`;
-  }).join(''):'<p class="trends-empty">No recorded schedule changes in this direction.</p>'}</section>`).join('')+'<p class="trends-footnote">Context is user-reported: Agreed means agreement with no pressure reported; Felt pressured means pressure was reported; Unexpected means not agreed in advance. Context not recorded means the available answers are incomplete.</p>';
+  }).join('')}</section>`).join('')+(withYou.length||withCoparent.length?'<p class="trends-footnote">Context is user-reported: Agreed means agreement with no pressure reported; Felt pressured means pressure was reported; Unexpected means not agreed in advance. Context not recorded means the available answers are incomplete.</p>':'');
   const changes=[...withYou,...withCoparent];
   const counts={pressured:0,agreed:0,unexpected:0,unknown:0};
   changes.forEach(([,entry])=>counts[trendsContext(entry)[0]]++);

@@ -135,4 +135,10 @@ checks both themes/viewports, split-day counting, legacy notes/markers, exclusiv
 context counts, incomplete answers, historical navigation, escaping, sync refresh,
 and empty states. The full local release suite passed all 31 results with zero
 failures/skips in about 88 seconds. Mobile/dark and desktop/light screenshots
-were inspected. App asset token: `trends-clarity-1`. This increment is not deployed.
+were inspected. App asset token: `trends-clarity-1`.
+
+The owner requested a shorter empty state and approved production release.
+Periods without custody records now hide coverage, empty direction cards and the
+context legend, leaving one message. Periods with custody but no changes retain
+coverage and a factual no-change message, with no empty cards or legend.
+Extended mobile/dark and desktop/light assertions cover both states.
