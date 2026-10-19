@@ -111,5 +111,12 @@ using Node 24.19.0. The offline update/reopen check also passed. Staged whitespa
 review found and removed two trailing-space Markdown line breaks in the readiness
 specification.
 
-Hosted CI verification remains pending until the reviewed branch is pushed.
+Pushed checkpoint `a1df43c` to `codex/release-hygiene`. The
+[first hosted run](https://github.com/smrif/thomjrepo/actions/runs/39314170916)
+completed successfully on GitHub/Linux in 2m 16s, including locked dependency
+installation, Chromium/system dependencies, and the complete release suite.
+The offline update/reopen test passed on both local and hosted runs; the older
+intermittent timeout remains a monitoring item, not an established product bug.
+This evidence-only follow-up changes documentation and uses `[skip ci]` to avoid
+repeating the unchanged application/test suite.
 Production deployment and deferred owner QA are separate from this checkpoint.

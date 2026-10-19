@@ -31,8 +31,9 @@ claim these checks passed merely because their local/mock tests passed.
   (QA-07) and owner/legal review remain pending; no old acceptance rows were migrated.
 - [ ] Choose/approve a fresh Supabase staging environment before platform-level
   migration replay/recovery tests. Do not replay the baseline in production.
-- [ ] After an approved code push, verify the first hosted GitHub Actions result.
-  The read-only workflow is prepared locally; no hosted CI pass is claimed.
+- [x] First hosted GitHub Actions result verified October 19: checkpoint
+  `a1df43c` on `codex/release-hygiene` passed
+  [Release Checks #1](https://github.com/smrif/thomjrepo/actions/runs/39314170916).
 - [ ] Approve developer-account enrollment and any paid app-store/service changes
   when packaging reaches that step; no purchases are authorized by this checklist.
 

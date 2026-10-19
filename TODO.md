@@ -134,13 +134,18 @@
 - The contract test catches missing inline handler functions, missing core screens, and missing CSS hooks.
 - The browser smoke test covers Settings nav, check-in card styling, split-night absent kid defaults, Brief Visit review state, schedule-change context, Calendar selected-day state, Calendar metadata, screenshot previews, Reports preview/filter behavior, Calendar trends, custom parent/co-parent labels across Review, Saved, Calendar, and Reports, and long parent/child names without stale labels or horizontal overflow.
 - [x] Prepare a full local release check (`node scripts/release-check.mjs`) and read-only GitHub Actions workflow for the same suite, including smoke, offline, policy, and security QA-tool tests. Pinned actions; frozen dependency lock; no production credentials, live mutation tests, or deployment. See `docs/backend/release-checks.md`.
-- [ ] Commit/push the reviewed workflow and verify its first hosted run; local success is not a GitHub/Linux CI result. No push or repository settings change has been made.
+- [x] Commit/push the reviewed workflow and verify its first hosted run.
   - October 19 release-hygiene review: all 30 local release results and the
     32-file build boundary passed. Fixed the reconnect test's aging fixed-date
-    fixture; see `docs/backend/release-checks.md`. Hosted verification pending.
+    fixture; see `docs/backend/release-checks.md`. Commit `a1df43c` pushed on
+    `codex/release-hygiene`; [first hosted run](https://github.com/smrif/thomjrepo/actions/runs/39314170916)
+    passed on GitHub/Linux in 2m 16s. No repository settings change or production
+    deployment was performed.
 - [ ] Watch the service-worker update/reopen test on hosted CI: one standalone
   run timed out at `offline-shell-test.mjs:138`; the unchanged rerun and preceding
   full suite passed. Investigate if it recurs; no root cause established.
+  - October 19: passed both the full local rerun and first hosted run. Continue
+    monitoring future runs; the earlier intermittent timeout has no proven cause.
 
 ## Calendar / Logging Follow-ups
 
