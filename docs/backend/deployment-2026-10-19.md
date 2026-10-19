@@ -24,3 +24,26 @@ Browser verification mocked Auth and blocked service workers for fresh navigatio
 checks. No sign-in email, account creation/deletion, live data write, or policy
 submission was performed. Physical-device/live QA remains in
 [owner QA](owner-qa.md). This deployment does not complete beta approval.
+
+## Subsequent Trends release
+
+The owner approved publishing Trends clarity and its revised compact empty state.
+Merged to main as `855e758`. The final local release suite passed all 31 results,
+zero failures/skips, in about 95 seconds;
+[hosted main checks](https://github.com/smrif/thomjrepo/actions/runs/39324112618)
+also passed. Wrangler 4.149.0 dry run and deployment succeeded.
+
+- Production Worker version: `3dd0d424-d925-4048-80af-fdd31f1c126b`.
+- Previously recorded version: `e159d2e4-1d3b-496b-9089-93e93a05055f`.
+- App token: `trends-clarity-1`; no schema or secret changes.
+- All 32 live static files matched the tested build byte-for-byte.
+- Canonical redirect preserved its query, legacy origin and health returned 200.
+- Live browser checks at 390px and 1280px passed all signup entry buttons, Back,
+  login/signup switching, and the compact Trends empty state: a single message,
+  no coverage paragraph, empty direction cards, or context legend. No page errors
+  or horizontal overflow were observed.
+
+Browser checks used fresh contexts, blocked service workers, and mocked Auth.
+Synthetic empty-state setup affected browser-local storage only; no live account,
+email, cloud entry or policy acceptance was created or changed. Deferred owner QA
+remains pending. The deployment record is a documentation-only follow-up.

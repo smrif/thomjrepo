@@ -173,7 +173,10 @@
 - [x] Implement the first Trends clarity increment locally (October 19): separate
   family-date coverage, both schedule-change directions, incomplete-context labels,
   historical Calendar links and distinct empty states. Automated coverage includes
-  both themes/viewports and sync refresh. Review/release remains pending.
+  both themes/viewports and sync refresh. Owner approved the compact empty state
+  and production release; deployed revision `855e758` as Worker
+  `3dd0d424-d925-4048-80af-fdd31f1c126b`, with all 32 files and live mobile/desktop
+  empty-state/navigation checks verified. See `docs/backend/deployment-2026-10-19.md`.
 
 - [x] Review the current decision tree in `DECISION_TREE.md`; corrected stale
   screen/progress descriptions and documented the remaining product decisions.
