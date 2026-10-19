@@ -874,7 +874,7 @@ try {
   await page.evaluate(() => switchTab('trends'));
   const trendsText = await page.locator('#tc-trends').innerText();
   assertIncludes(trendsText, "Days Ryan had kids", 'Calendar trends label copy');
-  assertIncludes(trendsText, "Your nights", 'Calendar trends label copy');
+  assertIncludes(trendsText, "Your scheduled days", 'Calendar trends label copy');
   assertIncludes(trendsText, "Laura's", 'Calendar trends label copy');
   assertExcludes(trendsText, "Dad", 'Calendar trends label copy');
   assertExcludes(trendsText, "Mom", 'Calendar trends label copy');

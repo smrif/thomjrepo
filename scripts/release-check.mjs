@@ -33,6 +33,6 @@ run(['--test', '--test-concurrency=1', ...[
   'account-deletion-test', 'account-deletion-ui-test', 'database-security-test',
   'automatic-sync-test', 'automatic-sync-ui-test', 'multi-device-sync-test',
   'signin-button-test', 'domain-migration-test', 'cloud-disclosures-test', 'date-filter-test',
-  'policy-acceptance-test', 'policy-acceptance-ui-test', 'offline-shell-test', 'smoke-test'
+  'policy-acceptance-test', 'policy-acceptance-ui-test', 'trends-clarity-test', 'offline-shell-test', 'smoke-test'
 ].map(name => `scripts/${name}.mjs`), 'scripts/security-qa/checks-test.mjs', 'scripts/security-qa/ui-test.mjs']);
 console.log('Local release checks passed. Owner QA and a hosted CI run remain separate evidence.');
