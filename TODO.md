@@ -112,6 +112,11 @@
 
 ## Testing / Release Hygiene
 
+- [x] Deploy the reviewed main checkpoint `5cf22ee` on October 19, 2026.
+  Worker `e159d2e4-1d3b-496b-9089-93e93a05055f`; all 32 production files matched
+  the build and mobile/desktop navigation passed with mocked Auth. See
+  `docs/backend/deployment-2026-10-19.md`. Deferred owner QA remains pending.
+
 - Before pushing UI changes, run:
   - `node scripts/contract-test.mjs`
   - `node scripts/api-contract-test.mjs`
