@@ -110,9 +110,10 @@ Goal: make saved profile changes, account identity, cloud state, and exports cle
   remains a distinct flow with its own progression.
 - Owner decision October 20: show one Account section and one email, rather than
   separate account/cloud-account concepts. The signed-in email is read-only and
-  used for report sharing; signed-out users enter their sign-in email in the same
-  field. Saving profile changes does not change Auth identity or restamp policy
-  acceptance. No separate report-contact preference is exposed.
+  used for report sharing. Subsequent owner direction moves signed-out users to
+  welcome/login rather than Settings; previously signed-in devices retain offline
+  access. Saving profile changes does not change Auth identity or restamp policy
+  acceptance. See `docs/backend/auth-required-entry.md`.
 - Keep child display-name editing; birthdays/nicknames/initials are optional future
   fields requiring a need and historical-identity plan. Do not collect them by default.
 - Add shared-activity editing using the onboarding activity model when approved;
@@ -125,7 +126,7 @@ Goal: make saved profile changes, account identity, cloud state, and exports cle
   or biometric settings only once the corresponding functionality exists.
 
 Acceptance examples: the signed-in email cannot be edited as a profile field;
-signed-out sign-in uses the same visible email field; changing a
+sign-out returns to welcome and remains effective after reload; changing a
 child display name does not rewrite historical entries; failed profile save
 preserves form input; local export works offline; long names do not hide navigation.
 

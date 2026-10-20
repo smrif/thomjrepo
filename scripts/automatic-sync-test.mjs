@@ -30,7 +30,7 @@ function harness({ storage = new Map(), cloud = new Map(), userId = 'owner' } = 
     setTimeout: (fn, delay) => { timers.set(++timerId, { fn, delay }); return timerId; },
     clearTimeout: id => timers.delete(id),
     hasSavedConfig: () => true, accountDeletedOnDevice: () => false,
-    cloudBackendEnabled: () => true,
+    cloudBackendEnabled: () => true, lockSignedOutApp:()=>{},
     cloudSyncAllowed: () => context.navigator.onLine && !context.cloudDeletionBusy,
     updateCloudSyncStatusUi: status => statuses.push(status),
     setCloudAuthMessage: () => {}, updateProfileSyncDetail: () => {},

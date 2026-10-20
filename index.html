@@ -37,9 +37,10 @@
   <button type="button" aria-label="Dismiss account deletion confirmation" onclick="dismissAccountDeletionNotice()">&times;</button>
 </div>
 
+<div class="screen" id="s-auth-loading" role="status" aria-live="polite"><div class="auth-loading"><h1>Opening your account</h1><p>Checking your saved sign-in…</p></div></div>
 <!-- SETUP -->
 <!-- ONBOARDING STEP 1: Welcome -->
-<div class="screen" id="s-ob-welcome">
+<div class="screen active" id="s-ob-welcome">
   <div class="landing">
     <header class="landing-nav"><a class="landing-brand" href="#landing-top"><img src="assets/whose-day-icon.svg" alt="" width="36" height="36">Whose Day</a><nav aria-label="Main navigation"><button class="landing-signin" onclick="showLoggedOutLogin()">Sign in</button><button class="landing-button" onclick="showLoggedOutSignup()">Sign up</button></nav></header>
     <main id="landing-top">
@@ -146,7 +147,7 @@
     <div class="ob-progress-bar"><div class="ob-progress-fill" style="width:100%"></div></div>
     <div class="ob-step-label">Last step</div>
     <h2 class="ob-q">Almost there</h2>
-    <p class="ob-sub">Confirm your email, then review the agreement.</p>
+    <p class="ob-sub">Enter your email and review the agreement. You'll verify your email before starting.</p>
     <label class="ob-label">Email address</label>
     <input class="ob-input" type="email" id="ob-email" placeholder="your@email.com" autocomplete="email" oninput="obValidateStep('s-ob-finish')">
     <div class="ob-terms-row">
@@ -154,7 +155,7 @@
       <label for="ob-terms">I agree to the <a href="assets/legal/2026-10-13/terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="assets/legal/2026-10-13/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</label>
     </div>
     <div class="ob-error" id="ob-finish-error" style="display:none">Please enter a valid email and accept the terms.</div>
-    <button class="ob-btn-primary ob-disabled" id="btn-ob-finish" onclick="obFinish()">Start tracking →</button>
+    <button class="ob-btn-primary ob-disabled" id="btn-ob-finish" onclick="obFinish()">Continue →</button>
     <button class="ob-btn-back" onclick="obBack('s-ob-kids')">← Back</button>
     <p class="ob-privacy-note">Saved on this device and synced to your account while signed in, including notes and screenshots.</p>
   </div>
@@ -210,7 +211,6 @@
           <span class="auth-status-pill" id="cloud-auth-pill">Local</span>
         </div>
         <div class="auth-actions">
-          <button class="settings-export-btn" type="button" id="cloud-auth-send" onclick="sendCloudSignInLink()">Send sign-in link</button>
           <button class="auth-secondary-btn" type="button" id="cloud-auth-refresh" onclick="refreshCloudAuthUi()">Refresh</button>
           <button class="auth-secondary-btn" type="button" id="cloud-auth-signout" onclick="signOutCloudAccount()" hidden>Sign out</button>
         </div>
@@ -373,7 +373,7 @@
 </div>
 
 <!-- HOME -->
-<div class="screen active" id="s-home">
+<div class="screen" id="s-home">
   <div class="home-shell">
     <div class="home-top">
       <div class="home-brand">
@@ -1125,7 +1125,7 @@
 </button>
 </div><!-- end .app -->
 <script src="supabase-config.js?v=production-domain-1"></script>
-<script src="supabase-client.js?v=separate-auth-1"></script>
-<script src="app.js?v=unified-account-1"></script>
+<script src="supabase-client.js?v=auth-entry-1"></script>
+<script src="app.js?v=auth-entry-1"></script>
 </body>
 </html>

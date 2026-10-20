@@ -170,6 +170,12 @@
 
 ## Future Product Areas
 
+- [x] Implement authenticated app entry locally (October 20): welcome/login for
+  signed-out users; Today for returning signed-in users; verified signup before
+  entering the app; sign-out returns to welcome; previously authenticated devices
+  retain offline access. No session-duration setting changed. See
+  `docs/backend/auth-required-entry.md`. Review/release remains pending.
+
 - [x] Implement the owner's unified Account Settings direction locally (October
   20): one section/email for profile, sign-in and sync; authenticated email is
   read-only and used for report sharing, with signed-out sign-in using the same

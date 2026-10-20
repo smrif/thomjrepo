@@ -196,7 +196,7 @@ for (const fail of [false, true]) {
 
 // New sync tasks and queued timers must remain blocked throughout deletion.
 const syncContext = {
-  cloudDeletionBusy: true, cloudSyncBusy: false, cloudSyncPending: false,
+  appAccessState:'signed-in', cloudDeletionBusy: true, cloudSyncBusy: false, cloudSyncPending: false,
   URLSearchParams, window: { location: { search: '' } }, navigator: { onLine: true },
   cloudBackendEnabled: () => true,
   accountDeletedOnDevice: () => false,

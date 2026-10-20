@@ -8,7 +8,7 @@ for (const state of ['new', 'incomplete', 'existing']) {
   const events = [];
   const input = { value: '' };
   const context = {
-    loggedOutAuthBusy: false, OB_STATE: {},
+    loggedOutAuthBusy: false, OB_STATE: {}, PENDING_SIGNUP_KEY:'pending',localStorage:{getItem:()=>null,removeItem:()=>{}},rememberSignedInAccount:()=>{},
     loggedOutLoginActive: () => true,
     document: { getElementById: () => input },
     window: { WhoseDayBackend: {
@@ -68,7 +68,7 @@ for (const signedIn of [false, true]) {
 
 const syncAllowed = source.slice(source.indexOf('function cloudSyncAllowed(){'), source.indexOf('\nfunction cloudRedirectUrl'));
 const syncContext = {
-  URLSearchParams, cloudDeletionBusy: false,
+  URLSearchParams, cloudDeletionBusy: false, appAccessState:'signed-in',
   window: { location: { search: '' } }, navigator: { onLine: true },
   hasSavedConfig: () => false, cloudBackendEnabled: () => true, accountDeletedOnDevice: () => false
 };
@@ -83,7 +83,7 @@ assert.equal(syncContext.cloudSyncAllowed(), false, 'Retained local records must
   const events = [];
   const button = { hidden: true, value: '' };
   const context = {
-    loggedOutAuthBusy: false, OB_STATE: {},
+    loggedOutAuthBusy: false, OB_STATE: {}, PENDING_SIGNUP_KEY:'pending',localStorage:{getItem:()=>null,removeItem:()=>{}},rememberSignedInAccount:()=>{},
     loggedOutAuthEnabled: () => true, loggedOutLoginActive: () => true,
     document: { getElementById: () => button },
     window: { WhoseDayBackend: {
@@ -120,4 +120,48 @@ assert.equal(syncContext.cloudSyncAllowed(), false, 'Retained local records must
   assert.deepEqual(requests.map(request=>request.options.shouldCreateUser),[false,true,false]);
   assert(requests.every(request=>request.options.emailRedirectTo==='https://whosedayapp.com/'));
 }
-console.log('Homepage auth tests passed (routing, automatic continuation, busy/back guards, sync-before-setup guard, explicit signup versus existing-account SDK requests).');
+// A device-local sign-out must clear persisted auth even when remote logout fails,
+// while preserving the user's records and keeping long-lived sessions enabled.
+{
+  const values=new Map([
+    ['sb-test-auth-token',JSON.stringify({user:{id:'owner'},refresh_token:'fixture'})],
+    ['sb-test-auth-token-code-verifier','fixture'],['familylog_entries','preserved']
+  ]);
+  let creates=0,stops=0,options;
+  const context={URL,localStorage:{getItem:key=>values.get(key),removeItem:key=>values.delete(key)},window:{
+    WHOSE_DAY_SUPABASE:{enabled:true,url:'https://test.supabase.co',publishableKey:'public-test'},
+    supabase:{createClient:(_url,_key,config)=>{creates++;options=config;return {auth:{
+      signOut:async ({scope})=>{assert.equal(scope,'local');throw new Error('Offline')},
+      stopAutoRefresh:async()=>{stops++}
+    }}}}
+  }};
+  vm.runInNewContext(readFileSync(new URL('../supabase-client.js',import.meta.url),'utf8'),context);
+  const sdk=context.window.WhoseDayBackend;
+  assert.equal(sdk.getCachedSession().user.id,'owner');
+  const clients=await Promise.all([sdk.getClient(),sdk.getClient()]);
+  assert.equal(clients[0],clients[1]);assert.equal(creates,1);
+  assert.equal(options.auth.persistSession,true);assert.equal(options.auth.autoRefreshToken,true);
+  await assert.rejects(sdk.signOut(),/Offline/);
+  assert.equal(stops,1);assert.equal(sdk.getCachedSession(),null);
+  assert.equal(values.get('familylog_entries'),'preserved');
+}
+{
+  const sdkSource=readFileSync(new URL('../supabase-client.js',import.meta.url),'utf8');
+  for(const callback of [false,true]){
+    const session={user:{id:'callback-user'}};
+    let listeners=0,unsubscribed=0;
+    const context={URL,setTimeout,clearTimeout,window:{location:{hash:callback?'#access_token=fixture':'',search:''},
+      WHOSE_DAY_SUPABASE:{enabled:true,url:'https://test.supabase.co',publishableKey:'public-test'},
+      supabase:{createClient:()=>({auth:{
+        getSession:async()=>({data:{session:null},error:null}),
+        onAuthStateChange:cb=>{listeners++;queueMicrotask(()=>cb('SIGNED_IN',session));return {data:{subscription:{unsubscribe:()=>unsubscribed++}}}}
+      }})}
+    }};
+    vm.runInNewContext(sdkSource,context);
+    const actual=await context.window.WhoseDayBackend.getSession();
+    assert.equal(actual,callback?session:null);
+    assert.equal(listeners,callback?1:0,'Ordinary signed-out entry must not wait for a callback that does not exist');
+    assert.equal(unsubscribed,callback?1:0);
+  }
+}
+console.log('Homepage auth tests passed (routing, continuation, guards, explicit signup, local logout cleanup, singleton SDK, persistent sessions, callback-only waiting).');

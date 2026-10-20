@@ -66,6 +66,7 @@ await page.route('**/supabase-client.js*', route => route.fulfill({
     getCustodyEntries: async () => [],
     upsertProfile: async profile => { window.smokeCloudWrites = (window.smokeCloudWrites || 0) + 1; return profile; },
     upsertCustodyEntries: async () => [],
+    signInWithEmail:async()=>{},
     upsertSyncDevice: async device => device
   };`
 }));
@@ -89,6 +90,7 @@ async function bootstrap(config = {}) {
     ...config
   };
 
+  initialAuthSession={user:{id:'smoke-user',email:appConfig.email}};initialAuthProfile=null;
   await page.goto(baseUrl);
   await page.evaluate(configValue => {
     localStorage.clear();
@@ -394,6 +396,9 @@ try {
   await page.locator('#ob-email').fill('ryan@example.com');
   await page.locator('#ob-terms').check();
   await click('#btn-ob-finish');
+  await expectActive('s-ob-login');
+  initialAuthSession={user:{id:'signup-user',email:'ryan@example.com'}};initialAuthProfile=null;
+  await page.goto(baseUrl+'/?code=mock-signup-callback');
   await expectActive('s-home');
 
   await bootstrap();
@@ -558,14 +563,14 @@ try {
   await assertCustomActivityInDecisionTree();
   await bootstrap();
   await click('#s-home .bottom-nav-item[onclick="showSetup()"]');
-  await page.locator('#setup-email').fill('weekly.user@example.com');
+  if(!await page.locator('#setup-email').evaluate(input=>input.readOnly))throw new Error('Account identity should be read-only');
   await click('#s-setup button[onclick="saveSetup()"]');
   await expectActive('s-home');
   const weeklyMailto = await page.evaluate(() => {
     const subject = encodeURIComponent('Whose Day — Weekly Report test');
     return reportMailto(subject, encodeURIComponent(buildWeeklyReport()));
   });
-  if (!weeklyMailto.startsWith('mailto:weekly.user%40example.com?')) {
+  if (!weeklyMailto.startsWith('mailto:parent%40example.com?')) {
     throw new Error(`Weekly report should use the email saved in Settings. Saw "${weeklyMailto}".`);
   }
   assertIncludes(weeklyMailto, 'Whose%20Day', 'Weekly report mailto');
@@ -573,7 +578,7 @@ try {
   await click('#s-home .bottom-nav-item[onclick="showExport()"]');
   await expectActive('s-export');
   await click('#s-export .bottom-nav-item[onclick="showSetup()"]');
-  await assertSettingsScreen('Reports Settings tab', 'weekly.user@example.com');
+  await assertSettingsScreen('Reports Settings tab', 'parent@example.com');
   await click(`#s-setup.screen.active .bottom-nav-item[onclick="show('s-home')"]`);
   await expectActive('s-home');
 

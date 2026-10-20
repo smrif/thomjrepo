@@ -70,27 +70,7 @@ try {
     await page.evaluate(() => sendLoggedOutSignInLink());
     assert.equal(await page.evaluate(() => signInRequests), 2);
 
-    await page.evaluate(() => showSetup());
-    const settings = page.locator('#cloud-auth-send');
-    await page.waitForFunction(() => !document.getElementById('cloud-auth-send').disabled);
-    await page.locator('#setup-email').fill('test@example.com');
-    const settingsColor = await settings.evaluate(button => getComputedStyle(button).backgroundColor);
-    await settings.click();
-    assert.equal(await settings.isEnabled(), false);
-    assert.equal(await settings.innerText(), 'Sending...');
-    assert.equal(await settings.getAttribute('aria-busy'), 'true');
-    assert.notEqual(await settings.evaluate(button => getComputedStyle(button).backgroundColor), settingsColor);
-    await settings.screenshot({ path: `/tmp/whose-day-settings-sending-${theme}.png` });
-    await page.evaluate(() => { sendCloudSignInLink(); sendCloudSignInLink(); });
-    assert.equal(await page.evaluate(() => signInRequests), 3);
-    await page.evaluate(() => finishSignIn('Network unavailable'));
-    await page.waitForFunction(() => !document.getElementById('cloud-auth-send').disabled);
-    assert.equal(await settings.innerText(), 'Send sign-in link');
-    await settings.click();
-    await page.evaluate(() => finishSignIn());
-    await page.waitForFunction(() => !document.getElementById('cloud-auth-send').disabled);
-    assert.equal(await settings.getAttribute('aria-busy'), null);
-    assert.equal(await page.evaluate(() => signInRequests), 4);
+    assert.equal(await page.locator('#cloud-auth-send').count(),0,'Settings has no sign-in action');
     const loginCreatesUser=await page.evaluate(()=>authRequests[0].options.createUser);
     assert.equal(loginCreatesUser,false,'The login entry point only signs in existing accounts');
     await page.evaluate(()=>{localStorage.removeItem(LOGGED_OUT_SIGNIN_COOLDOWN_KEY);show('s-ob-welcome');});
@@ -101,7 +81,7 @@ try {
       await signupButtons.nth(i).click();
       assert.equal(await page.locator('#s-ob-name').isVisible(),true);
       assert.equal(await page.locator('#s-ob-login').isVisible(),false,'Signup must not start with email login');
-      assert.equal(await page.evaluate(()=>signInRequests),4,'Entering onboarding sends no auth email');
+      assert.equal(await page.evaluate(()=>signInRequests),2,'Entering onboarding sends no auth email');
       await page.locator('#s-ob-name .ob-btn-back').click();
       assert.equal(await page.locator('#s-ob-welcome').isVisible(),true,'Back from the first question returns to the homepage');
     }

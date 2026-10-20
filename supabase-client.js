@@ -1,6 +1,7 @@
 (function(){
   let sdkPromise=null;
   let client=null;
+  let authReturnPending=/(?:access_token|refresh_token|error)=/.test(window.location?.hash||'')||/(?:^|[?&])code=/.test(window.location?.search||'');
 
   function authStorageKey(){
     return 'sb-'+new URL(settings().url).hostname.split('.')[0]+'-auth-token';
@@ -38,6 +39,7 @@
     if(!isEnabled())throw new Error('Supabase is not enabled.');
     if(client)return client;
     const sdk=await loadSdk();
+    if(client)return client;
     const config=settings();
     client=sdk.createClient(config.url,config.publishableKey,{
       auth:{
@@ -54,8 +56,11 @@
     const supabaseClient=await getClient();
     const {data,error}=await supabaseClient.auth.getSession();
     if(error)throw error;
-    if(data.session)return data.session;
-    return waitForSession(supabaseClient);
+    if(data.session){authReturnPending=false;return data.session;}
+    if(!authReturnPending)return null;
+    const session=await waitForSession(supabaseClient);
+    authReturnPending=false;
+    return session;
   }
 
   function waitForSession(supabaseClient,timeoutMs=5000){
@@ -74,6 +79,7 @@
         if(session)finish(session);
       });
       subscription=result.data.subscription;
+      if(settled)subscription.unsubscribe();
       supabaseClient.auth.getSession().then(({data})=>{
         if(data.session)finish(data.session);
       }).catch(()=>finish(null));
@@ -94,8 +100,27 @@
 
   async function signOut(){
     const supabaseClient=await getClient();
-    const {error}=await supabaseClient.auth.signOut();
-    if(error)throw error;
+    try{
+      await supabaseClient.auth.signOut({scope:'local'});
+    }finally{
+      await supabaseClient.auth.stopAutoRefresh();
+      for(const suffix of ['','-code-verifier','-user'])localStorage.removeItem(authStorageKey()+suffix);
+      client=null;
+    }
+  }
+
+  function getCachedSession(){
+    try{
+      const session=JSON.parse(localStorage.getItem(authStorageKey())||'null');
+      return session?.user?.id&&session?.refresh_token?session:null;
+    }catch{return null}
+  }
+
+  async function subscribeAuthState(callback){
+    try{
+      const supabaseClient=await getClient();
+      return supabaseClient.auth.onAuthStateChange((event,session)=>queueMicrotask(()=>callback(event,session))).data.subscription;
+    }catch{return null}
   }
 
   async function getProfile(userId){
@@ -208,6 +233,8 @@
     settings,
     getClient,
     getSession,
+    getCachedSession,
+    subscribeAuthState,
     signInWithEmail,
     signOut,
     getProfile,

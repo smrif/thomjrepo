@@ -29,7 +29,7 @@ console.log(`Build boundary passed (${built.length} static files; no QA server o
 
 // Explicit local/mock suite: never auto-run sign-in email, live API, or deletion QA.
 run(['--test', '--test-concurrency=1', ...[
-  'contract-test', 'api-contract-test', 'homepage-auth-test', 'checkin-branch-test',
+  'contract-test', 'api-contract-test', 'homepage-auth-test', 'auth-entry-test', 'checkin-branch-test',
   'account-deletion-test', 'account-deletion-ui-test', 'database-security-test',
   'automatic-sync-test', 'automatic-sync-ui-test', 'multi-device-sync-test',
   'signin-button-test', 'domain-migration-test', 'cloud-disclosures-test', 'date-filter-test',

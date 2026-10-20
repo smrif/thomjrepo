@@ -2329,6 +2329,8 @@ body:has(#s-export.active) .app{
 #s-setup .account-email-hint:empty{display:none}
 #s-setup #cloud-account-section{margin-top:12px}
 #s-setup #setup-email[readonly]{color:var(--daily-ink-soft)}
+.auth-loading{padding:64px 24px;text-align:center;color:var(--daily-ink)}
+.auth-loading p{color:var(--daily-ink-soft)}
 #s-export details.report-explanation summary{cursor:pointer;color:var(--daily-ink);font-weight:600}
 #s-export .report-preview-title{min-width:0;overflow-wrap:anywhere}
 

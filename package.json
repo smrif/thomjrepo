@@ -32,7 +32,8 @@
     "test:release": "node scripts/release-check.mjs",
     "test:trends": "node scripts/trends-clarity-test.mjs",
     "test:reports": "node scripts/reports-clarity-test.mjs",
-    "test:settings": "node scripts/settings-account-test.mjs"
+    "test:settings": "node scripts/settings-account-test.mjs",
+    "test:auth-entry": "node scripts/auth-entry-test.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",

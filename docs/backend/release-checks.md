@@ -191,3 +191,22 @@ The first full run caught the sync disclosure removed with the old heading;
 restored it in both Account states. The final complete local suite passed all
 33 results, zero failures/skips, in about 97 seconds; 32-file build boundary
 passed. No production email, account, or data mutations were used.
+
+## October 20, 2026 Authenticated Entry Follow-up
+
+The owner clarified that signed-out users should land on welcome/login, with
+Settings reserved for signed-in/offline returning users. Implemented startup and
+navigation checks, verification before signup enters Today, matching-draft
+continuation, immediate device-local sign-out with retained records, offline
+continuity for previously authenticated devices, reconnect/session-loss checks,
+and history/cross-tab/stale-response guards. Removed Settings sign-in controls.
+Session persistence/refresh remains enabled; no provider session timeout changed.
+See [authenticated entry](auth-required-entry.md) for behavior and limitations.
+
+Added mocked entry tests and SDK logout/callback tests, and made older UI fixtures
+explicit about authentication. The first full pass caught deletion-reload and
+legacy local-profile fixture assumptions; both were corrected. The final complete
+local suite passed all 34 results, zero failures/skips, in about 87 seconds, with
+the 32-file build boundary passing. Offline shell/update, policy acceptance,
+security, sync and responsive smoke checks passed. No live accounts/emails,
+provider setting changes or production deployment were performed.

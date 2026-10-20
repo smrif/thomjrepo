@@ -24,9 +24,12 @@ try{
     getProfile:async()=>null,upsertProfile:async row=>row,getCustodyEntries:async()=>[],upsertSyncDevice:async row=>row,
     signOut:async()=>{window.testSession=null},signInWithEmail:async email=>{window.requestedEmail=email}};
   `}));
+  await context.addInitScript(()=>{
+   if(!localStorage.getItem('custody_tracker_config'))localStorage.setItem('custody_tracker_config',JSON.stringify({currentParentLabel:'Parent',children:['Avery'],email:'old-contact@example.com',termsAccepted:true}));
+  });
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port+'/');
-  await page.evaluate(theme=>{saveConfig({...DEFAULT_CONFIG,email:'old-contact@example.com',children:['Avery'],termsAccepted:true,themeMode:theme});showSetup()},theme);
+  await page.evaluate(async theme=>{await checkAppAccess();saveConfig({...DEFAULT_CONFIG,email:'old-contact@example.com',children:['Avery'],termsAccepted:true,themeMode:theme});showSetup()},theme);
   await page.waitForFunction(()=>!cloudAuthBusy&&document.getElementById('cloud-auth-title').textContent==='Signed in');
   assert.equal(await page.locator('#s-setup h2').filter({hasText:/^Account$/}).count(),1);
   assert.equal(await page.locator('#s-setup h2').filter({hasText:/Cloud account/}).count(),0);
@@ -35,7 +38,7 @@ try{
   assert.equal(await account.locator('#cloud-auth-signout').isVisible(),true);
   assert.equal(await page.locator('#setup-email').inputValue(),'account@example.com');
   assert.equal(await page.locator('#setup-email').evaluate(e=>e.readOnly),true);
-  assert.equal(await page.locator('#cloud-auth-send').isVisible(),false);
+  assert.equal(await page.locator('#cloud-auth-send').count(),0);
   assert.equal(await page.evaluate(()=>reportMailto('Test','body')),'mailto:account%40example.com?subject=Test&body=body');
   await page.screenshot({path:'/tmp/whose-day-account-'+theme+'.png',fullPage:true});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
@@ -46,12 +49,10 @@ try{
   await page.evaluate(()=>showSetup());
   await page.waitForFunction(()=>!cloudAuthBusy);
   await page.locator('#cloud-auth-signout').click();
-  await page.waitForFunction(()=>!cloudAuthBusy&&document.getElementById('cloud-auth-title').textContent==='Not signed in');
-  assert.equal(await page.locator('#setup-email').evaluate(e=>e.readOnly),false);
-  await page.locator('#setup-email').fill('signin@example.com');
-  await page.locator('#cloud-auth-send').click();
-  await page.waitForFunction(()=>window.requestedEmail==='signin@example.com');
-  assert.equal(await page.locator('#cloud-delete-panel').isVisible(),false);
+  await page.locator('#s-ob-welcome.active').waitFor();
+  await page.reload();await page.locator('#s-ob-welcome.active').waitFor();
+  await page.evaluate(()=>showSetup());
+  assert.equal(await page.locator('#s-setup').isVisible(),false);
   assert.deepEqual(errors,[]);await context.close();
  }
  console.log('Unified Account passed: one section/email, authenticated identity, readonly email, report recipient, save without policy restamping, sign-out and signed-out sign-in, mobile/dark and desktop/light.');

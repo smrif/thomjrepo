@@ -67,9 +67,7 @@ try {
     const privacyLink = page.locator('#s-ob-login a[href="privacy.html"]');
     assert.equal(await privacyLink.getAttribute('rel'), 'noopener');
     assert.equal(await privacyLink.getAttribute('target'), '_blank');
-    await page.evaluate(() => showSetup());
-    assert.match(await page.locator('#cloud-account-section').innerText(), /sync automatically while signed in, including notes and screenshots/);
-    await page.evaluate(async () => { testSignIn(); await refreshCloudAuthUi(false); });
+    await page.evaluate(async () => { testSignIn(); await checkAppAccess({initial:true});showSetup();await refreshCloudAuthUi(false); });
     assert.equal(await page.locator('#cloud-auth-title').innerText(), 'Signed in');
     assert.match(await page.locator('#cloud-account-section').innerText(), /sync automatically while signed in, including notes and screenshots/);
     await page.locator('#cloud-account-section').evaluate(element => element.scrollIntoView({ block: 'start' }));
