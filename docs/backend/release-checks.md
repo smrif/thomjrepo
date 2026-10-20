@@ -167,3 +167,27 @@ mobile/dark and desktop/light screenshots. The first suite run found a stale
 week-label smoke expectation and a Reports-help/Trends-legend class collision;
 both were corrected. Final full local suite: 32 passed, zero failed/skipped,
 about 90 seconds, with a 32-file build boundary pass.
+
+## October 20, 2026 Unified Account Settings
+
+The owner rejected separate Account and Cloud account concepts. Settings now has
+one Account section containing profile fields, authenticated status, sync,
+conflict review, restore, sign-out and deletion controls. Removed the duplicate
+sign-in email field. The remaining email shows authenticated identity read-only
+while signed in and accepts the sign-in address while signed out. Report email
+recipients prefer the current authenticated identity, refreshed by sync/restore
+and cleared by sign-out. Saving profile uses the displayed address; no Auth email
+change API, schema migration, or acceptance restamping was introduced.
+
+Retained sync disclosures in both sign-in states. Existing sync and deletion
+logic/controls remain; no live account operations were performed. Added
+`scripts/settings-account-test.mjs` for one-section/one-email structure, identity
+and report-recipient consistency, read-only email, profile saving without policy
+restamping, sign-out and signed-out sign-in in mobile/dark and desktop/light.
+Updated the sign-in button test to use the unified field. Inspected both layouts.
+App token is `unified-account-1`; this increment is not deployed.
+
+The first full run caught the sync disclosure removed with the old heading;
+restored it in both Account states. The final complete local suite passed all
+33 results, zero failures/skips, in about 97 seconds; 32-file build boundary
+passed. No production email, account, or data mutations were used.

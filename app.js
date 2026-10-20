@@ -43,6 +43,7 @@ const ACTIVITY_ID_ALIASES={sports:'practice',dance:'practice',music:'practice'};
 const REMOVED_DEFAULT_ACTIVITY_IDS=new Set(['volunteer','tournament']);
 const CUSTOM_ACTIVITY_MAX_LENGTH=32;
 
+let signedInAccountEmail='';
 let APP_CONFIG=loadConfig();
 let KIDS=[...APP_CONFIG.children];
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -440,7 +441,7 @@ function initSetupForm(){
   if(setupTitle)setupTitle.textContent=onboarding?'Let’s get you started':'Settings';
   if(setupSubtitle)setupSubtitle.textContent=onboarding?'A few quick details to personalize your experience.':'Update your profile and household details.';
   document.getElementById('setup-current-parent').value=onboarding?'':APP_CONFIG.currentParentLabel;
-  document.getElementById('setup-email').value=onboarding?'':(APP_CONFIG.email||'');
+  document.getElementById('setup-email').value=onboarding?'':(signedInAccountEmail||APP_CONFIG.email||'');
   document.getElementById('setup-co-parent').value=APP_CONFIG.coParentLabel;
   document.getElementById('setup-co-parent').oninput=()=>updateCoParentPreview();
   renderChildFields(onboarding?['']:APP_CONFIG.children);
@@ -960,6 +961,7 @@ async function performCloudSync({reason='manual',showMessage=false}={}){
     cloudSyncPending=false;
     updateCloudSyncStatusUi({state:'syncing',message:'Syncing latest changes...',persist:false});
     const session=await window.WhoseDayBackend.getSession();
+    signedInAccountEmail=session?.user?.email||'';
     if(!session){
       cloudSyncPending=false;
       updateCloudSyncStatusUi({state:'pending',message:'Sign in before cloud sync can run.'});
@@ -1051,8 +1053,6 @@ async function initCloudAuthUi(){
   const enabled=cloudBackendEnabled();
   section.hidden=!enabled;
   if(!enabled)return;
-  const email=document.getElementById('cloud-auth-email');
-  if(email&&!email.value)email.value=APP_CONFIG.email||document.getElementById('setup-email')?.value||'';
   updateEntryBackupDetail(Object.keys(getEntries()).length);
   updateCloudSyncStatusUi({persist:false});
   await refreshCloudAuthUi(false);
@@ -1065,15 +1065,23 @@ async function refreshCloudAuthUi(showMessage=true){
   if(!cloudBackendEnabled()||!title||!detail||!pill)return;
   try{
     setCloudAuthBusy(true);
+    document.getElementById('setup-email').readOnly=true;
     title.textContent='Checking account';
-    detail.textContent='Looking for a saved Supabase session on this device.';
+    detail.textContent='Checking your sign-in status.';
     pill.textContent='Checking';
-    if(showMessage)setCloudAuthMessage('Checking cloud account status...');
+    if(showMessage)setCloudAuthMessage('Checking account status...');
     const session=await window.WhoseDayBackend.getSession();
     const email=session?.user?.email||'';
+    signedInAccountEmail=email;
+    const accountInput=document.getElementById('setup-email');
+    accountInput.readOnly=!!session;
+    if(email)accountInput.value=email;
+    handleSetupInput();
+    document.getElementById('account-email-hint').textContent=session?'Your sign-in email. Used for report sharing.':'';
+    document.getElementById('cloud-auth-send').hidden=!!session;
     if(session){
       title.textContent='Signed in';
-      detail.textContent=email?'Connected as '+email:'Your cloud account is connected.';
+      detail.textContent='Profile and logs sync automatically while signed in, including notes and screenshots.';
       pill.textContent='Connected';
       pill.classList.add('connected');
       if(signOut)signOut.hidden=false;
@@ -1085,10 +1093,10 @@ async function refreshCloudAuthUi(showMessage=true){
       }
       updateCloudSyncStatusUi({persist:false});
       scheduleCloudSync('signed-in',200);
-      if(showMessage)setCloudAuthMessage('Cloud account connected. Sync runs automatically.','success');
+      if(showMessage)setCloudAuthMessage('Signed in. Sync runs automatically.','success');
     }else{
       title.textContent='Not signed in';
-      detail.textContent='Send a secure email link to connect this device.';
+      detail.textContent='Profile and logs sync automatically while signed in, including notes and screenshots.';
       pill.textContent='Local';
       pill.classList.remove('connected');
       if(signOut)signOut.hidden=true;
@@ -1099,7 +1107,8 @@ async function refreshCloudAuthUi(showMessage=true){
       if(showMessage)setCloudAuthMessage('');
     }
   }catch(error){
-    setCloudAuthMessage(error.message||'Could not check cloud sign-in status.','error');
+    document.getElementById('setup-email').readOnly=!!signedInAccountEmail;
+    setCloudAuthMessage(error.message||'Could not check sign-in status.','error');
   }finally{
     setCloudAuthBusy(false);
   }
@@ -1107,7 +1116,7 @@ async function refreshCloudAuthUi(showMessage=true){
 async function sendCloudSignInLink(){
   if(cloudAuthBusy)return;
   const button=document.getElementById('cloud-auth-send');
-  const input=document.getElementById('cloud-auth-email');
+  const input=document.getElementById('setup-email');
   const email=(input?.value||document.getElementById('setup-email')?.value||'').trim();
   if(!isValidEmail(email)){
     setCloudAuthMessage('Enter a valid email address first.','error');
@@ -1132,6 +1141,7 @@ async function signOutCloudAccount(){
   try{
     setCloudAuthBusy(true);
     await window.WhoseDayBackend.signOut();
+    signedInAccountEmail='';
     setCloudAuthMessage('Signed out. Local records are still on this device.','success');
     setProfileSyncVisible(false);
     updateEntryBackupDetail(Object.keys(getEntries()).length);
@@ -1777,7 +1787,8 @@ async function restoreLoggedOutCloudAccount(session=null){
   try{
     setLoggedOutAuthBusy(true);
     session=session||await window.WhoseDayBackend.getSession();
-    if(!session)throw new Error('Sign in before restoring your cloud account.');
+    if(!session)throw new Error('Sign in before restoring your account.');
+    signedInAccountEmail=session.user.email||'';
     const profile=await window.WhoseDayBackend.getProfile(session.user.id);
     if(!loggedOutLoginActive())return;
     // A profile written by an older startup sync is not completed onboarding.
@@ -1807,7 +1818,7 @@ async function restoreLoggedOutCloudAccount(session=null){
     setLoggedOutAuthMessage('');
     show('s-home');
   }catch(error){
-    setLoggedOutAuthMessage(error.message||'Could not restore your cloud account.','error');
+    setLoggedOutAuthMessage(error.message||'Could not restore your account.','error');
   }finally{
     setLoggedOutAuthBusy(false);
   }
@@ -3120,7 +3131,7 @@ function sendWeeklyEmail(){
   document.getElementById('sunday-prompt').style.display='none';
 }
 function reportMailto(subject,body){
-  const recipient=encodeURIComponent((APP_CONFIG.email||'').trim());
+  const recipient=encodeURIComponent((signedInAccountEmail||APP_CONFIG.email||'').trim());
   return `mailto:${recipient}?subject=${subject}&body=${body}`;
 }
 

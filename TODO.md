@@ -170,6 +170,12 @@
 
 ## Future Product Areas
 
+- [x] Implement the owner's unified Account Settings direction locally (October
+  20): one section/email for profile, sign-in and sync; authenticated email is
+  read-only and used for report sharing, with signed-out sign-in using the same
+  field. Existing sync, restore, sign-out and deletion controls remain in Account.
+  Review/release remains pending.
+
 - [x] Implement Reports clarity locally (October 19): selected period/type,
   family-date statistics, shared selection and print totals, unknown context and
   timestamps, timezone/export limitations, neutral day wording and compact empty

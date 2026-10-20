@@ -184,7 +184,7 @@
         <span class="settings-section-icon people-icon" aria-hidden="true"></span>
         <div>
           <h2>Account</h2>
-          <p>Your profile and report contact information.</p>
+          <p>Your profile, sign-in, and sync settings.</p>
         </div>
       </div>
       <div class="settings-card settings-fields-card">
@@ -196,19 +196,11 @@
         <div class="setup-field">
           <label for="setup-email">Email address</label>
           <input type="email" id="setup-email" placeholder="your@email.com" autocomplete="email" oninput="handleSetupInput()">
+          <div class="account-email-hint" id="account-email-hint"></div>
           <div class="setup-error">Please enter a valid email address.</div>
         </div>
       </div>
-    </section>
-
-    <section class="settings-section settings-cloud-section" id="cloud-account-section" hidden>
-      <div class="settings-section-head">
-        <span class="settings-section-icon data-icon" aria-hidden="true"></span>
-        <div>
-          <h2>Cloud account</h2>
-          <p>Profile and logs sync automatically while signed in, including notes and screenshots.</p>
-        </div>
-      </div>
+      <div id="cloud-account-section" hidden>
       <div class="settings-card settings-auth-card">
         <div class="auth-status-row">
           <div>
@@ -216,10 +208,6 @@
             <span id="cloud-auth-detail">Sign in to sync this device with your account.</span>
           </div>
           <span class="auth-status-pill" id="cloud-auth-pill">Local</span>
-        </div>
-        <div class="setup-field" id="cloud-auth-email-field">
-          <label for="cloud-auth-email">Email for sign-in link</label>
-          <input type="email" id="cloud-auth-email" placeholder="your@email.com" autocomplete="email">
         </div>
         <div class="auth-actions">
           <button class="settings-export-btn" type="button" id="cloud-auth-send" onclick="sendCloudSignInLink()">Send sign-in link</button>
@@ -272,6 +260,7 @@
           <button class="auth-danger-btn" type="button" id="cloud-delete-btn" onclick="deleteCloudAccount()" disabled>Delete account</button>
         </div>
         <div class="auth-message" id="cloud-auth-message" role="status" aria-live="polite"></div>
+      </div>
       </div>
     </section>
 
@@ -1137,6 +1126,6 @@
 </div><!-- end .app -->
 <script src="supabase-config.js?v=production-domain-1"></script>
 <script src="supabase-client.js?v=separate-auth-1"></script>
-<script src="app.js?v=reports-clarity-1"></script>
+<script src="app.js?v=unified-account-1"></script>
 </body>
 </html>

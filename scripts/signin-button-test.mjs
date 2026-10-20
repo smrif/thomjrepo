@@ -73,7 +73,7 @@ try {
     await page.evaluate(() => showSetup());
     const settings = page.locator('#cloud-auth-send');
     await page.waitForFunction(() => !document.getElementById('cloud-auth-send').disabled);
-    await page.locator('#cloud-auth-email').fill('test@example.com');
+    await page.locator('#setup-email').fill('test@example.com');
     const settingsColor = await settings.evaluate(button => getComputedStyle(button).backgroundColor);
     await settings.click();
     assert.equal(await settings.isEnabled(), false);

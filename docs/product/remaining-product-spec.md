@@ -108,8 +108,11 @@ Goal: make saved profile changes, account identity, cloud state, and exports cle
 
 - Keep bottom navigation visible for returning-user Settings. First-run setup
   remains a distinct flow with its own progression.
-- Explain report contact email separately from signed-in identity. Editing the
-  profile email field must not imply that the Supabase login email changed.
+- Owner decision October 20: show one Account section and one email, rather than
+  separate account/cloud-account concepts. The signed-in email is read-only and
+  used for report sharing; signed-out users enter their sign-in email in the same
+  field. Saving profile changes does not change Auth identity or restamp policy
+  acceptance. No separate report-contact preference is exposed.
 - Keep child display-name editing; birthdays/nicknames/initials are optional future
   fields requiring a need and historical-identity plan. Do not collect them by default.
 - Add shared-activity editing using the onboarding activity model when approved;
@@ -121,7 +124,8 @@ Goal: make saved profile changes, account identity, cloud state, and exports cle
 - Keep appearance options and explicit policy-review behavior. Show reminders
   or biometric settings only once the corresponding functionality exists.
 
-Acceptance examples: changing report email preserves login identity; changing a
+Acceptance examples: the signed-in email cannot be edited as a profile field;
+signed-out sign-in uses the same visible email field; changing a
 child display name does not rewrite historical entries; failed profile save
 preserves form input; local export works offline; long names do not hide navigation.
 
