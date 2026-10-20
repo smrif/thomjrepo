@@ -60,6 +60,7 @@ try{
  await h.page.locator('#s-home.active').waitFor();
  await h.page.evaluate(()=>showSetup());await h.page.waitForFunction(()=>!cloudAuthBusy);
  assert.equal(await h.page.locator('#cloud-auth-send').count(),0);
+ await h.page.getByRole('button',{name:/^Email /}).click();
  await h.page.locator('#cloud-auth-signout').click();await h.page.locator('#s-ob-welcome.active').waitFor();
  await h.page.reload();await h.page.waitForFunction(()=>!appAccessTask);
  assert.equal(await h.page.locator('#s-home').isVisible(),false);

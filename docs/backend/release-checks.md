@@ -210,3 +210,23 @@ local suite passed all 34 results, zero failures/skips, in about 87 seconds, wit
 the 32-file build boundary passing. Offline shell/update, policy acceptance,
 security, sync and responsive smoke checks passed. No live accounts/emails,
 provider setting changes or production deployment were performed.
+
+## October 20, 2026 Settings overview and detail pages
+
+Replaced the long Settings form with the owner's approved grouped overview.
+Name, email/sign-in, co-parent, activities, profile sync/restore/conflicts,
+custody-log sync, export, and account deletion open focused pages; children have
+individual editors and appearance stays inline. Summary rows show saved values
+and current sync state. Save returns to Settings, Back discards draft changes,
+authenticated reload preserves detail navigation, and leaving deletion clears
+its typed confirmation. Child names render as text. Historical records and
+policy acceptance are preserved; appearance saves through existing sync.
+
+The full local release suite passed all 34 results with zero failures/skips,
+including the expanded Settings flow and adapted auth, policy, deletion,
+disclosure, offline shell, and app smoke checks. The static build contains 41
+files including licensed Heroicons assets. Browser preview checks covered dark
+mobile and desktop layouts with a sample account; no real account or cloud data
+was used. The app asset token is `settings-pages-1`. Owner approved the layout
+and requested production deployment; hosted CI and deployment evidence are
+recorded separately with the release.

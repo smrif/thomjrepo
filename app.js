@@ -122,7 +122,7 @@ function applyThemeMode(){
 function setThemeMode(mode,persist=true){
   APP_CONFIG.themeMode=normalizeThemeMode(mode);
   applyThemeMode();
-  if(persist&&hasSavedConfig())localStorage.setItem(CONFIG_KEY,JSON.stringify(APP_CONFIG));
+  if(persist&&hasSavedConfig()){localStorage.setItem(CONFIG_KEY,JSON.stringify(APP_CONFIG));scheduleCloudSync('appearance');}
 }
 function recordAppSession(){
   if(!hasSavedConfig()||sessionStorage.getItem(SESSION_COUNTED_KEY))return;
@@ -231,7 +231,8 @@ function renderChildRow(row){
   btn.type='button';
   btn.className='settings-child-row-button';
   btn.onclick=()=>openChildEditor(row);
-  btn.innerHTML=`<span class="settings-child-avatar person-icon" aria-hidden="true"></span><span class="settings-child-name">${name||'Unnamed child'}</span><span class="settings-chevron" aria-hidden="true">›</span>`;
+  btn.innerHTML=`<span class="settings-child-avatar settings-library-icon" style="--settings-icon:url(assets/icons/user-circle.svg)" aria-hidden="true"></span><span class="settings-child-name"></span><span class="settings-library-icon" style="--settings-icon:url(assets/icons/chevron-right.svg)" aria-hidden="true"></span>`;
+  btn.querySelector('.settings-child-name').textContent=name||'Unnamed child';
   row.appendChild(btn);
   row.appendChild(error);
 }
@@ -244,27 +245,34 @@ function openChildEditor(row){
   const childInput=row.querySelector('.setup-child-input');
   input.value=childInput?.value||'';
   if(remove)remove.style.display=document.querySelectorAll('.setup-child-row').length>1?'inline-flex':'none';
+  document.getElementById('child-editor-error').textContent='';
+  if(!document.getElementById('s-setup').classList.contains('onboarding-mode'))openSettingsPage('child');
+  modal.hidden=false;
   modal.classList.add('show');
   modal.setAttribute('aria-hidden','false');
   setTimeout(()=>input.focus(),0);
 }
 
 function closeChildEditor(){
+  if(editingChildRow&&!cleanName(editingChildRow.querySelector('.setup-child-input')?.value)){editingChildRow.remove();updateChildRemoveButtons();}
   const modal=document.getElementById('child-modal');
   modal.classList.remove('show');
   modal.setAttribute('aria-hidden','true');
   editingChildRow=null;
+  if(!document.getElementById('s-setup').classList.contains('onboarding-mode'))backToSettings();
 }
 
 function saveChildEditor(){
   if(!editingChildRow)return;
   const value=cleanName(document.getElementById('child-modal-input').value);
+  if(!value){document.getElementById('child-editor-error').textContent='Enter a child’s name.';document.getElementById('child-modal-input').focus();return;}
   const input=editingChildRow.querySelector('.setup-child-input');
   input.value=value;
   renderChildRow(editingChildRow);
   updateChildRemoveButtons();
   handleSetupInput();
-  closeChildEditor();
+  if(document.getElementById('s-setup').classList.contains('onboarding-mode'))closeChildEditor();
+  else{document.getElementById('child-modal').classList.remove('show');document.getElementById('child-modal').setAttribute('aria-hidden','true');editingChildRow=null;saveSetup(true);}
 }
 
 function removeEditingChild(){
@@ -273,7 +281,8 @@ function removeEditingChild(){
   editingChildRow.remove();
   updateChildRemoveButtons();
   handleSetupInput();
-  closeChildEditor();
+  if(document.getElementById('s-setup').classList.contains('onboarding-mode'))closeChildEditor();
+  else{document.getElementById('child-modal').classList.remove('show');document.getElementById('child-modal').setAttribute('aria-hidden','true');editingChildRow=null;saveSetup(true);}
 }
 
 // ── ACTIVITIES ───────────────────────────────────────────────────
@@ -460,6 +469,8 @@ function initSetupForm(){
   setThemeMode(APP_CONFIG.themeMode,false);
   document.getElementById('setup-continue').textContent=onboarding?'Start tracking →':'Save changes';
   validateSetup(false);
+  updateSettingsOverview();
+  if(!onboarding&&appHasAccess())openSettingsPage(settingsPage,{push:false,focus:false});
   initCloudAuthUi();
 }
 function setOnboardingMode(active){
@@ -541,10 +552,14 @@ function setPolicySaveBusy(busy,button){
   if(busy)button.setAttribute('aria-busy','true');
   else button.removeAttribute('aria-busy');
 }
-async function saveSetup(){
+async function saveSetup(returnToSettings=false){
   if(policySaveBusy)return;
   setupValidationAttempted=true;
   if(!validateSetup(true)){
+    if(!document.getElementById('s-setup').classList.contains('onboarding-mode')){
+      const page=document.getElementById('setup-current-parent').getAttribute('aria-invalid')==='true'?'name':document.getElementById('setup-email').getAttribute('aria-invalid')==='true'?'email':'overview';
+      openSettingsPage(page,{push:false});
+    }
     // Scroll to first invalid field so user knows what to fix
     const firstInvalid=document.querySelector('.setup-field.invalid, .setup-terms.invalid');
     if(firstInvalid)firstInvalid.scrollIntoView({behavior:'smooth',block:'center'});
@@ -576,7 +591,8 @@ async function saveSetup(){
   renderConfigurableUi();
   if(!await finishSetupAccess(config.email))return;
   initHome();
-  show('s-home');
+  if(returnToSettings&&!onboarding){showSetup();openSettingsPage('overview',{push:false});document.getElementById('settings-save-message').textContent='Changes saved.';}
+  else show('s-home');
 }
 function skipSetup(){if(!appHasAccess()){startWelcome();return}saveConfig(DEFAULT_CONFIG);setOnboardingMode(false);renderConfigurableUi();initHome();show('s-home')}
 function cloudBackendEnabled(){
@@ -627,7 +643,7 @@ async function checkAppAccess({initial=false}={}){
       const account=lastSignedInAccount();
       if(account?.id&&hasSavedConfig()){
         appAccessState='offline';signedInAccountEmail=account.email||'';
-        if(initial)show('s-home');
+        if(initial)showInitialApp();
       }else if(initial)startWelcome();
       return;
     }
@@ -653,7 +669,7 @@ async function checkAppAccess({initial=false}={}){
         if(initial){showLoggedOutLogin()}
       }else{
         rememberSignedInAccount(session);
-        if(initial||document.getElementById('s-ob-welcome').classList.contains('active')){recordAppSession();show('s-home')}
+        if(initial||document.getElementById('s-ob-welcome').classList.contains('active')){recordAppSession();showInitialApp()}
         scheduleCloudSync('session-ready',200);
       }
     }catch(error){
@@ -662,7 +678,7 @@ async function checkAppAccess({initial=false}={}){
       const retryable=error?.name==='AuthRetryableFetchError'||error?.status>=500||/network|fetch|timed out/i.test(error?.message||'');
       if(retryable&&cached?.user?.id&&hasSavedConfig()&&!localStorage.getItem(SIGNED_OUT_KEY)&&!localStorage.getItem(PENDING_SIGNUP_KEY)){
         appAccessState='offline';signedInAccountEmail=cached.user.email||'';
-        if(initial)show('s-home');
+        if(initial)showInitialApp();
       }else{
         lockSignedOutApp();
         if(initial)startWelcome();
@@ -936,6 +952,7 @@ function updateCloudSyncStatusUi(status={}){
     }
   }
   renderCloudConflictReview();
+  updateSettingsOverview();
 }
 function conflictTimeLabel(iso){
   if(!iso)return'Unknown update time';
@@ -1194,6 +1211,7 @@ async function refreshCloudAuthUi(showMessage=true){
     const accountInput=document.getElementById('setup-email');
     accountInput.readOnly=!!session;
     if(email)accountInput.value=email;
+    updateSettingsOverview();
     handleSetupInput();
     document.getElementById('account-email-hint').textContent=session?'Your sign-in email. Used for report sharing.':'';
     if(session){
@@ -1646,6 +1664,7 @@ function show(id,direction){
   setActiveScreenMeta(id);
   const current=document.querySelector('.screen.active:not(.screen-leave)')||document.querySelector('.screen.active');
   const currentId=current?.id||null;
+  if(currentId==='s-setup'&&id!=='s-setup'&&location.hash.startsWith('#settings'))history.replaceState(null,'',location.pathname+location.search);
   let navDirection=direction;
   const isCheckinTransition=currentId&&CHECKIN_FLOW_SCREENS.has(currentId)&&CHECKIN_FLOW_SCREENS.has(id);
 
@@ -2084,7 +2103,59 @@ function dismissActivityPrompt(){
 function startWelcome(){initOnboarding();show('s-ob-welcome');}
 function skipWelcome(){obSkip();}
 // ── END WELCOME ───────────────────────────────────────
-function showSetup(){setOnboardingMode(false);initSetupForm();show('s-setup')}
+let settingsPage='overview';
+const SETTINGS_PAGES=new Set(['overview','name','email','coparent','sync','activities','export','logs','delete','child']);
+function showInitialApp(){
+  const match=location.hash.match(/^#settings(?:\/([a-z]+))?$/);
+  if(!match){show('s-home');return;}
+  const page=SETTINGS_PAGES.has(match[1])&&match[1]!=='child'?match[1]:'overview';
+  showSetup();openSettingsPage(page,{push:false});
+  history.replaceState({settingsPage:page},'',location.pathname+location.search+(page==='overview'?'#settings':'#settings/'+page));
+}
+function updateSettingsOverview(){
+  const values={name:APP_CONFIG.currentParentLabel,email:signedInAccountEmail||APP_CONFIG.email,coparent:APP_CONFIG.coParentLabel,activities:getConfiguredActivityIds().length+' selected',sync:appAccessState==='offline'?'Offline':document.getElementById('cloud-sync-status')?.textContent||'Ready'};
+  document.querySelectorAll('[data-cloud-unavailable]').forEach(el=>{el.hidden=cloudBackendEnabled()&&appAccessState!=='offline'&&navigator.onLine!==false});
+  Object.entries(values).forEach(([key,value])=>{const el=document.getElementById('settings-'+key+'-summary');if(el){el.textContent=value||'Not set';if(key==='sync')el.dataset.state=document.getElementById('cloud-sync-status')?.dataset.state||'idle'}});
+}
+function openSettingsPage(page,{push=true,focus=true}={}){
+  if(!SETTINGS_PAGES.has(page)||!appHasAccess())return;
+  settingsPage=page;
+  if(page!=='child'){const modal=document.getElementById('child-modal');modal.classList.remove('show');modal.setAttribute('aria-hidden','true');editingChildRow=null;}
+  document.querySelectorAll('#s-setup [data-settings-page]').forEach(el=>{el.hidden=el.dataset.settingsPage!==page});
+  document.querySelector('#s-setup .settings-back').hidden=page==='overview';
+  document.getElementById('settings-overview-title').hidden=page!=='overview';
+  document.getElementById('settings-overview-description').hidden=page!=='overview';
+  const area=document.getElementById('settings-save-area');
+  const target=document.querySelector(`[data-settings-page="${page}"] [data-settings-actions]`);
+  (target||document.querySelector('[data-settings-page="overview"]')).appendChild(area);
+  area.hidden=!['name','coparent','activities'].includes(page)&&!(page==='overview'&&!hasCurrentPolicyAcceptance(APP_CONFIG));
+  const message=document.getElementById('cloud-auth-message');
+  if(message){const host=document.querySelector(`[data-settings-page="${page}"]`);host.appendChild(message);message.textContent='';}
+  document.getElementById('settings-save-message').textContent='';
+  if(page!=='delete'){document.getElementById('cloud-delete-confirm').value='';updateCloudDeleteButton();}
+  updateSettingsOverview();
+  if(push)history.pushState({settingsPage:page},'',location.pathname+location.search+'#settings/'+page);
+  window.scrollTo(0,0);
+  if(focus){const heading=document.getElementById('settings-heading-'+page)||document.getElementById(page==='child'?'child-modal-title':'settings-overview-title');heading?.setAttribute('tabindex','-1');heading?.focus({preventScroll:true});}
+}
+function backToSettings(){
+  if(policySaveBusy)policySaveNavigationToken++;
+  const modal=document.getElementById('child-modal');modal.classList.remove('show');modal.setAttribute('aria-hidden','true');editingChildRow=null;
+  initSetupForm();
+  openSettingsPage('overview',{push:false});
+  history.replaceState({settingsPage:'overview'},'',location.pathname+location.search+'#settings');
+}
+window.addEventListener('popstate',event=>{
+  if(document.getElementById('s-setup').classList.contains('active')&&appHasAccess()){
+    const page=event.state?.settingsPage;
+    if(page&&page!=='child'){
+      initSetupForm();openSettingsPage(page,{push:false});
+    }else backToSettings();
+  }
+});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&settingsPage!=='overview'&&document.getElementById('s-setup').classList.contains('active')){event.preventDefault();backToSettings()}});
+
+function showSetup(){setOnboardingMode(false);initSetupForm();show('s-setup');if(appHasAccess()){openSettingsPage('overview',{push:false,focus:false});history.replaceState({settingsPage:'overview'},'',location.pathname+location.search+'#settings')}}
 function resetWeekCards(){
   const classes={dad:'checkin-decision-card planned',mom:'checkin-decision-card change'};
   Object.entries(classes).forEach(([w,cls])=>{const el=document.getElementById('wk-'+w);if(el)el.className=cls});

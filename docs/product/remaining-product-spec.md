@@ -114,6 +114,15 @@ Goal: make saved profile changes, account identity, cloud state, and exports cle
   welcome/login rather than Settings; previously signed-in devices retain offline
   access. Saving profile changes does not change Auth identity or restamp policy
   acceptance. See `docs/backend/auth-required-entry.md`.
+- Follow-up owner direction: use a compact Settings overview based on the supplied
+  dark wireframe. Account rows show name, email, co-parent, and current sync state.
+  Children remain individual rows; appearance stays inline. Editing, activity
+  choices, sync/restore/conflicts, custody sync, CSV export, and deletion open
+  focused pages with a Settings back button. Saving returns to the overview;
+  Back discards draft edits, and appearance saves immediately. Child edits save
+  independently without rewriting historical log names. Browser history and
+  authenticated reloads preserve Settings navigation. Destructive confirmation
+  is cleared when leaving the deletion page. Changes remain local pending review.
 - Keep child display-name editing; birthdays/nicknames/initials are optional future
   fields requiring a need and historical-identity plan. Do not collect them by default.
 - Add shared-activity editing using the onboarding activity model when approved;

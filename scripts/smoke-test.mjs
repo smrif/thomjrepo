@@ -260,7 +260,7 @@ async function assertSettingsScreen(context, expectedEmail = 'parent@example.com
   const settingsTermsVisible = await page.locator('#s-setup .setup-terms').isVisible();
   const policyReviewAvailable = await page.evaluate(() => !hasCurrentPolicyAcceptance(APP_CONFIG));
   if (settingsTermsVisible !== policyReviewAvailable) throw new Error(`${context}: Settings should offer policy review only for missing/stale acceptance, without forcing it.`);
-  const settingsTitle = await page.locator('#s-setup .settings-title').innerText();
+  const settingsTitle = await page.locator('#settings-overview-title').innerText();
   if (settingsTitle.toLowerCase() !== 'settings') throw new Error(`${context}: Settings should use its own title, saw "${settingsTitle}".`);
   const fieldState = await page.evaluate(() => ({
     currentParent: document.getElementById('setup-current-parent')?.value || '',
@@ -293,10 +293,12 @@ async function assertCustomActivityInDecisionTree() {
     activityIds: ['school', 'afterschool', 'medical', 'practice', 'birthday', 'camp', 'therapy', 'religious']
   });
   await page.evaluate(() => showSetup());
+  await page.evaluate(()=>openSettingsPage('activities'));
   await page.locator('#setup-custom-activity').fill('Karate and late afternoon practice');
   await click('#setup-activities-container .activity-add-btn');
   await click('#setup-continue');
-  await expectActive('s-home');
+  await expectActive('s-setup');
+  await click('#s-setup .bottom-nav-item[onclick="show(\'s-home\')"]');
 
   const state = await page.evaluate(() => {
     renderConfigurableUi();
@@ -564,7 +566,7 @@ try {
   await bootstrap();
   await click('#s-home .bottom-nav-item[onclick="showSetup()"]');
   if(!await page.locator('#setup-email').evaluate(input=>input.readOnly))throw new Error('Account identity should be read-only');
-  await click('#s-setup button[onclick="saveSetup()"]');
+  await page.evaluate(()=>saveSetup());
   await expectActive('s-home');
   const weeklyMailto = await page.evaluate(() => {
     const subject = encodeURIComponent('Whose Day — Weekly Report test');
@@ -913,8 +915,12 @@ try {
   });
   await click('#s-home .bottom-nav-item[onclick="showSetup()"]');
   await expectActive('s-setup');
+  await page.evaluate(()=>openSettingsPage('name'));
   await page.locator('#setup-current-parent').fill(longCurrentParent);
+  await click('#setup-continue');
+  await page.evaluate(()=>openSettingsPage('coparent'));
   await page.locator('#setup-co-parent').fill(longCoParent);
+  await click('#setup-continue');
   await page.locator('.setup-child-input').evaluateAll((inputs, names) => {
     inputs.forEach((input, idx) => { input.value = names[idx] || ''; });
   }, ['Ava Penelope Montgomery-Sanderson', 'Benjamin Theodore Worthington-Harrington']);
@@ -930,7 +936,7 @@ try {
   const longChildRows = await page.locator('#s-setup .settings-child-row-button').count();
   if (longChildRows !== 3) throw new Error(`Settings should show three child rows after adding a child, saw ${longChildRows}.`);
   await assertNoHorizontalOverflow('Settings with long labels');
-  await click('#s-setup button[onclick="saveSetup()"]');
+  await page.evaluate(()=>saveSetup());
   await expectActive('s-home');
 
   await click('#s-home .bottom-nav-item[onclick="showCal()"]');

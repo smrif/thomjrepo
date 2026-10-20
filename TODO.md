@@ -178,8 +178,12 @@
 
 - [x] Implement the owner's unified Account Settings direction locally (October
   20): one section/email for profile, sign-in and sync; authenticated email is
-  read-only and used for report sharing, with signed-out sign-in using the same
-  field. Existing sync, restore, sign-out and deletion controls remain in Account.
+  read-only and used for report sharing. Signed-out sign-in lives on welcome/login.
+  Follow-up uses the owner's wireframe: compact overview cards, summary rows,
+  inline appearance, child profile pages, and focused name/email/co-parent,
+  activities, sync/restore/conflicts, custody sync, export, and deletion pages.
+  Saves return to Settings; Back cancels draft edits. Confirmation is cleared
+  when leaving deletion. Existing account and data behavior is retained.
   Review/release remains pending.
 
 - [x] Implement Reports clarity locally (October 19): selected period/type,
