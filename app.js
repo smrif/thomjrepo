@@ -410,7 +410,7 @@ function renderConfigurableUi(){
   const dadActualTitle=document.getElementById('report-dadactual-title');
   if(dadActualTitle)dadActualTitle.textContent=currentParentPoss()+' actual time with kids';
   const dadActualDesc=document.getElementById('report-dadactual-desc');
-  if(dadActualDesc)dadActualDesc.textContent='All nights '+currentParent()+' had the kids — '+currentParentPoss()+' day plus any schedule changes';
+  if(dadActualDesc)dadActualDesc.textContent='Recorded days '+currentParent()+' had the kids — '+currentParentPoss()+' day plus any schedule changes';
   const momsWeekTitle=document.getElementById('report-momsweek-title');
   if(momsWeekTitle)momsWeekTitle.textContent=coParentPoss()+' day — '+currentParentPoss()+' involvement';
   const momsWeekDesc=document.getElementById('report-momsweek-desc');
@@ -1388,7 +1388,8 @@ function entryMetaHtml(e,{fullAttachment=false}={}){
 }
 function reportMetaLines(e){
   const lines=[];
-  if(e.loggedAt)lines.push('LOGGED: '+new Date(e.loggedAt).toLocaleString());
+  lines.push('LOGGED: '+(Number.isFinite(Date.parse(e.loggedAt))?new Date(e.loggedAt).toLocaleString():'Unknown'));
+  if((e.week==='dad'&&e.dadMode==='mom-had')||(e.week==='mom'&&e.momMode==='dad-had'))lines.push('CONTEXT: '+trendsContext(e)[1]);
   lines.push(...changeContextReportLines(e));
   if(e.attachment)lines.push('ATTACHMENT: Screenshot attached in app');
   return lines;
@@ -2850,20 +2851,51 @@ function reportEntries(){
   if(REPORT_FILTER==='all')return entries;
   return filterRecentEntryDates(entries,parseInt(REPORT_FILTER,10));
 }
+function reportTitle(type){
+  return {honest:'Custody deviation report',dadactual:'Actual time with kids',momsweek:coParentPoss()+' day — involvement',full:'Full diary',notes:'Diary notes only'}[type]||'Report';
+}
+function reportPeriodLabel(){return REPORT_FILTER==='all'?'All time':'Last '+REPORT_FILTER+' days (including today)'}
+function reportIncludedEntries(type){
+  return reportEntries().filter(([,e])=>{
+    if(type==='full')return true;
+    if(type==='notes')return !!e.diary?.trim();
+    if(!trendsCustodyRecord(e))return false;
+    if(type==='honest')return e.week==='dad'&&e.dadMode==='mom-had'||e.week==='mom'&&e.momMode==='dad-had';
+    if(type==='dadactual')return e.week==='dad'&&e.dadMode!=='mom-had'&&(e.kidsWithDad||[]).length>0||e.week==='mom'&&e.momMode==='dad-had';
+    return type==='momsweek'&&e.week==='mom'&&['helped','dad-had'].includes(e.momMode);
+  });
+}
+function buildReport(type){
+  const selected=reportEntries(),included=reportIncludedEntries(type);
+  if(!included.length)return [reportTitle(type),'Period: '+reportPeriodLabel(),
+    'Records in period: '+selected.length+' · Included in this report: 0',
+    'No matching records in this period.'].join('\n');
+  const custody=selected.filter(([,e])=>trendsCustodyRecord(e)).length;
+  const missing=selected.filter(([,e])=>e.week==='not-logged').length;
+  const zone=Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const header=[reportTitle(type),'Period: '+reportPeriodLabel(),
+    'Records in period: '+selected.length+' · Included in this report: '+included.length,
+    'Coverage: '+custody+' custody records · '+missing+' not-logged markers · '+(selected.length-custody-missing)+' other/legacy notes',
+    'Counts are family dates, including split days; not children or hours. Unrecorded dates have unknown custody.',
+    'Displayed timestamps: '+zone+'. Device timestamps do not independently verify when events occurred.',
+    'Attachments: references only; screenshot files are not included. CSV is not a restorable backup or screenshot package.',''];
+  return header.join('\n')+'\n'+(included.length?buildReportBody(type):'No matching records in this period.');
+}
 function renderReportsStats(){
   const entries=reportEntries();
-  const logged=entries.filter(([,e])=>e.week!=='not-logged').length;
-  const deviations=entries.filter(([,e])=>e.dadMode==='mom-had'||e.momMode==='dad-had').length;
-  const pressured=entries.filter(([,e])=>e.changePressured).length;
+  const logged=entries.filter(([,e])=>trendsCustodyRecord(e)).length;
+  const deviations=reportIncludedEntries('honest').length;
+  const pressured=reportIncludedEntries('honest').filter(([,e])=>e.changePressured===true).length;
   const attachments=entries.filter(([,e])=>e.attachment).length;
   const el=document.getElementById('reports-stats-bar');if(!el)return;
   el.innerHTML=`
+    <p class="sec-lbl">${trendsEscape(reportPeriodLabel())} · period totals</p>
     <div class="reports-stats-bar">
-      <div class="reports-stat-item"><div class="reports-stat-num">${logged}</div><div class="reports-stat-lbl">Logged days</div></div>
-      <div class="reports-stat-item"><div class="reports-stat-num red">${deviations}</div><div class="reports-stat-lbl">Custody deviations</div></div>
+      <div class="reports-stat-item"><div class="reports-stat-num">${logged}</div><div class="reports-stat-lbl">Custody dates</div></div>
+      <div class="reports-stat-item"><div class="reports-stat-num red">${deviations}</div><div class="reports-stat-lbl">Schedule-change dates</div></div>
       <div class="reports-stat-divider"></div>
-      <div class="reports-stat-item"><div class="reports-stat-num">${pressured}</div><div class="reports-stat-lbl">Pressure flags</div></div>
-      <div class="reports-stat-item"><div class="reports-stat-num blue">${attachments}</div><div class="reports-stat-lbl">Screenshots</div></div>
+      <div class="reports-stat-item"><div class="reports-stat-num">${pressured}</div><div class="reports-stat-lbl">User-reported pressure</div></div>
+      <div class="reports-stat-item"><div class="reports-stat-num blue">${attachments}</div><div class="reports-stat-lbl">Records with screenshots</div></div>
     </div>`;
 }
 function setReportFilter(range){
@@ -2876,14 +2908,13 @@ function showExport(){currentExportType=null;document.querySelectorAll('.export-
 function selectExport(type){
   currentExportType=type;document.querySelectorAll('.export-card').forEach(c=>c.classList.remove('sel'));document.getElementById('exp-'+type).classList.add('sel');
   currentReportText=buildReport(type);
-  const titleMap={honest:'Custody deviation report',dadactual:'Actual time with kids',momsweek:coParentPoss()+' week',full:'Full diary',notes:'Diary notes only'};
-  const title=document.getElementById('preview-title');if(title)title.textContent=titleMap[type]||'Preview';
+  const title=document.getElementById('preview-title');if(title)title.textContent=reportTitle(type)+' · '+reportPeriodLabel();
   document.getElementById('preview-box').textContent=currentReportText||'No entries found.';
   document.getElementById('export-preview-section').style.display='block';document.getElementById('copy-toast').style.display='none';
   setTimeout(()=>document.getElementById('export-preview-section').scrollIntoView({behavior:'smooth',block:'start'}),0);
 }
-function buildReport(type){
-  const sorted=reportEntries().sort((a,b)=>a[0].localeCompare(b[0]));
+function buildReportBody(type){
+  const sorted=reportIncludedEntries(type).sort((a,b)=>a[0].localeCompare(b[0]));
   if(!sorted.length)return'';
   const gen='Generated: '+new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})+'\nNote: Entries for dates before yesterday are read-only in the app.';
   const D='─'.repeat(50);
@@ -2892,35 +2923,36 @@ function buildReport(type){
     for(const[ds,e]of sorted){
       L.push('DATE: '+fmtDate(ds));
       L.push(...reportMetaLines(e));
-      if(e.week==='other'){L.push('TYPE: Pre-agreed day note');L.push('NOTE: '+(e.diary||'—'))}
-      else if(e.dadMode==='mom-had'){L.push('WEEK: '+currentParentPoss()+' scheduled week — KIDS AT '+coParent().toUpperCase());L.push('KIDS AT '+coParent().toUpperCase()+': '+(e.momHadKidsOnDadWeek||[]).join(', '));if(e.diary)L.push('NOTE: '+e.diary)}
-      else if(e.dadMode==='dad-helped-mom'){L.push('WEEK: '+currentParentPoss()+' scheduled week');const n=(e.kidsWithDad||[]).length;L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(n===KIDS.length?kidsCountLabel():n===0?'None':(e.kidsWithDad||[]).join(', ')));L.push(coParent().toUpperCase()+' HELPED:');Object.entries(e.momHelpedOnDadWeek||{}).forEach(([k,v])=>L.push('  '+k+': '+(v.acts||[]).map(activityLabel).join(', ')+(v.note?' ('+v.note+')':'')));if(e.diary)L.push('NOTE: '+e.diary)}
-      else if(e.momMode==='easy'){L.push('WEEK: '+coParentPoss()+' scheduled week');L.push('STATUS: '+coParent()+' had the kids');if(e.diary)L.push('NOTE: '+e.diary)}
-      else if(e.momMode==='helped'){L.push('WEEK: '+coParentPoss()+' scheduled week');L.push(currentParent().toUpperCase()+' HELPED WITH: '+(e.helpedKids||[]).join(', '));Object.entries(e.helpedData||{}).forEach(([k,v])=>L.push('  '+k+': '+(v.acts||[]).map(activityLabel).join(', ')+(v.note?' ('+v.note+')':'')));if(e.diary)L.push('NOTE: '+e.diary)}
-      else if(e.momMode==='dad-had'){L.push('WEEK: '+coParentPoss()+' scheduled week — KIDS WITH '+currentParent().toUpperCase());L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(e.dadHadKids||[]).join(', '));if(e.diary)L.push('NOTE: '+e.diary)}
-      else{const n=(e.kidsWithDad||[]).length;L.push('WEEK: '+currentParentPoss()+' scheduled week');L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(n===KIDS.length?kidsCountLabel():n===0?'None':(e.kidsWithDad||[]).join(', ')));if(e.diary)L.push('NOTES: '+e.diary)}
+      if(e.week==='not-logged'){L.push('STATUS: Nothing logged; custody unknown.')}
+      else if(e.week==='other'){L.push('TYPE: Legacy day note; custody unknown');L.push('NOTE: '+(e.diary||'—'))}
+      else if(e.dadMode==='mom-had'){L.push('SCHEDULED DAY: '+currentParentPoss()+' scheduled day — KIDS AT '+coParent().toUpperCase());L.push('KIDS AT '+coParent().toUpperCase()+': '+(e.momHadKidsOnDadWeek||[]).join(', '));if(e.diary)L.push('NOTE: '+e.diary)}
+      else if(e.dadMode==='dad-helped-mom'){L.push('SCHEDULED DAY: '+currentParentPoss()+' scheduled day');const n=(e.kidsWithDad||[]).length;L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(n===KIDS.length?kidsCountLabel():n===0?'None':(e.kidsWithDad||[]).join(', ')));L.push(coParent().toUpperCase()+' HELPED:');Object.entries(e.momHelpedOnDadWeek||{}).forEach(([k,v])=>L.push('  '+k+': '+(v.acts||[]).map(activityLabel).join(', ')+(v.note?' ('+v.note+')':'')));if(e.diary)L.push('NOTE: '+e.diary)}
+      else if(e.momMode==='easy'){L.push('SCHEDULED DAY: '+coParentPoss()+' scheduled day');L.push('STATUS: '+coParent()+' had the kids');if(e.diary)L.push('NOTE: '+e.diary)}
+      else if(e.momMode==='helped'){L.push('SCHEDULED DAY: '+coParentPoss()+' scheduled day');L.push(currentParent().toUpperCase()+' HELPED WITH: '+(e.helpedKids||[]).join(', '));Object.entries(e.helpedData||{}).forEach(([k,v])=>L.push('  '+k+': '+(v.acts||[]).map(activityLabel).join(', ')+(v.note?' ('+v.note+')':'')));if(e.diary)L.push('NOTE: '+e.diary)}
+      else if(e.momMode==='dad-had'){L.push('SCHEDULED DAY: '+coParentPoss()+' scheduled day — KIDS WITH '+currentParent().toUpperCase());L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(e.dadHadKids||[]).join(', '));if(e.diary)L.push('NOTE: '+e.diary)}
+      else{const n=(e.kidsWithDad||[]).length;L.push('SCHEDULED DAY: '+currentParentPoss()+' scheduled day');L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(n===KIDS.length?kidsCountLabel():n===0?'None':(e.kidsWithDad||[]).join(', ')));if(e.diary)L.push('NOTES: '+e.diary)}
       L.push(D,'');
     }return L.join('\n');
   }
   if(type==='dadactual'){
     const filt=sorted.filter(([,e])=>(e.week==='dad'&&e.dadMode!=='mom-had'&&(e.kidsWithDad||[]).length>0)||(e.week==='mom'&&e.momMode==='dad-had'));
     if(!filt.length)return'No entries found.';
-    let L=['WHOSE DAY — '+currentParent().toUpperCase()+' ACTUAL TIME WITH KIDS','Includes '+currentParentPoss()+' scheduled days and '+coParentPoss()+' scheduled nights where the kids were with '+currentParent()+'.',gen,'Total: '+filt.length+' days','',D,''];
-    for(const[ds,e]of filt){L.push('DATE: '+fmtDate(ds));L.push(...reportMetaLines(e));if(e.momMode==='dad-had'){L.push('*** '+coParent().toUpperCase()+'\'S WEEK — KIDS LEFT WITH '+currentParent().toUpperCase()+' ***');L.push('KIDS: '+(e.dadHadKids||[]).join(', '))}else{const n=(e.kidsWithDad||[]).length;L.push(currentParentPoss()+" scheduled week · "+(n===KIDS.length?kidsCountLabel():(e.kidsWithDad||[]).join(', ')))}if(e.diary)L.push('NOTE: '+e.diary);L.push(D,'');}return L.join('\n');
+    let L=['WHOSE DAY — '+currentParent().toUpperCase()+' ACTUAL TIME WITH KIDS','Includes '+currentParentPoss()+' scheduled days and '+coParentPoss()+' scheduled days where the kids were with '+currentParent()+'.',gen,'Total: '+filt.length+' days','',D,''];
+    for(const[ds,e]of filt){L.push('DATE: '+fmtDate(ds));L.push(...reportMetaLines(e));if(e.momMode==='dad-had'){L.push('*** '+coParent().toUpperCase()+'\'S SCHEDULED DAYS — KIDS WITH '+currentParent().toUpperCase()+' ***');L.push('KIDS: '+(e.dadHadKids||[]).join(', '))}else{const n=(e.kidsWithDad||[]).length;L.push(currentParentPoss()+" scheduled day · "+(n===KIDS.length?kidsCountLabel():(e.kidsWithDad||[]).join(', ')))}if(e.diary)L.push('NOTE: '+e.diary);L.push(D,'');}return L.join('\n');
   }
   if(type==='honest'){
     const mhd=sorted.filter(([,e])=>e.week==='dad'&&e.dadMode==='mom-had');
     const dhm=sorted.filter(([,e])=>e.week==='mom'&&e.momMode==='dad-had');
-    let L=['WHOSE DAY — FULL HONESTY REPORT',gen,'',D,currentParent().toUpperCase()+"'S WEEK — KIDS ENDED UP AT "+coParent().toUpperCase()+' ('+mhd.length+' nights)',D,''];
+    let L=['WHOSE DAY — CUSTODY DEVIATION REPORT',gen,'',D,currentParent().toUpperCase()+"'S SCHEDULED DAYS — KIDS ENDED UP AT "+coParent().toUpperCase()+' ('+mhd.length+' dates)',D,''];
     if(!mhd.length)L.push('None logged.','');else for(const[ds,e]of mhd){L.push('DATE: '+fmtDate(ds));L.push(...reportMetaLines(e));L.push('AT '+coParent().toUpperCase()+': '+(e.momHadKidsOnDadWeek||[]).join(', '));if(e.diary)L.push('NOTE: '+e.diary);L.push('')}
-    L.push(D,coParent().toUpperCase()+"'S WEEK — KIDS ENDED UP WITH "+currentParent().toUpperCase()+' ('+dhm.length+' nights)',D,'');
+    L.push(D,coParent().toUpperCase()+"'S SCHEDULED DAYS — KIDS ENDED UP WITH "+currentParent().toUpperCase()+' ('+dhm.length+' dates)',D,'');
     if(!dhm.length)L.push('None logged.','');else for(const[ds,e]of dhm){L.push('DATE: '+fmtDate(ds));L.push(...reportMetaLines(e));L.push('WITH '+currentParent().toUpperCase()+': '+(e.dadHadKids||[]).join(', '));if(e.diary)L.push('NOTE: '+e.diary);L.push('')}
     return L.join('\n');
   }
   if(type==='momsweek'){
     const filt=sorted.filter(([,e])=>e.week==='mom'&&(e.momMode==='helped'||e.momMode==='dad-had'));
     if(!filt.length)return'No '+coParentPoss()+' week entries with '+currentParent()+' involvement found.';
-    let L=['WHOSE DAY — '+coParent().toUpperCase()+"'S WEEK / "+currentParent().toUpperCase()+"'S INVOLVEMENT",gen,'Total: '+filt.length,'',D,''];
+    let L=['WHOSE DAY — '+coParent().toUpperCase()+"'S SCHEDULED DAY / "+currentParent().toUpperCase()+"'S INVOLVEMENT",gen,'Total: '+filt.length,'',D,''];
     for(const[ds,e]of filt){L.push('DATE: '+fmtDate(ds));L.push(...reportMetaLines(e));if(e.momMode==='dad-had'){L.push('Kids ended up with '+currentParent());L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(e.dadHadKids||[]).join(', '))}else{L.push(currentParent()+' helped out');Object.entries(e.helpedData||{}).forEach(([k,v])=>L.push('  '+k+': '+(v.acts||[]).map(activityLabel).join(', ')+(v.note?' — '+v.note:'')))}if(e.diary)L.push('NOTE: '+e.diary);L.push(D,'');}return L.join('\n');
   }
   if(type==='notes'){
@@ -2928,19 +2960,19 @@ function buildReport(type){
     let L=['WHOSE DAY — DIARY NOTES',gen,'',D,''];
     for(const[ds,e]of filt){
       let t='['+coParentPoss()+' day]';
-      if(e.week==='other')t='[Pre-agreed day]';
+      if(e.week==='other')t='[Legacy day note; custody unknown]';
       else if(e.dadMode==='mom-had')t='['+currentParentPoss()+' day/'+coParent()+' had]';
       else if(e.momMode==='dad-had')t='['+coParentPoss()+' day/'+currentParent()+' had]';
       else if(e.momMode==='helped')t='['+coParentPoss()+' day/'+currentParent()+' helped]';
       else if(e.week==='dad')t='['+currentParentPoss()+' day]';
-      L.push(fmtDate(ds)+' '+t);L.push(e.diary.trim(),'');
+      L.push(fmtDate(ds)+' '+t);L.push(...reportMetaLines(e));L.push(e.diary.trim(),'');
     }return L.join('\n');
   }
   return'';
 }
 function shareReport(){
   if(!currentReportText)return;
-  const names={full:'Full Diary',dadactual:currentParentPoss()+' Actual Time',honest:'Honesty Report',momsweek:coParentPoss()+' Week',notes:'Diary Notes'};
+  const names={full:'Full Diary',dadactual:currentParentPoss()+' Actual Time',honest:'Custody Deviation Report',momsweek:coParentPoss()+' Day',notes:'Diary Notes'};
   const subject=encodeURIComponent('Whose Day — '+(names[currentExportType]||'Report')+' '+new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'}));
   const body=encodeURIComponent(currentReportText);
   if(navigator.share){navigator.share({title:'Whose Day',text:currentReportText}).catch(()=>{})}
@@ -2989,8 +3021,9 @@ function printReport(){
   const printTime=now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
   const parentName=APP_CONFIG.currentParentLabel||'Parent';
   const kids=(APP_CONFIG.children||[]).join(', ')||'Children';
-  const totalEntries=Object.keys(getEntries()).filter(ds=>!isLockedDate(ds)===false||true).length;
-  const lockedEntries=Object.entries(getEntries()).filter(([ds])=>isLockedDate(ds)).length;
+  const totalEntries=reportEntries().length;
+  const includedEntries=reportIncludedEntries(currentExportType).length;
+  const lockedEntries=reportIncludedEntries(currentExportType).filter(([ds])=>isLockedDate(ds)).length;
 
   const attestation=`ATTESTATION
 ${'─'.repeat(60)}
@@ -3000,11 +3033,12 @@ custody documentation application.
 Reporting parent: ${parentName}
 Children: ${kids}
 Report generated: ${printDate} at ${printTime}
-Total entries in record: ${totalEntries}
+Records in selected period: ${totalEntries}
+Included in report: ${includedEntries}
 Locked (read-only) entries: ${lockedEntries}
 
-All entries in this report were logged through the Whose Day
-application and timestamped at the time of logging.
+These entries contain user-entered information and device timestamps.
+Missing timestamps are unknown; timestamps do not independently verify events.
 Entries for dates before yesterday are read-only in the app.
 These are personal records supplied by the reporting parent.
 
@@ -3017,7 +3051,7 @@ Signature: _________________________ Date: _____________
 Printed name: ______________________
 ${'─'.repeat(60)}`;
 
-  w.document.write(`<!doctype html><html><head><title>${reportTitle}</title>
+  w.document.write(`<!doctype html><html><head><title>${trendsEscape(reportTitle)}</title>
   <style>
     @page{margin:2cm}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#111;font-size:12px;line-height:1.6}
@@ -3037,13 +3071,14 @@ ${'─'.repeat(60)}`;
     <span style="font-size:13px;color:#666;margin-left:12px">To save as PDF, choose 'Save as PDF' in the print dialog</span>
   </div>
   <div class="cover">
-    <div class="cover-title">Whose Day — ${reportTitle}</div>
+    <div class="cover-title">Whose Day — ${trendsEscape(reportTitle)}</div>
     <div class="cover-sub">Personal custody documentation record</div>
     <div class="cover-meta">
-      <strong>Reporting parent:</strong> ${parentName}<br>
-      <strong>Children:</strong> ${kids}<br>
+      <strong>Reporting parent:</strong> ${trendsEscape(parentName)}<br>
+      <strong>Children:</strong> ${trendsEscape(kids)}<br>
       <strong>Generated:</strong> ${printDate} at ${printTime}<br>
-      <strong>Total entries:</strong> ${totalEntries} &nbsp;·&nbsp; <strong>Locked entries:</strong> ${lockedEntries}
+      <strong>Period:</strong> ${trendsEscape(reportPeriodLabel())}<br>
+      <strong>Records in period:</strong> ${totalEntries} · <strong>Included:</strong> ${includedEntries} &nbsp;·&nbsp; <strong>Locked entries:</strong> ${lockedEntries}
     </div>
   </div>
   <pre></pre>

@@ -891,7 +891,7 @@ try {
   await click('#exp-honest');
   await page.waitForFunction(() => getComputedStyle(document.getElementById('export-preview-section')).display !== 'none');
   const reportPreviewText = await page.locator('#preview-box').innerText();
-  assertIncludes(reportPreviewText, "RYAN'S WEEK", 'Report preview label copy');
+  assertIncludes(reportPreviewText, "RYAN'S SCHEDULED DAYS", 'Report preview label copy');
   assertIncludes(reportPreviewText, 'AT LAURA', 'Report preview label copy');
   assertIncludes(reportPreviewText, 'CHANGE AGREED IN ADVANCE: Yes', 'Report preview metadata');
   assertIncludes(reportPreviewText, 'FELT PRESSURED: No', 'Report preview metadata');

@@ -170,6 +170,12 @@
 
 ## Future Product Areas
 
+- [x] Implement Reports clarity locally (October 19): selected period/type,
+  family-date statistics, shared selection and print totals, unknown context and
+  timestamps, timezone/export limitations, neutral day wording and compact empty
+  reports. Browser coverage exercises all five types and preview/print parity.
+  Review/release remains pending.
+
 - [x] Implement the first Trends clarity increment locally (October 19): separate
   family-date coverage, both schedule-change directions, incomplete-context labels,
   historical Calendar links and distinct empty states. Automated coverage includes

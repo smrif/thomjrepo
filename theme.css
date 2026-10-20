@@ -2319,6 +2319,14 @@ body:has(#s-export.active) .app{
   margin-bottom:20px;
 }
 
+#s-export details.report-explanation{
+  margin:0 0 20px;padding:12px 14px;border:1px solid var(--daily-border);
+  border-radius:10px;background:var(--daily-card);color:var(--daily-ink-soft);
+  font-size:13px;line-height:1.6;
+}
+#s-export details.report-explanation summary{cursor:pointer;color:var(--daily-ink);font-weight:600}
+#s-export .report-preview-title{min-width:0;overflow-wrap:anywhere}
+
 #s-export .reports-kicker{
   display:inline-flex;
   align-items:center;

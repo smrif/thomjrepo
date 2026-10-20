@@ -4,13 +4,20 @@ Prepared October 13, 2026 from the current app. The owner approved the first
 Trends clarity increment October 19 and subsequently approved its production
 release with a compact empty state. Other proposed additions remain a reviewable draft.
 
+The owner approved Reports clarity October 19. The local implementation shares
+record selection across output and print totals, labels period totals and type
+inclusion separately, counts custody by family date, preserves missing context
+and timestamps, states the display timezone, and explains attachment/CSV limits.
+It retains all five report types and the signature attestation. Review/release
+of this Reports increment remains pending.
+
 ## Existing foundation
 
 | Area | Already implemented | Remaining design/build work |
 | --- | --- | --- |
 | Onboarding | Welcome, demo, parent/child names, shared activities, email sign-in, explicit policy acceptance | Optional reason-for-use question and any adaptive home experience require a product decision. |
 | Trends | Calendar subtab, month/rolling/all-time filters, custody/help counts; October 19 local increment adds both change directions, coverage, context labels and Calendar links | Optional time-series charts and child breakdown. |
-| Reports | Five report types, period filters, statistics, preview, copy/email/print, metadata and attestation | Clarify scope/count definitions, range coverage, attachment portability, and consistent neutral wording. |
+| Reports | Five report types, period filters, statistics, preview, copy/email/print, metadata and attestation; October 19 local increment adds period/type scope, family-date definitions, coverage, attachment limits and neutral day wording | Review/release the clarity increment; future export packaging remains separate scope. |
 | Settings | Profile/co-parent/child editing, appearance, cloud sync/restore/conflicts/deletion, CSV export, policy review, bottom navigation | Clarify editable email purpose, activity editing, export limitations, and optional future preferences. |
 
 ## Shared counting and date rules
