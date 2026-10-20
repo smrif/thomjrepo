@@ -8,8 +8,9 @@ The owner approved Reports clarity October 19. The local implementation shares
 record selection across output and print totals, labels period totals and type
 inclusion separately, counts custody by family date, preserves missing context
 and timestamps, states the display timezone, and explains attachment/CSV limits.
-It retains all five report types and the signature attestation. Review/release
-of this Reports increment remains pending.
+It retains all five report types and the signature attestation. The owner approved
+the increment, and it was deployed October 20, 2026; see
+`docs/backend/deployment-2026-10-20.md`.
 
 ## Existing foundation
 

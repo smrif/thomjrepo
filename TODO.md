@@ -174,7 +174,9 @@
   family-date statistics, shared selection and print totals, unknown context and
   timestamps, timezone/export limitations, neutral day wording and compact empty
   reports. Browser coverage exercises all five types and preview/print parity.
-  Review/release remains pending.
+  Owner approved and deployed October 20: main `2b2a623`, Worker
+  `54a29184-c51d-4069-ad1c-e8a70b8810b5`. All 32 production files and live
+  mobile/desktop Reports checks passed; see `docs/backend/deployment-2026-10-20.md`.
 
 - [x] Implement the first Trends clarity increment locally (October 19): separate
   family-date coverage, both schedule-change directions, incomplete-context labels,
