@@ -174,7 +174,8 @@
   signed-out users; Today for returning signed-in users; verified signup before
   entering the app; sign-out returns to welcome; previously authenticated devices
   retain offline access. No session-duration setting changed. See
-  `docs/backend/auth-required-entry.md`. Review/release remains pending.
+  `docs/backend/auth-required-entry.md`. Owner approved and deployed October 20;
+  see `docs/backend/deployment-2026-10-20-settings.md`.
 
 - [x] Implement the owner's unified Account Settings direction locally (October
   20): one section/email for profile, sign-in and sync; authenticated email is
@@ -184,7 +185,10 @@
   activities, sync/restore/conflicts, custody sync, export, and deletion pages.
   Saves return to Settings; Back cancels draft edits. Confirmation is cleared
   when leaving deletion. Existing account and data behavior is retained.
-  Review/release remains pending.
+  Owner approved and deployed October 20: main `c6d10b3`, Worker
+  `e0c935c1-bc15-4890-9f0d-e0cf0db73c70`. All 34 local checks and approved-source
+  hosted CI passed; all 41 production assets and mobile/desktop Settings flows
+  verified. See `docs/backend/deployment-2026-10-20-settings.md`.
 
 - [x] Implement Reports clarity locally (October 19): selected period/type,
   family-date statistics, shared selection and print totals, unknown context and

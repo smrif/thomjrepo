@@ -54,4 +54,6 @@ Existing UI fixtures now explicitly authenticate rather than assuming a local
 profile grants access. No live emails, accounts, policy submissions or provider
 settings were used. Physical-device and real-account QA remain separate.
 
-Assets use `auth-entry-1`; production deployment remains pending owner review.
+The client uses `auth-entry-1` and the Settings app uses `settings-pages-1`.
+Owner approved and deployed October 20, 2026; see
+[Settings production release](deployment-2026-10-20-settings.md).

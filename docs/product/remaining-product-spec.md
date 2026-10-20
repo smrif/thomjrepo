@@ -122,7 +122,8 @@ Goal: make saved profile changes, account identity, cloud state, and exports cle
   Back discards draft edits, and appearance saves immediately. Child edits save
   independently without rewriting historical log names. Browser history and
   authenticated reloads preserve Settings navigation. Destructive confirmation
-  is cleared when leaving the deletion page. Changes remain local pending review.
+  is cleared when leaving the deletion page. Owner approved and deployed October 20; see
+  `docs/backend/deployment-2026-10-20-settings.md`.
 - Keep child display-name editing; birthdays/nicknames/initials are optional future
   fields requiring a need and historical-identity plan. Do not collect them by default.
 - Add shared-activity editing using the onboarding activity model when approved;

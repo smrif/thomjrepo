@@ -230,3 +230,9 @@ mobile and desktop layouts with a sample account; no real account or cloud data
 was used. The app asset token is `settings-pages-1`. Owner approved the layout
 and requested production deployment; hosted CI and deployment evidence are
 recorded separately with the release.
+
+Deployment follow-up: owner-approved source `2c8d905` passed hosted CI and was
+merged to main as `c6d10b3` with an identical tree. Worker
+`e0c935c1-bc15-4890-9f0d-e0cf0db73c70` is live. All 41 production assets
+matched the build and mobile/desktop deployed Settings regressions passed.
+See [Settings deployment verification](deployment-2026-10-20-settings.md).
