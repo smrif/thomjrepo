@@ -30,7 +30,8 @@
     "test:dates": "node scripts/date-filter-test.mjs",
     "test:checkin": "node scripts/checkin-branch-test.mjs",
     "test:release": "node scripts/release-check.mjs",
-    "test:trends": "node scripts/trends-clarity-test.mjs"
+    "test:trends": "node scripts/trends-clarity-test.mjs",
+    "test:reports": "node scripts/reports-clarity-test.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",

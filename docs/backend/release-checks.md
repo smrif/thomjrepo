@@ -142,3 +142,28 @@ Periods without custody records now hide coverage, empty direction cards and the
 context legend, leaving one message. Periods with custody but no changes retain
 coverage and a factual no-change message, with no empty cards or legend.
 Extended mobile/dark and desktop/light assertions cover both states.
+
+## October 19, 2026 Reports clarity
+
+Implemented the owner's requested Reports increment on `codex/reports-clarity`.
+All five types use a shared inclusion selector; outputs identify type, period,
+period records and included records separately. Custody statistics count family
+dates and exclude legacy notes/unknown days. Both change directions retain
+explicit incomplete context and unknown timestamps, with the displayed timezone
+identified. Full diary marks not-logged dates as unknown custody; legacy notes
+do not imply agreement or overnight location. Empty reports stay compact.
+
+Preview/print use the same report body. Print totals and locked counts are scoped
+to the selected period/type, cover names are escaped, and the signature attestation
+remains. Collapsed help explains counting, screenshot references and CSV limits;
+no CSV schema or screenshot packaging behavior changed. App token is
+`reports-clarity-1`; no backend/schema change or production deployment.
+
+Added `scripts/reports-clarity-test.mjs` to the release command, exercising all
+five type counts, outside/future range exclusion, split-day statistics, context,
+unknown timestamps, timezone labels, preview/print parity, escaped names, no
+stored-entry mutation, compact empty output and both responsive themes. Inspected
+mobile/dark and desktop/light screenshots. The first suite run found a stale
+week-label smoke expectation and a Reports-help/Trends-legend class collision;
+both were corrected. Final full local suite: 32 passed, zero failed/skipped,
+about 90 seconds, with a 32-file build boundary pass.

@@ -1008,6 +1008,7 @@
 
     <!-- SUMMARY STATS -->
     <div id="reports-stats-bar" style="margin-bottom:1.25rem"></div>
+    <details class="report-explanation"><summary>How counts and exports work</summary><p>Counts cover the selected period. Custody and schedule changes count family dates, including split days, rather than children or hours. Pressure is user-reported on schedule-change dates. Screenshots counts records with an attachment.</p><p>Missing records have unknown custody. Reports reference screenshots without including image files. CSV includes attachment details; it is not a restorable backup or a package of screenshot files.</p></details>
 
     <!-- DATE RANGE FILTER -->
     <div class="report-filter-row">
@@ -1035,7 +1036,7 @@
         </span>
         <div>
           <div class="export-title">Custody deviation report</div>
-          <div class="export-desc">Every night the schedule wasn't followed — both directions, with pressure flags</div>
+          <div class="export-desc">Recorded schedule changes in both directions, with reported context</div>
         </div>
         <span class="export-chevron">›</span>
       </div>
@@ -1136,6 +1137,6 @@
 </div><!-- end .app -->
 <script src="supabase-config.js?v=production-domain-1"></script>
 <script src="supabase-client.js?v=separate-auth-1"></script>
-<script src="app.js?v=trends-clarity-1"></script>
+<script src="app.js?v=reports-clarity-1"></script>
 </body>
 </html>
