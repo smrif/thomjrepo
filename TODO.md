@@ -170,6 +170,22 @@
 
 ## Future Product Areas
 
+- [x] Implement authenticated app entry locally (October 20): welcome/login for
+  signed-out users; Today for returning signed-in users; verified signup before
+  entering the app; sign-out returns to welcome; previously authenticated devices
+  retain offline access. No session-duration setting changed. See
+  `docs/backend/auth-required-entry.md`. Review/release remains pending.
+
+- [x] Implement the owner's unified Account Settings direction locally (October
+  20): one section/email for profile, sign-in and sync; authenticated email is
+  read-only and used for report sharing. Signed-out sign-in lives on welcome/login.
+  Follow-up uses the owner's wireframe: compact overview cards, summary rows,
+  inline appearance, child profile pages, and focused name/email/co-parent,
+  activities, sync/restore/conflicts, custody sync, export, and deletion pages.
+  Saves return to Settings; Back cancels draft edits. Confirmation is cleared
+  when leaving deletion. Existing account and data behavior is retained.
+  Review/release remains pending.
+
 - [x] Implement Reports clarity locally (October 19): selected period/type,
   family-date statistics, shared selection and print totals, unknown context and
   timestamps, timezone/export limitations, neutral day wording and compact empty

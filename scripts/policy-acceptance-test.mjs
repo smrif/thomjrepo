@@ -101,7 +101,9 @@ for (const kind of ['terms', 'privacy']) {
   equal(snapshot, latest.replace('href="index.html"', 'href="../../../index.html"'), 'Versioned document matches the current policy text');
   assert(snapshot.includes(`<meta name="policy-version" content="${current}">`)); checks++;
   for (const id of ['s-ob-finish', 's-setup']) {
-    const screen = markup.slice(markup.indexOf(`id="${id}"`), markup.indexOf(`id="${id}"`) + (id === 's-setup' ? 14000 : 2000));
+    const start = markup.indexOf(`id="${id}"`);
+    const nextScreen = markup.indexOf('<div class="screen', start);
+    const screen = markup.slice(start, nextScreen < 0 ? undefined : nextScreen);
     assert(screen.includes(`href="${item.path}"`), `${id} must link to the version it records`); checks++;
   }
 }

@@ -108,8 +108,21 @@ Goal: make saved profile changes, account identity, cloud state, and exports cle
 
 - Keep bottom navigation visible for returning-user Settings. First-run setup
   remains a distinct flow with its own progression.
-- Explain report contact email separately from signed-in identity. Editing the
-  profile email field must not imply that the Supabase login email changed.
+- Owner decision October 20: show one Account section and one email, rather than
+  separate account/cloud-account concepts. The signed-in email is read-only and
+  used for report sharing. Subsequent owner direction moves signed-out users to
+  welcome/login rather than Settings; previously signed-in devices retain offline
+  access. Saving profile changes does not change Auth identity or restamp policy
+  acceptance. See `docs/backend/auth-required-entry.md`.
+- Follow-up owner direction: use a compact Settings overview based on the supplied
+  dark wireframe. Account rows show name, email, co-parent, and current sync state.
+  Children remain individual rows; appearance stays inline. Editing, activity
+  choices, sync/restore/conflicts, custody sync, CSV export, and deletion open
+  focused pages with a Settings back button. Saving returns to the overview;
+  Back discards draft edits, and appearance saves immediately. Child edits save
+  independently without rewriting historical log names. Browser history and
+  authenticated reloads preserve Settings navigation. Destructive confirmation
+  is cleared when leaving the deletion page. Changes remain local pending review.
 - Keep child display-name editing; birthdays/nicknames/initials are optional future
   fields requiring a need and historical-identity plan. Do not collect them by default.
 - Add shared-activity editing using the onboarding activity model when approved;
@@ -121,7 +134,8 @@ Goal: make saved profile changes, account identity, cloud state, and exports cle
 - Keep appearance options and explicit policy-review behavior. Show reminders
   or biometric settings only once the corresponding functionality exists.
 
-Acceptance examples: changing report email preserves login identity; changing a
+Acceptance examples: the signed-in email cannot be edited as a profile field;
+sign-out returns to welcome and remains effective after reload; changing a
 child display name does not rewrite historical entries; failed profile save
 preserves form input; local export works offline; long names do not hide navigation.
 

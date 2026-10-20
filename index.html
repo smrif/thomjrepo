@@ -26,8 +26,8 @@
 <meta name="twitter:image" content="https://whosedayapp.com/assets/homepage/share-preview-v1.jpg">
 <meta name="twitter:image:alt" content="An illustrated journal, phone, and cup of tea on a quiet evening table.">
 <link rel="icon" type="image/svg+xml" href="assets/whose-day-icon.svg">
-<link rel="stylesheet" href="styles.css?v=separate-auth-1">
-<link rel="stylesheet" href="theme.css?v=cloud-disclosures-1">
+<link rel="stylesheet" href="styles.css?v=settings-pages-1-separate-auth-1">
+<link rel="stylesheet" href="theme.css?v=settings-pages-1-cloud-disclosures-1">
 </head>
 <body>
 <div class="app" id="app" style="padding-bottom:80px">
@@ -37,9 +37,10 @@
   <button type="button" aria-label="Dismiss account deletion confirmation" onclick="dismissAccountDeletionNotice()">&times;</button>
 </div>
 
+<div class="screen" id="s-auth-loading" role="status" aria-live="polite"><div class="auth-loading"><h1>Opening your account</h1><p>Checking your saved sign-in…</p></div></div>
 <!-- SETUP -->
 <!-- ONBOARDING STEP 1: Welcome -->
-<div class="screen" id="s-ob-welcome">
+<div class="screen active" id="s-ob-welcome">
   <div class="landing">
     <header class="landing-nav"><a class="landing-brand" href="#landing-top"><img src="assets/whose-day-icon.svg" alt="" width="36" height="36">Whose Day</a><nav aria-label="Main navigation"><button class="landing-signin" onclick="showLoggedOutLogin()">Sign in</button><button class="landing-button" onclick="showLoggedOutSignup()">Sign up</button></nav></header>
     <main id="landing-top">
@@ -146,7 +147,7 @@
     <div class="ob-progress-bar"><div class="ob-progress-fill" style="width:100%"></div></div>
     <div class="ob-step-label">Last step</div>
     <h2 class="ob-q">Almost there</h2>
-    <p class="ob-sub">Confirm your email, then review the agreement.</p>
+    <p class="ob-sub">Enter your email and review the agreement. You'll verify your email before starting.</p>
     <label class="ob-label">Email address</label>
     <input class="ob-input" type="email" id="ob-email" placeholder="your@email.com" autocomplete="email" oninput="obValidateStep('s-ob-finish')">
     <div class="ob-terms-row">
@@ -154,7 +155,7 @@
       <label for="ob-terms">I agree to the <a href="assets/legal/2026-10-13/terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="assets/legal/2026-10-13/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</label>
     </div>
     <div class="ob-error" id="ob-finish-error" style="display:none">Please enter a valid email and accept the terms.</div>
-    <button class="ob-btn-primary ob-disabled" id="btn-ob-finish" onclick="obFinish()">Start tracking →</button>
+    <button class="ob-btn-primary ob-disabled" id="btn-ob-finish" onclick="obFinish()">Continue →</button>
     <button class="ob-btn-back" onclick="obBack('s-ob-kids')">← Back</button>
     <p class="ob-privacy-note">Saved on this device and synced to your account while signed in, including notes and screenshots.</p>
   </div>
@@ -164,93 +165,233 @@
 <div class="screen" id="s-setup">
   <div class="settings-shell">
     <div class="settings-top">
-      <div class="settings-brand">
-        <svg class="settings-logo whose-day-logo" width="42" height="42" viewBox="0 0 64 64" aria-hidden="true">
-          <rect class="logo-tile" width="64" height="64" rx="18"/>
-          <path class="logo-half-left" d="M32 16a16 16 0 0 0 0 32V16Z"/>
-          <path class="logo-half-right" d="M32 16a16 16 0 0 1 0 32V16Z"/>
-          <circle class="logo-dot" cx="32" cy="32" r="4.2"/>
-        </svg>
-        <span>Whose Day</span>
-      </div>
-      <div class="settings-title">Settings</div>
-      <button class="profile-chip settings-profile" onclick="showSetup()" id="settings-profile">R</button>
+      <button type="button" class="settings-back" onclick="backToSettings()" hidden>
+        <span class="settings-library-icon" style="--settings-icon:url(assets/icons/arrow-left.svg)" aria-hidden="true"></span>Settings</button>
+      <h1 id="settings-overview-title">Settings</h1>
+      <p id="settings-overview-description">Manage your account, family, and data.</p>
+      <span id="settings-profile" hidden></span>
     </div>
-
     <div class="setup-alert" id="setup-alert"></div>
-
-    <section class="settings-section">
-      <div class="settings-section-head">
-        <span class="settings-section-icon people-icon" aria-hidden="true"></span>
-        <div>
-          <h2>Account</h2>
-          <p>Your profile and report contact information.</p>
+    <div data-settings-page="overview">
+      <section class="settings-section settings-overview-card">
+        <div class="settings-section-head">
+          <span class="settings-library-icon" style="--settings-icon:url(assets/icons/user-circle.svg)" aria-hidden="true"></span>
+          <div>
+            <h2>Account</h2>
+            <p>Your profile, sign-in, and sync settings.</p>
+          </div>
         </div>
-      </div>
+        <div class="settings-row-group">
+          <button type="button" class="settings-link" onclick="openSettingsPage('name')">
+            <span>Name</span>
+            <span class="settings-row-value" id="settings-name-summary"></span>
+            <span class="settings-library-icon" style="--settings-icon:url(assets/icons/chevron-right.svg)" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="settings-link" onclick="openSettingsPage('email')">
+            <span>Email</span>
+            <span class="settings-row-value" id="settings-email-summary"></span>
+            <span class="settings-library-icon" style="--settings-icon:url(assets/icons/chevron-right.svg)" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="settings-link" onclick="openSettingsPage('coparent')">
+            <span>Co-parent</span>
+            <span class="settings-row-value" id="settings-coparent-summary"></span>
+            <span class="settings-library-icon" style="--settings-icon:url(assets/icons/chevron-right.svg)" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="settings-link" onclick="openSettingsPage('sync')">
+            <span>Sync status</span>
+            <span class="settings-row-value" id="settings-sync-summary"></span>
+            <span class="settings-library-icon" style="--settings-icon:url(assets/icons/chevron-right.svg)" aria-hidden="true"></span>
+          </button>
+        </div>
+      </section>
+      <section class="settings-section settings-overview-card">
+        <div class="settings-section-head">
+          <span class="settings-library-icon" style="--settings-icon:url(assets/icons/users.svg)" aria-hidden="true"></span>
+          <div>
+            <h2>Children</h2>
+            <p>Manage your children’s profiles.</p>
+          </div>
+        </div>
+        <div class="settings-card settings-child-card">
+          <div class="setup-children-list" id="setup-children-list"></div>
+        </div>
+        <button class="setup-add-child" type="button" onclick="addChildField()">+ Add another child</button>
+      </section>
+      <section class="settings-section settings-overview-card">
+        <div class="settings-section-head">
+          <span class="settings-library-icon" style="--settings-icon:url(assets/icons/swatch.svg)" aria-hidden="true"></span>
+          <div>
+            <h2>Appearance</h2>
+            <p>Choose how the app looks.</p>
+          </div>
+        </div>
+        <div class="settings-card appearance-card">
+          <button class="theme-mode-btn" type="button" data-theme-mode="system" onclick="setThemeMode('system')">System</button>
+          <button class="theme-mode-btn" type="button" data-theme-mode="light" onclick="setThemeMode('light')">Light</button>
+          <button class="theme-mode-btn" type="button" data-theme-mode="dark" onclick="setThemeMode('dark')">Dark</button>
+        </div>
+      </section>
+      <section class="settings-section settings-overview-card">
+        <div class="settings-section-head">
+          <span class="settings-library-icon" style="--settings-icon:url(assets/icons/calendar-days.svg)" aria-hidden="true"></span>
+          <div>
+            <h2>Common activities</h2>
+            <p>Choose the activities you use most often.</p>
+          </div>
+        </div>
+        <div class="settings-row-group">
+          <button type="button" class="settings-link" onclick="openSettingsPage('activities')">
+            <span>Manage activities</span>
+            <span class="settings-row-value" id="settings-activities-summary"></span>
+            <span class="settings-library-icon" style="--settings-icon:url(assets/icons/chevron-right.svg)" aria-hidden="true"></span>
+          </button>
+        </div>
+      </section>
+      <section class="settings-section settings-overview-card">
+        <div class="settings-section-head">
+          <span class="settings-library-icon" style="--settings-icon:url(assets/icons/document-arrow-down.svg)" aria-hidden="true"></span>
+          <div>
+            <h2>Data &amp; export</h2>
+            <p>Download a copy of your records.</p>
+          </div>
+        </div>
+        <div class="settings-row-group">
+          <button type="button" class="settings-link" onclick="openSettingsPage('export')">
+            <span>Export all data (CSV)</span>
+            <span class="settings-row-value"></span>
+            <span class="settings-library-icon" style="--settings-icon:url(assets/icons/chevron-right.svg)" aria-hidden="true"></span>
+          </button>
+        </div>
+      </section>
+      <section class="settings-section settings-overview-card">
+        <div class="settings-section-head">
+          <span class="settings-library-icon" style="--settings-icon:url(assets/icons/shield-check.svg)" aria-hidden="true"></span>
+          <div>
+            <h2>Safety &amp; account management</h2>
+            <p>Manage your records and account.</p>
+          </div>
+        </div>
+        <div class="settings-row-group">
+          <button type="button" class="settings-link" onclick="openSettingsPage('logs')">
+            <span>Custody log sync</span>
+            <span class="settings-row-value"></span>
+            <span class="settings-library-icon" style="--settings-icon:url(assets/icons/chevron-right.svg)" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="settings-link settings-danger-link" onclick="openSettingsPage('delete')">
+            <span>Delete account</span>
+            <span class="settings-row-value"></span>
+            <span class="settings-library-icon" style="--settings-icon:url(assets/icons/chevron-right.svg)" aria-hidden="true"></span>
+          </button>
+        </div>
+      </section>
+    </div>
+    <section class="settings-detail" data-settings-page="name" hidden aria-labelledby="settings-heading-name">
+      <h2 id="settings-heading-name" tabindex="-1">Your name</h2>
+      <p class="settings-detail-description">This name appears in your logs and reports.</p>
       <div class="settings-card settings-fields-card">
         <div class="setup-field">
           <label for="setup-current-parent">Your name</label>
           <input type="text" id="setup-current-parent" placeholder="Your name" autocomplete="name" oninput="handleSetupInput()">
           <div class="setup-error">Please enter your name.</div>
         </div>
+      </div>
+      <div data-settings-actions></div>
+    </section>
+    <section class="settings-detail" data-settings-page="email" hidden aria-labelledby="settings-heading-email">
+      <h2 id="settings-heading-email" tabindex="-1">Email &amp; sign-in</h2>
+      <p class="settings-detail-description">Your sign-in email is also used when sharing reports.</p>
+      <div class="settings-card settings-fields-card">
         <div class="setup-field">
           <label for="setup-email">Email address</label>
           <input type="email" id="setup-email" placeholder="your@email.com" autocomplete="email" oninput="handleSetupInput()">
+          <div class="account-email-hint" id="account-email-hint"></div>
           <div class="setup-error">Please enter a valid email address.</div>
         </div>
       </div>
+      <div class="settings-page-actions">
+        <button class="auth-secondary-btn" type="button" id="cloud-auth-signout" onclick="signOutCloudAccount()" hidden>Sign out</button>
+      </div>
+      <div data-settings-actions></div>
     </section>
-
-    <section class="settings-section settings-cloud-section" id="cloud-account-section" hidden>
-      <div class="settings-section-head">
-        <span class="settings-section-icon data-icon" aria-hidden="true"></span>
-        <div>
-          <h2>Cloud account</h2>
-          <p>Profile and logs sync automatically while signed in, including notes and screenshots.</p>
+    <section class="settings-detail" data-settings-page="coparent" hidden aria-labelledby="settings-heading-coparent">
+      <h2 id="settings-heading-coparent" tabindex="-1">Co-parent</h2>
+      <p class="settings-detail-description">Use a name or label you recognize in your logs and reports.</p>
+      <div class="settings-card settings-fields-card">
+        <div class="setup-field">
+          <label for="setup-co-parent">Co-parent name</label>
+          <input type="text" id="setup-co-parent" placeholder="e.g. Taylor, Mom, Co-parent">
         </div>
       </div>
-      <div class="settings-card settings-auth-card">
-        <div class="auth-status-row">
-          <div>
-            <strong id="cloud-auth-title">Not signed in</strong>
-            <span id="cloud-auth-detail">Sign in to sync this device with your account.</span>
-          </div>
-          <span class="auth-status-pill" id="cloud-auth-pill">Local</span>
-        </div>
-        <div class="setup-field" id="cloud-auth-email-field">
-          <label for="cloud-auth-email">Email for sign-in link</label>
-          <input type="email" id="cloud-auth-email" placeholder="your@email.com" autocomplete="email">
-        </div>
-        <div class="auth-actions">
-          <button class="settings-export-btn" type="button" id="cloud-auth-send" onclick="sendCloudSignInLink()">Send sign-in link</button>
-          <button class="auth-secondary-btn" type="button" id="cloud-auth-refresh" onclick="refreshCloudAuthUi()">Refresh</button>
-          <button class="auth-secondary-btn" type="button" id="cloud-auth-signout" onclick="signOutCloudAccount()" hidden>Sign out</button>
-        </div>
-        <div class="profile-sync-panel sync-status-panel" id="cloud-sync-status-panel" hidden>
-          <div>
-            <strong>Sync status</strong>
-            <span id="cloud-sync-detail">Sync runs automatically when you are signed in.</span>
-            <span class="sync-conflict-note" id="cloud-sync-conflicts" hidden></span>
-          </div>
-          <span class="sync-status-pill" id="cloud-sync-status" data-state="idle">Ready</span>
-        </div>
-        <div class="profile-sync-panel conflict-review-panel" id="cloud-conflict-panel" hidden>
-          <div>
-            <strong>Review sync conflicts</strong>
-            <span>Choose which copy to keep for each date. Nothing will be overwritten until you choose.</span>
-          </div>
-          <div class="conflict-review-list" id="cloud-conflict-list"></div>
-        </div>
-        <div class="profile-sync-panel" id="profile-sync-panel" hidden>
-          <div>
-            <strong>Profile sync</strong>
-            <span id="profile-sync-detail">Settings sync automatically when you are signed in.</span>
+      <div data-settings-actions></div>
+    </section>
+    <section class="settings-detail" data-settings-page="sync" hidden aria-labelledby="settings-heading-sync">
+      <h2 id="settings-heading-sync" tabindex="-1">Sync status</h2>
+      <p class="settings-detail-description">Your profile and records sync automatically while signed in.</p>
+      <div id="cloud-account-section" hidden>
+        <div class="settings-card settings-auth-card">
+          <div class="auth-status-row">
+            <div>
+              <strong id="cloud-auth-title">Not signed in</strong>
+              <span id="cloud-auth-detail">Sign in to sync this device with your account.</span>
+            </div>
+            <span class="auth-status-pill" id="cloud-auth-pill">Local</span>
           </div>
           <div class="auth-actions">
-            <button class="settings-export-btn" type="button" id="profile-backup-btn" onclick="backupCloudProfile()">Sync profile now</button>
-            <button class="auth-secondary-btn" type="button" id="profile-restore-btn" onclick="restoreCloudProfile()">Restore profile</button>
+            <button class="auth-secondary-btn" type="button" id="cloud-auth-refresh" onclick="refreshCloudAuthUi()">Refresh</button>
           </div>
+          <div class="profile-sync-panel sync-status-panel" id="cloud-sync-status-panel" hidden>
+            <div>
+              <strong>Sync status</strong>
+              <span id="cloud-sync-detail">Sync runs automatically when you are signed in.</span>
+              <span class="sync-conflict-note" id="cloud-sync-conflicts" hidden></span>
+            </div>
+            <span class="sync-status-pill" id="cloud-sync-status" data-state="idle">Ready</span>
+          </div>
+          <div class="profile-sync-panel conflict-review-panel" id="cloud-conflict-panel" hidden>
+            <div>
+              <strong>Review sync conflicts</strong>
+              <span>Choose which copy to keep for each date. Nothing will be overwritten until you choose.</span>
+            </div>
+            <div class="conflict-review-list" id="cloud-conflict-list"></div>
+          </div>
+          <div class="profile-sync-panel" id="profile-sync-panel" hidden>
+            <div>
+              <strong>Profile sync</strong>
+              <span id="profile-sync-detail">Settings sync automatically when you are signed in.</span>
+            </div>
+            <div class="auth-actions">
+              <button class="settings-export-btn" type="button" id="profile-backup-btn" onclick="backupCloudProfile()">Sync profile now</button>
+              <button class="auth-secondary-btn" type="button" id="profile-restore-btn" onclick="restoreCloudProfile()">Restore profile</button>
+            </div>
+          </div>
+          <div class="auth-message" id="cloud-auth-message" role="status" aria-live="polite"></div>
         </div>
+      </div>
+      <div data-settings-actions></div>
+    </section>
+    <section class="settings-detail" data-settings-page="activities" hidden aria-labelledby="settings-heading-activities">
+      <h2 id="settings-heading-activities" tabindex="-1">Common activities</h2>
+      <p class="settings-detail-description">These choices appear when you log help with plans.</p>
+      <div id="setup-activities-container" style="display:none"></div>
+      <div data-settings-actions></div>
+    </section>
+    <section class="settings-detail" data-settings-page="export" hidden aria-labelledby="settings-heading-export">
+      <h2 id="settings-heading-export" tabindex="-1">Data &amp; export</h2>
+      <p class="settings-detail-description">Keep a copy of your records.</p>
+      <div class="settings-card settings-data-card">
+        <div>
+          <strong>Export all data</strong>
+          <span>Downloads your settings, children, entries, notes, and attachment details as CSV.</span>
+        </div>
+        <button class="settings-export-btn" type="button" onclick="exportAllData()">Export CSV</button>
+      </div>
+      <div data-settings-actions></div>
+    </section>
+    <section class="settings-detail" data-settings-page="logs" hidden aria-labelledby="settings-heading-logs">
+      <h2 id="settings-heading-logs" tabindex="-1">Custody log sync</h2>
+      <p class="settings-detail-description">Sync your dated entries, notes, and screenshots.</p>
+      <p class="settings-cloud-unavailable" data-cloud-unavailable hidden>Connect to the internet to manage your account and synced records. Your saved records remain available on this device.</p>
+      <div class="settings-card settings-auth-card">
         <div class="profile-sync-panel" id="entry-backup-panel" hidden>
           <div>
             <strong>Custody log sync</strong>
@@ -260,6 +401,14 @@
             <button class="settings-export-btn" type="button" id="entry-backup-btn" onclick="backupCustodyEntries()">Sync custody logs now</button>
           </div>
         </div>
+      </div>
+      <div data-settings-actions></div>
+    </section>
+    <section class="settings-detail" data-settings-page="delete" hidden aria-labelledby="settings-heading-delete">
+      <h2 id="settings-heading-delete" tabindex="-1">Delete account</h2>
+      <p class="settings-detail-description">Review what will be removed before continuing.</p>
+      <p class="settings-cloud-unavailable" data-cloud-unavailable hidden>Connect to the internet to manage your account and synced records. Your saved records remain available on this device.</p>
+      <div class="settings-card settings-auth-card">
         <div class="profile-sync-panel cloud-delete-panel" id="cloud-delete-panel" hidden>
           <div>
             <strong>Delete account</strong>
@@ -271,120 +420,64 @@
           </div>
           <button class="auth-danger-btn" type="button" id="cloud-delete-btn" onclick="deleteCloudAccount()" disabled>Delete account</button>
         </div>
-        <div class="auth-message" id="cloud-auth-message" role="status" aria-live="polite"></div>
       </div>
+      <div data-settings-actions></div>
     </section>
-
-    <section class="settings-section">
-      <div class="settings-section-head">
-        <span class="settings-section-icon coparent-icon" aria-hidden="true"></span>
-        <div>
-          <h2>Co-parent</h2>
-          <p>Keep labels neutral and recognizable.</p>
-        </div>
-      </div>
-      <div class="settings-card settings-fields-card">
-        <div class="setup-field">
-          <label for="setup-co-parent">Co-parent name</label>
-          <input type="text" id="setup-co-parent" placeholder="e.g. Taylor, Mom, Co-parent">
-        </div>
-        <div class="settings-placeholder-row">
-          <div>
-            <strong>Co-parent label</strong>
-            <span>Used in logs and reports.</span>
-          </div>
-          <span class="settings-placeholder-value" id="setup-co-parent-label-preview">Mom</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="settings-section">
-      <div class="settings-section-head">
-        <span class="settings-section-icon children-icon" aria-hidden="true"></span>
-        <div>
-          <h2>Children</h2>
-          <p>Manage your children’s profiles.</p>
-        </div>
-      </div>
-      <div class="settings-card settings-child-card">
-        <div class="setup-children-list" id="setup-children-list"></div>
-      </div>
-      <button class="setup-add-child" type="button" onclick="addChildField()">+ Add another child</button>
-    </section>
-
-    <section class="settings-section">
-      <div class="settings-section-head">
-        <span class="settings-section-icon appearance-icon" aria-hidden="true"></span>
-        <div>
-          <h2>Appearance</h2>
-          <p>Switch the check-in theme while reviewing the new visual direction.</p>
-        </div>
-      </div>
-      <div class="settings-card appearance-card">
-        <button class="theme-mode-btn" type="button" data-theme-mode="system" onclick="setThemeMode('system')">System</button>
-        <button class="theme-mode-btn" type="button" data-theme-mode="light" onclick="setThemeMode('light')">Light</button>
-        <button class="theme-mode-btn" type="button" data-theme-mode="dark" onclick="setThemeMode('dark')">Dark</button>
-      </div>
-    </section>
-
-    <div id="setup-activities-container" style="display:none"></div>
-
-    <div class="setup-field" id="setup-name-field" style="display:none"></div>
-    <div class="setup-field" id="setup-email-field" style="display:none"></div>
-    <div class="setup-terms" id="setup-terms-field">
-      <label><input type="checkbox" id="setup-terms" onchange="handlePolicyAcceptanceInput()">
-      <span>I agree to the <a href="assets/legal/2026-10-13/terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="assets/legal/2026-10-13/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
-      <div class="setup-error">Please accept the Terms of Use and Privacy Policy.</div>
-    </div>
-
-    <div class="setup-actions">
-      <div id="setup-progress-hint" style="display:none;font-size:12px;color:#993c1d;background:#faece7;border-radius:8px;padding:8px 12px;margin-bottom:8px;text-align:center"></div>
-      <button class="btn primary setup-continue" id="setup-continue" onclick="saveSetup()">Save changes</button>
-      <div class="setup-privacy">Saved on this device. Synced to your account while signed in.</div>
-    </div>
-
-    <section class="settings-section settings-data-section">
-      <div class="settings-section-head">
-        <span class="settings-section-icon data-icon" aria-hidden="true"></span>
-        <div>
-          <h2>Data</h2>
-          <p>Export a copy of your records.</p>
-        </div>
-      </div>
-      <div class="settings-card settings-data-card">
-        <div>
-          <strong>Export all data</strong>
-          <span>Downloads your settings, children, entries, notes, and attachment details as CSV.</span>
-        </div>
-        <button class="settings-export-btn" type="button" onclick="exportAllData()">Export CSV</button>
-      </div>
-    </section>
-
-    <div class="child-modal-backdrop" id="child-modal" aria-hidden="true">
-      <div class="child-modal-card" role="dialog" aria-modal="true" aria-labelledby="child-modal-title">
+    <div class="child-modal-backdrop" data-settings-page="child" hidden id="child-modal" aria-hidden="true">
+      <div class="child-modal-card" aria-labelledby="child-modal-title">
         <div class="child-modal-head">
-          <h3 id="child-modal-title">Child profile</h3>
+          <h2 id="child-modal-title" tabindex="-1">Child profile</h2>
           <button type="button" class="child-modal-close" onclick="closeChildEditor()" aria-label="Close child editor">×</button>
         </div>
         <label for="child-modal-input">Display name</label>
         <input type="text" id="child-modal-input" placeholder="Child name">
+        <div id="child-editor-error" role="alert" class="setup-error"></div>
         <div class="child-modal-actions">
           <button type="button" class="child-modal-remove" onclick="removeEditingChild()">Remove</button>
-          <button type="button" class="child-modal-save" onclick="saveChildEditor()">Done</button>
+          <button type="button" class="child-modal-save" onclick="saveChildEditor()">Save child</button>
         </div>
       </div>
     </div>
+    <div id="settings-save-area" hidden>
+      <div class="setup-terms" id="setup-terms-field">
+        <label>
+          <input type="checkbox" id="setup-terms" onchange="handlePolicyAcceptanceInput()">
+          <span>I agree to the <a href="assets/legal/2026-10-13/terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="assets/legal/2026-10-13/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span>
+        </label>
+        <div class="setup-error">Please accept the Terms of Use and Privacy Policy.</div>
+      </div>
+      <div class="setup-actions">
+        <div id="setup-progress-hint" style="display:none;font-size:12px;color:#993c1d;background:#faece7;border-radius:8px;padding:8px 12px;margin-bottom:8px;text-align:center"></div>
+        <button class="btn primary setup-continue" id="setup-continue" onclick="saveSetup(true)">Save changes</button>
+        <div class="setup-privacy">Saved on this device. Synced to your account while signed in.</div>
+      </div>
+    </div>
+    <div class="auth-message" id="settings-save-message" role="status" aria-live="polite"></div>
   </div>
   <div class="bottom-nav">
-    <button class="bottom-nav-item" onclick="show('s-home')"><span class="nav-home"></span><strong>Today</strong></button>
-    <button class="bottom-nav-item" onclick="showCal()"><span class="nav-calendar"></span><strong>Calendar</strong></button>
-    <button class="bottom-nav-item" onclick="showExport()"><span class="nav-bars"></span><strong>Reports</strong></button>
-    <button class="bottom-nav-item active" onclick="showSetup()"><span class="nav-gear"></span><strong>Settings</strong></button>
+    <button class="bottom-nav-item" onclick="show('s-home')">
+      <span class="nav-home"></span>
+      <strong>Today</strong>
+    </button>
+    <button class="bottom-nav-item" onclick="showCal()">
+      <span class="nav-calendar"></span>
+      <strong>Calendar</strong>
+    </button>
+    <button class="bottom-nav-item" onclick="showExport()">
+      <span class="nav-bars"></span>
+      <strong>Reports</strong>
+    </button>
+    <button class="bottom-nav-item active" onclick="showSetup()">
+      <span class="nav-gear"></span>
+      <strong>Settings</strong>
+    </button>
   </div>
 </div>
 
+
+
 <!-- HOME -->
-<div class="screen active" id="s-home">
+<div class="screen" id="s-home">
   <div class="home-shell">
     <div class="home-top">
       <div class="home-brand">
@@ -1136,7 +1229,7 @@
 </button>
 </div><!-- end .app -->
 <script src="supabase-config.js?v=production-domain-1"></script>
-<script src="supabase-client.js?v=separate-auth-1"></script>
-<script src="app.js?v=reports-clarity-1"></script>
+<script src="supabase-client.js?v=auth-entry-1"></script>
+<script src="app.js?v=settings-pages-1"></script>
 </body>
 </html>

@@ -65,9 +65,10 @@ try {
     assert.equal(await page.evaluate(() => APP_CONFIG.termsAcceptedAt), saved.termsAcceptedAt, 'Reload must retain the actual submission timestamp');
     await page.evaluate(() => showSetup());
     assert(await page.locator('#setup-terms').isChecked());
+    await page.getByRole('button',{name:/^Name /}).click();
     await page.locator('#setup-current-parent').fill('Updated parent');
     await page.locator('#setup-continue').click();
-    await page.locator('#s-home.active').waitFor();
+    await page.locator('[data-settings-page=overview]:visible').waitFor();
     assert.equal(await page.evaluate(() => APP_CONFIG.termsAcceptedAt), saved.termsAcceptedAt, 'Ordinary Settings save must not restamp acceptance');
 
     // Restoring a legacy account must replace newer local acceptance metadata, not mix it in.
@@ -77,14 +78,14 @@ try {
     assert.equal(await page.evaluate(() => APP_CONFIG.termsVersion), 'alpha-local');
     assert(!(await page.locator('#setup-terms').isChecked()), 'An old acceptance must not appear as agreement to current documents');
     await page.locator('#setup-continue').click();
-    await page.locator('#s-home.active').waitFor();
+    await page.locator('[data-settings-page=overview]:visible').waitFor();
     assert.equal(await page.evaluate(() => APP_CONFIG.termsAcceptedAt), legacy.terms_accepted_at, 'Editing a legacy profile does not force or invent re-consent');
     await page.evaluate(() => showSetup());
     await page.locator('#setup-terms-field').scrollIntoViewIfNeeded();
     await page.screenshot({ path: `/tmp/whose-day-policy-review-${width}.png` });
     await page.locator('#setup-terms').check();
     await page.locator('#setup-continue').click();
-    await page.locator('#s-home.active').waitFor();
+    await page.locator('[data-settings-page=overview]:visible').waitFor();
     assert.equal(await page.evaluate(() => APP_CONFIG.termsVersion), '2026-10-13');
     assert.notEqual(await page.evaluate(() => APP_CONFIG.termsAcceptedAt), legacy.terms_accepted_at, 'Only an explicit checkbox resubmission upgrades acceptance');
     await page.evaluate(async () => { clearTimeout(cloudSyncTimer); await syncCloudData({reason:'policy-test'}); });
@@ -92,6 +93,7 @@ try {
     assert.equal(await page.evaluate(() => qaLastProfile.terms_accepted_at===APP_CONFIG.termsAcceptedAt), true);
     await page.evaluate(() => showSetup());
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth<=innerWidth), true);
+    await page.getByRole('button',{name:/^Name /}).click();
     await page.locator('#s-setup .setup-actions').scrollIntoViewIfNeeded();
     await page.screenshot({ path: `/tmp/whose-day-policy-acceptance-${width}.png` });
     for (const kind of ['terms', 'privacy']) {

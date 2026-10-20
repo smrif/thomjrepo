@@ -167,3 +167,66 @@ mobile/dark and desktop/light screenshots. The first suite run found a stale
 week-label smoke expectation and a Reports-help/Trends-legend class collision;
 both were corrected. Final full local suite: 32 passed, zero failed/skipped,
 about 90 seconds, with a 32-file build boundary pass.
+
+## October 20, 2026 Unified Account Settings
+
+The owner rejected separate Account and Cloud account concepts. Settings now has
+one Account section containing profile fields, authenticated status, sync,
+conflict review, restore, sign-out and deletion controls. Removed the duplicate
+sign-in email field. The remaining email shows authenticated identity read-only
+while signed in and accepts the sign-in address while signed out. Report email
+recipients prefer the current authenticated identity, refreshed by sync/restore
+and cleared by sign-out. Saving profile uses the displayed address; no Auth email
+change API, schema migration, or acceptance restamping was introduced.
+
+Retained sync disclosures in both sign-in states. Existing sync and deletion
+logic/controls remain; no live account operations were performed. Added
+`scripts/settings-account-test.mjs` for one-section/one-email structure, identity
+and report-recipient consistency, read-only email, profile saving without policy
+restamping, sign-out and signed-out sign-in in mobile/dark and desktop/light.
+Updated the sign-in button test to use the unified field. Inspected both layouts.
+App token is `unified-account-1`; this increment is not deployed.
+
+The first full run caught the sync disclosure removed with the old heading;
+restored it in both Account states. The final complete local suite passed all
+33 results, zero failures/skips, in about 97 seconds; 32-file build boundary
+passed. No production email, account, or data mutations were used.
+
+## October 20, 2026 Authenticated Entry Follow-up
+
+The owner clarified that signed-out users should land on welcome/login, with
+Settings reserved for signed-in/offline returning users. Implemented startup and
+navigation checks, verification before signup enters Today, matching-draft
+continuation, immediate device-local sign-out with retained records, offline
+continuity for previously authenticated devices, reconnect/session-loss checks,
+and history/cross-tab/stale-response guards. Removed Settings sign-in controls.
+Session persistence/refresh remains enabled; no provider session timeout changed.
+See [authenticated entry](auth-required-entry.md) for behavior and limitations.
+
+Added mocked entry tests and SDK logout/callback tests, and made older UI fixtures
+explicit about authentication. The first full pass caught deletion-reload and
+legacy local-profile fixture assumptions; both were corrected. The final complete
+local suite passed all 34 results, zero failures/skips, in about 87 seconds, with
+the 32-file build boundary passing. Offline shell/update, policy acceptance,
+security, sync and responsive smoke checks passed. No live accounts/emails,
+provider setting changes or production deployment were performed.
+
+## October 20, 2026 Settings overview and detail pages
+
+Replaced the long Settings form with the owner's approved grouped overview.
+Name, email/sign-in, co-parent, activities, profile sync/restore/conflicts,
+custody-log sync, export, and account deletion open focused pages; children have
+individual editors and appearance stays inline. Summary rows show saved values
+and current sync state. Save returns to Settings, Back discards draft changes,
+authenticated reload preserves detail navigation, and leaving deletion clears
+its typed confirmation. Child names render as text. Historical records and
+policy acceptance are preserved; appearance saves through existing sync.
+
+The full local release suite passed all 34 results with zero failures/skips,
+including the expanded Settings flow and adapted auth, policy, deletion,
+disclosure, offline shell, and app smoke checks. The static build contains 41
+files including licensed Heroicons assets. Browser preview checks covered dark
+mobile and desktop layouts with a sample account; no real account or cloud data
+was used. The app asset token is `settings-pages-1`. Owner approved the layout
+and requested production deployment; hosted CI and deployment evidence are
+recorded separately with the release.

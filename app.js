@@ -43,6 +43,13 @@ const ACTIVITY_ID_ALIASES={sports:'practice',dance:'practice',music:'practice'};
 const REMOVED_DEFAULT_ACTIVITY_IDS=new Set(['volunteer','tournament']);
 const CUSTOM_ACTIVITY_MAX_LENGTH=32;
 
+const LAST_ACCOUNT_KEY='whose_day_last_signed_in_account';
+const SIGNED_OUT_KEY='whose_day_explicitly_signed_out';
+const PENDING_SIGNUP_KEY='whose_day_pending_signup_email';
+let appAccessState='checking';
+let appAccessEpoch=0;
+let appAccessTask=null;
+let signedInAccountEmail='';
 let APP_CONFIG=loadConfig();
 let KIDS=[...APP_CONFIG.children];
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -115,7 +122,7 @@ function applyThemeMode(){
 function setThemeMode(mode,persist=true){
   APP_CONFIG.themeMode=normalizeThemeMode(mode);
   applyThemeMode();
-  if(persist&&hasSavedConfig())localStorage.setItem(CONFIG_KEY,JSON.stringify(APP_CONFIG));
+  if(persist&&hasSavedConfig()){localStorage.setItem(CONFIG_KEY,JSON.stringify(APP_CONFIG));scheduleCloudSync('appearance');}
 }
 function recordAppSession(){
   if(!hasSavedConfig()||sessionStorage.getItem(SESSION_COUNTED_KEY))return;
@@ -224,7 +231,8 @@ function renderChildRow(row){
   btn.type='button';
   btn.className='settings-child-row-button';
   btn.onclick=()=>openChildEditor(row);
-  btn.innerHTML=`<span class="settings-child-avatar person-icon" aria-hidden="true"></span><span class="settings-child-name">${name||'Unnamed child'}</span><span class="settings-chevron" aria-hidden="true">›</span>`;
+  btn.innerHTML=`<span class="settings-child-avatar settings-library-icon" style="--settings-icon:url(assets/icons/user-circle.svg)" aria-hidden="true"></span><span class="settings-child-name"></span><span class="settings-library-icon" style="--settings-icon:url(assets/icons/chevron-right.svg)" aria-hidden="true"></span>`;
+  btn.querySelector('.settings-child-name').textContent=name||'Unnamed child';
   row.appendChild(btn);
   row.appendChild(error);
 }
@@ -237,27 +245,34 @@ function openChildEditor(row){
   const childInput=row.querySelector('.setup-child-input');
   input.value=childInput?.value||'';
   if(remove)remove.style.display=document.querySelectorAll('.setup-child-row').length>1?'inline-flex':'none';
+  document.getElementById('child-editor-error').textContent='';
+  if(!document.getElementById('s-setup').classList.contains('onboarding-mode'))openSettingsPage('child');
+  modal.hidden=false;
   modal.classList.add('show');
   modal.setAttribute('aria-hidden','false');
   setTimeout(()=>input.focus(),0);
 }
 
 function closeChildEditor(){
+  if(editingChildRow&&!cleanName(editingChildRow.querySelector('.setup-child-input')?.value)){editingChildRow.remove();updateChildRemoveButtons();}
   const modal=document.getElementById('child-modal');
   modal.classList.remove('show');
   modal.setAttribute('aria-hidden','true');
   editingChildRow=null;
+  if(!document.getElementById('s-setup').classList.contains('onboarding-mode'))backToSettings();
 }
 
 function saveChildEditor(){
   if(!editingChildRow)return;
   const value=cleanName(document.getElementById('child-modal-input').value);
+  if(!value){document.getElementById('child-editor-error').textContent='Enter a child’s name.';document.getElementById('child-modal-input').focus();return;}
   const input=editingChildRow.querySelector('.setup-child-input');
   input.value=value;
   renderChildRow(editingChildRow);
   updateChildRemoveButtons();
   handleSetupInput();
-  closeChildEditor();
+  if(document.getElementById('s-setup').classList.contains('onboarding-mode'))closeChildEditor();
+  else{document.getElementById('child-modal').classList.remove('show');document.getElementById('child-modal').setAttribute('aria-hidden','true');editingChildRow=null;saveSetup(true);}
 }
 
 function removeEditingChild(){
@@ -266,7 +281,8 @@ function removeEditingChild(){
   editingChildRow.remove();
   updateChildRemoveButtons();
   handleSetupInput();
-  closeChildEditor();
+  if(document.getElementById('s-setup').classList.contains('onboarding-mode'))closeChildEditor();
+  else{document.getElementById('child-modal').classList.remove('show');document.getElementById('child-modal').setAttribute('aria-hidden','true');editingChildRow=null;saveSetup(true);}
 }
 
 // ── ACTIVITIES ───────────────────────────────────────────────────
@@ -440,7 +456,7 @@ function initSetupForm(){
   if(setupTitle)setupTitle.textContent=onboarding?'Let’s get you started':'Settings';
   if(setupSubtitle)setupSubtitle.textContent=onboarding?'A few quick details to personalize your experience.':'Update your profile and household details.';
   document.getElementById('setup-current-parent').value=onboarding?'':APP_CONFIG.currentParentLabel;
-  document.getElementById('setup-email').value=onboarding?'':(APP_CONFIG.email||'');
+  document.getElementById('setup-email').value=onboarding?'':(signedInAccountEmail||APP_CONFIG.email||'');
   document.getElementById('setup-co-parent').value=APP_CONFIG.coParentLabel;
   document.getElementById('setup-co-parent').oninput=()=>updateCoParentPreview();
   renderChildFields(onboarding?['']:APP_CONFIG.children);
@@ -453,6 +469,8 @@ function initSetupForm(){
   setThemeMode(APP_CONFIG.themeMode,false);
   document.getElementById('setup-continue').textContent=onboarding?'Start tracking →':'Save changes';
   validateSetup(false);
+  updateSettingsOverview();
+  if(!onboarding&&appHasAccess())openSettingsPage(settingsPage,{push:false,focus:false});
   initCloudAuthUi();
 }
 function setOnboardingMode(active){
@@ -534,10 +552,14 @@ function setPolicySaveBusy(busy,button){
   if(busy)button.setAttribute('aria-busy','true');
   else button.removeAttribute('aria-busy');
 }
-async function saveSetup(){
+async function saveSetup(returnToSettings=false){
   if(policySaveBusy)return;
   setupValidationAttempted=true;
   if(!validateSetup(true)){
+    if(!document.getElementById('s-setup').classList.contains('onboarding-mode')){
+      const page=document.getElementById('setup-current-parent').getAttribute('aria-invalid')==='true'?'name':document.getElementById('setup-email').getAttribute('aria-invalid')==='true'?'email':'overview';
+      openSettingsPage(page,{push:false});
+    }
     // Scroll to first invalid field so user knows what to fix
     const firstInvalid=document.querySelector('.setup-field.invalid, .setup-terms.invalid');
     if(firstInvalid)firstInvalid.scrollIntoView({behavior:'smooth',block:'center'});
@@ -567,16 +589,120 @@ async function saveSetup(){
   }finally{setPolicySaveBusy(false,button)}
   setOnboardingMode(false);
   renderConfigurableUi();
+  if(!await finishSetupAccess(config.email))return;
   initHome();
-  show('s-home');
+  if(returnToSettings&&!onboarding){showSetup();openSettingsPage('overview',{push:false});document.getElementById('settings-save-message').textContent='Changes saved.';}
+  else show('s-home');
 }
-function skipSetup(){saveConfig(DEFAULT_CONFIG);setOnboardingMode(false);renderConfigurableUi();initHome();show('s-home')}
+function skipSetup(){if(!appHasAccess()){startWelcome();return}saveConfig(DEFAULT_CONFIG);setOnboardingMode(false);renderConfigurableUi();initHome();show('s-home')}
 function cloudBackendEnabled(){
   return !!(window.WhoseDayBackend&&window.WhoseDayBackend.isEnabled&&window.WhoseDayBackend.isEnabled());
 }
+function isAppPreview(){
+  const params=new URLSearchParams(location.search);
+  return ['june','july'].includes(params.get('demo'))||params.has('onboarding-theme-preview');
+}
+function appHasAccess(){
+  return isAppPreview()||hasSavedConfig()&&!accountDeletedOnDevice()&&
+    !localStorage.getItem(SIGNED_OUT_KEY)&&['signed-in','offline'].includes(appAccessState);
+}
+function rememberSignedInAccount(session){
+  if(!session?.user?.id)return;
+  appAccessState='signed-in';
+  signedInAccountEmail=session.user.email||'';
+  localStorage.removeItem(SIGNED_OUT_KEY);
+  localStorage.setItem(LAST_ACCOUNT_KEY,JSON.stringify({id:session.user.id,email:signedInAccountEmail}));
+}
+function lastSignedInAccount(){
+  if(localStorage.getItem(SIGNED_OUT_KEY)||localStorage.getItem(PENDING_SIGNUP_KEY)||accountDeletedOnDevice())return null;
+  try{
+    return JSON.parse(localStorage.getItem(LAST_ACCOUNT_KEY)||'null')||window.WhoseDayBackend?.getCachedSession?.()?.user||null;
+  }catch{return null}
+}
+function lockSignedOutApp(explicit=false){
+  appAccessEpoch++;
+  appAccessState='signed-out';
+  signedInAccountEmail='';
+  if(explicit)localStorage.setItem(SIGNED_OUT_KEY,'1');
+  localStorage.removeItem(LAST_ACCOUNT_KEY);
+  clearTimeout(cloudSyncTimer);clearTimeout(cloudSyncRefreshTimer);
+  cloudSyncPending=false;
+  if(!document.querySelector('.screen.active')?.id.startsWith('s-ob-'))startWelcome();
+}
+async function checkAppAccess({initial=false}={}){
+  if(isAppPreview())return;
+  if(appAccessTask)return appAccessTask;
+  const epoch=appAccessEpoch;
+  const callback=initial&&shouldOpenLoggedOutLoginOnBoot();
+  appAccessTask=(async()=>{
+    if((localStorage.getItem(SIGNED_OUT_KEY)||accountDeletedOnDevice())&&!callback){
+      lockSignedOutApp();
+      if(initial)startWelcome();return;
+    }
+    if(navigator.onLine===false){
+      const account=lastSignedInAccount();
+      if(account?.id&&hasSavedConfig()){
+        appAccessState='offline';signedInAccountEmail=account.email||'';
+        if(initial)showInitialApp();
+      }else if(initial)startWelcome();
+      return;
+    }
+    try{
+      let session=null;
+      if(cloudBackendEnabled()){
+        let timer;
+        try{
+          session=await Promise.race([window.WhoseDayBackend.getSession(),new Promise((_,reject)=>{
+            timer=setTimeout(()=>reject(new Error('Sign-in check timed out.')),12000);
+          })]);
+        }finally{clearTimeout(timer)}
+      }
+      if(epoch!==appAccessEpoch)return;
+      if(!session){
+        lockSignedOutApp();
+        if(document.getElementById('s-auth-loading').classList.contains('active'))startWelcome();
+        return;
+      }
+      const needsRestore=callback||!hasSavedConfig()||accountDeletedOnDevice()||localStorage.getItem(PENDING_SIGNUP_KEY)||['onboarding','restoring'].includes(appAccessState);
+      if(needsRestore){
+        appAccessState='restoring';
+        if(initial){showLoggedOutLogin()}
+      }else{
+        rememberSignedInAccount(session);
+        if(initial||document.getElementById('s-ob-welcome').classList.contains('active')){recordAppSession();showInitialApp()}
+        scheduleCloudSync('session-ready',200);
+      }
+    }catch(error){
+      if(epoch!==appAccessEpoch)return;
+      const cached=window.WhoseDayBackend?.getCachedSession?.();
+      const retryable=error?.name==='AuthRetryableFetchError'||error?.status>=500||/network|fetch|timed out/i.test(error?.message||'');
+      if(retryable&&cached?.user?.id&&hasSavedConfig()&&!localStorage.getItem(SIGNED_OUT_KEY)&&!localStorage.getItem(PENDING_SIGNUP_KEY)){
+        appAccessState='offline';signedInAccountEmail=cached.user.email||'';
+        if(initial)showInitialApp();
+      }else{
+        lockSignedOutApp();
+        if(initial)startWelcome();
+      }
+    }
+  })().finally(()=>{appAccessTask=null});
+  return appAccessTask;
+}
+async function finishSetupAccess(email){
+  if(isAppPreview()||appHasAccess())return true;
+  if(appAccessState==='onboarding'&&signedInAccountEmail&&signedInAccountEmail.toLowerCase()===email.trim().toLowerCase()){
+    appAccessState='signed-in';localStorage.removeItem(PENDING_SIGNUP_KEY);scheduleCloudSync('setup-complete',200);return true;
+  }
+  localStorage.setItem(PENDING_SIGNUP_KEY,email.trim().toLowerCase());
+  await showLoggedOutAuth('signup');
+  if(appHasAccess())return true;
+  document.getElementById('ob-login-email').value=email;
+  if(navigator.onLine===false)setLoggedOutAuthMessage('Your setup is saved on this device. Connect to finish creating your account.');
+  else await sendLoggedOutSignInLink();
+  return false;
+}
 function cloudSyncAllowed(){
   const params=new URLSearchParams(window.location.search);
-  return !cloudDeletionBusy&&!accountDeletedOnDevice()&&hasSavedConfig()&&cloudBackendEnabled()&&!params.has('demo')&&!params.has('onboarding-theme-preview')&&navigator.onLine!==false;
+  return appAccessState==='signed-in'&&!cloudDeletionBusy&&!accountDeletedOnDevice()&&hasSavedConfig()&&cloudBackendEnabled()&&!params.has('demo')&&!params.has('onboarding-theme-preview')&&navigator.onLine!==false;
 }
 function cloudRedirectUrl(){
   const config=window.WhoseDayBackend?.settings?.()||{};
@@ -632,7 +758,7 @@ function setCloudAuthMessage(message,tone=''){
 function setCloudAuthBusy(busy){
   busy=busy||cloudDeletionBusy;
   cloudAuthBusy=busy;
-  ['cloud-auth-send','cloud-auth-refresh','cloud-auth-signout','profile-backup-btn','profile-restore-btn','entry-backup-btn','cloud-delete-btn'].forEach(id=>{
+  ['cloud-auth-refresh','cloud-auth-signout','profile-backup-btn','profile-restore-btn','entry-backup-btn','cloud-delete-btn'].forEach(id=>{
     const btn=document.getElementById(id);
     if(btn)btn.disabled=busy;
   });
@@ -826,6 +952,7 @@ function updateCloudSyncStatusUi(status={}){
     }
   }
   renderCloudConflictReview();
+  updateSettingsOverview();
 }
 function conflictTimeLabel(iso){
   if(!iso)return'Unknown update time';
@@ -960,7 +1087,9 @@ async function performCloudSync({reason='manual',showMessage=false}={}){
     cloudSyncPending=false;
     updateCloudSyncStatusUi({state:'syncing',message:'Syncing latest changes...',persist:false});
     const session=await window.WhoseDayBackend.getSession();
+    signedInAccountEmail=session?.user?.email||'';
     if(!session){
+      lockSignedOutApp();
       cloudSyncPending=false;
       updateCloudSyncStatusUi({state:'pending',message:'Sign in before cloud sync can run.'});
       return null;
@@ -1051,8 +1180,6 @@ async function initCloudAuthUi(){
   const enabled=cloudBackendEnabled();
   section.hidden=!enabled;
   if(!enabled)return;
-  const email=document.getElementById('cloud-auth-email');
-  if(email&&!email.value)email.value=APP_CONFIG.email||document.getElementById('setup-email')?.value||'';
   updateEntryBackupDetail(Object.keys(getEntries()).length);
   updateCloudSyncStatusUi({persist:false});
   await refreshCloudAuthUi(false);
@@ -1063,17 +1190,33 @@ async function refreshCloudAuthUi(showMessage=true){
   const pill=document.getElementById('cloud-auth-pill');
   const signOut=document.getElementById('cloud-auth-signout');
   if(!cloudBackendEnabled()||!title||!detail||!pill)return;
+  if(appAccessState==='offline'){
+    title.textContent='Offline';detail.textContent='Your saved records are available. Connect to sync.';
+    pill.textContent='Offline';setProfileSyncVisible(false);
+    if(signOut)signOut.hidden=false;
+    const input=document.getElementById('setup-email');input.readOnly=true;
+    if(signedInAccountEmail)input.value=signedInAccountEmail;
+    return;
+  }
   try{
     setCloudAuthBusy(true);
+    document.getElementById('setup-email').readOnly=true;
     title.textContent='Checking account';
-    detail.textContent='Looking for a saved Supabase session on this device.';
+    detail.textContent='Checking your sign-in status.';
     pill.textContent='Checking';
-    if(showMessage)setCloudAuthMessage('Checking cloud account status...');
+    if(showMessage)setCloudAuthMessage('Checking account status...');
     const session=await window.WhoseDayBackend.getSession();
     const email=session?.user?.email||'';
+    signedInAccountEmail=email;
+    const accountInput=document.getElementById('setup-email');
+    accountInput.readOnly=!!session;
+    if(email)accountInput.value=email;
+    updateSettingsOverview();
+    handleSetupInput();
+    document.getElementById('account-email-hint').textContent=session?'Your sign-in email. Used for report sharing.':'';
     if(session){
       title.textContent='Signed in';
-      detail.textContent=email?'Connected as '+email:'Your cloud account is connected.';
+      detail.textContent='Profile and logs sync automatically while signed in, including notes and screenshots.';
       pill.textContent='Connected';
       pill.classList.add('connected');
       if(signOut)signOut.hidden=false;
@@ -1085,10 +1228,11 @@ async function refreshCloudAuthUi(showMessage=true){
       }
       updateCloudSyncStatusUi({persist:false});
       scheduleCloudSync('signed-in',200);
-      if(showMessage)setCloudAuthMessage('Cloud account connected. Sync runs automatically.','success');
+      if(showMessage)setCloudAuthMessage('Signed in. Sync runs automatically.','success');
     }else{
+      lockSignedOutApp();
       title.textContent='Not signed in';
-      detail.textContent='Send a secure email link to connect this device.';
+      detail.textContent='Profile and logs sync automatically while signed in, including notes and screenshots.';
       pill.textContent='Local';
       pill.classList.remove('connected');
       if(signOut)signOut.hidden=true;
@@ -1099,49 +1243,24 @@ async function refreshCloudAuthUi(showMessage=true){
       if(showMessage)setCloudAuthMessage('');
     }
   }catch(error){
-    setCloudAuthMessage(error.message||'Could not check cloud sign-in status.','error');
+    document.getElementById('setup-email').readOnly=!!signedInAccountEmail;
+    setCloudAuthMessage(error.message||'Could not check sign-in status.','error');
   }finally{
-    setCloudAuthBusy(false);
-  }
-}
-async function sendCloudSignInLink(){
-  if(cloudAuthBusy)return;
-  const button=document.getElementById('cloud-auth-send');
-  const input=document.getElementById('cloud-auth-email');
-  const email=(input?.value||document.getElementById('setup-email')?.value||'').trim();
-  if(!isValidEmail(email)){
-    setCloudAuthMessage('Enter a valid email address first.','error');
-    if(input)input.focus();
-    return;
-  }
-  try{
-    setCloudAuthBusy(true);
-    if(button){button.textContent='Sending...';button.setAttribute('aria-busy','true')}
-    setCloudAuthMessage('');
-    await window.WhoseDayBackend.signInWithEmail(email,cloudRedirectUrl());
-    setCloudAuthMessage('Sign-in link sent. Check your email, then return to Whose Day.','success');
-  }catch(error){
-    setCloudAuthMessage(error.message||'Could not send the sign-in link.','error');
-  }finally{
-    if(button){button.textContent='Send sign-in link';button.removeAttribute('aria-busy')}
     setCloudAuthBusy(false);
   }
 }
 async function signOutCloudAccount(){
   if(cloudAuthBusy)return;
+  setCloudAuthBusy(true);
+  lockSignedOutApp(true);
   try{
-    setCloudAuthBusy(true);
+    if(cloudSyncTask)await cloudSyncTask;
     await window.WhoseDayBackend.signOut();
-    setCloudAuthMessage('Signed out. Local records are still on this device.','success');
-    setProfileSyncVisible(false);
-    updateEntryBackupDetail(Object.keys(getEntries()).length);
-    setStoredSyncConflicts([]);
-    updateCloudSyncStatusUi({state:'idle',message:'Sign in to turn on automatic sync.'});
-    await refreshCloudAuthUi(false);
   }catch(error){
-    setCloudAuthMessage(error.message||'Could not sign out.','error');
+    console.warn('Remote sign-out could not be confirmed. This device remains signed out.');
   }finally{
-    setCloudAuthBusy(false);
+    setProfileSyncVisible(false);setStoredSyncConflicts([]);
+    setCloudAuthBusy(false);startWelcome();
   }
 }
 async function backupCloudProfile(){
@@ -1533,6 +1652,7 @@ function setActiveScreenMeta(screenId){
 }
 
 function show(id,direction){
+  if(!id.startsWith('s-ob-')&&id!=='s-auth-loading'&&!appHasAccess())id='s-ob-welcome';
   const next=document.getElementById(id);
   if(!next)return;
   if(policySaveBusy&&document.querySelector('.screen.active')?.id!==id)policySaveNavigationToken++;
@@ -1544,6 +1664,7 @@ function show(id,direction){
   setActiveScreenMeta(id);
   const current=document.querySelector('.screen.active:not(.screen-leave)')||document.querySelector('.screen.active');
   const currentId=current?.id||null;
+  if(currentId==='s-setup'&&id!=='s-setup'&&location.hash.startsWith('#settings'))history.replaceState(null,'',location.pathname+location.search);
   let navDirection=direction;
   const isCheckinTransition=currentId&&CHECKIN_FLOW_SCREENS.has(currentId)&&CHECKIN_FLOW_SCREENS.has(id);
 
@@ -1655,6 +1776,7 @@ function obBack(targetScreen){
   window.scrollTo(0,0);
 }
 function obSkip(){
+  if(!appHasAccess()){startWelcome();return}
   saveConfig(DEFAULT_CONFIG);
   setOnboardingMode(false);
   renderConfigurableUi();
@@ -1678,7 +1800,7 @@ function showLoggedOutAuth(mode){
   document.getElementById('ob-auth-label').textContent=signup?'New account':'Welcome back';
   document.getElementById('ob-auth-title').textContent=signup?'Sign up':'Sign in';
   document.getElementById('ob-auth-description').textContent=signup
-    ?"Create your account with a secure email link. Then we'll help you set up your parenting log."
+    ?"Open the link in your email to finish creating your account. Your setup is saved on this device."
     :"Use the email for your existing account. We'll send a secure link to restore your profile and records.";
   document.getElementById('ob-auth-switch-signup').hidden=signup;
   document.getElementById('ob-auth-switch-login').hidden=!signup;
@@ -1686,7 +1808,7 @@ function showLoggedOutAuth(mode){
   setLoggedOutAuthMessage('');
   updateLoggedOutSignInButton();
   show('s-ob-login');
-  initLoggedOutLoginUi();
+  return initLoggedOutLoginUi();
 }
 
 async function initLoggedOutLoginUi(){
@@ -1698,6 +1820,7 @@ async function initLoggedOutLoginUi(){
     return;
   }
   if(email&&!email.value)email.value=APP_CONFIG.email||'';
+  if(navigator.onLine===false){setLoggedOutAuthMessage('Connect to sign in.');return;}
   await refreshLoggedOutLoginUi(false);
 }
 
@@ -1777,16 +1900,25 @@ async function restoreLoggedOutCloudAccount(session=null){
   try{
     setLoggedOutAuthBusy(true);
     session=session||await window.WhoseDayBackend.getSession();
-    if(!session)throw new Error('Sign in before restoring your cloud account.');
+    if(!session)throw new Error('Sign in before restoring your account.');
+    signedInAccountEmail=session.user.email||'';
     const profile=await window.WhoseDayBackend.getProfile(session.user.id);
     if(!loggedOutLoginActive())return;
+    rememberSignedInAccount(session);
+    const pendingEmail=localStorage.getItem(PENDING_SIGNUP_KEY);
+    if(!profile?.terms_accepted_at&&pendingEmail&&pendingEmail===String(session.user.email||'').trim().toLowerCase()&&hasSavedConfig()&&hasCurrentPolicyAcceptance(APP_CONFIG)){
+      localStorage.removeItem(PENDING_SIGNUP_KEY);
+      saveConfig(APP_CONFIG);setOnboardingMode(false);renderConfigurableUi();recordAppSession();show('s-home');return;
+    }
     // A profile written by an older startup sync is not completed onboarding.
     if(!profile?.terms_accepted_at){
+      appAccessState='onboarding';
       OB_STATE.email=session.user.email||'';
       document.getElementById('ob-email').value=OB_STATE.email;
       show('s-ob-name');
       return;
     }
+    localStorage.removeItem(PENDING_SIGNUP_KEY);
     saveConfig(configFromProfile(profile));
     const cloudRows=await window.WhoseDayBackend.getCustodyEntries(session.user.id);
     const entries=getEntries();
@@ -1807,7 +1939,7 @@ async function restoreLoggedOutCloudAccount(session=null){
     setLoggedOutAuthMessage('');
     show('s-home');
   }catch(error){
-    setLoggedOutAuthMessage(error.message||'Could not restore your cloud account.','error');
+    setLoggedOutAuthMessage(error.message||'Could not restore your account.','error');
   }finally{
     setLoggedOutAuthBusy(false);
   }
@@ -1932,6 +2064,7 @@ async function obFinish(){
   }finally{setPolicySaveBusy(false,button)}
   setOnboardingMode(false);
   renderConfigurableUi();
+  if(!await finishSetupAccess(email))return;
   if(!ONBOARDING_PREVIEW)recordAppSession();
   initHome();
   show('s-home');
@@ -1970,7 +2103,59 @@ function dismissActivityPrompt(){
 function startWelcome(){initOnboarding();show('s-ob-welcome');}
 function skipWelcome(){obSkip();}
 // ── END WELCOME ───────────────────────────────────────
-function showSetup(){setOnboardingMode(false);initSetupForm();show('s-setup')}
+let settingsPage='overview';
+const SETTINGS_PAGES=new Set(['overview','name','email','coparent','sync','activities','export','logs','delete','child']);
+function showInitialApp(){
+  const match=location.hash.match(/^#settings(?:\/([a-z]+))?$/);
+  if(!match){show('s-home');return;}
+  const page=SETTINGS_PAGES.has(match[1])&&match[1]!=='child'?match[1]:'overview';
+  showSetup();openSettingsPage(page,{push:false});
+  history.replaceState({settingsPage:page},'',location.pathname+location.search+(page==='overview'?'#settings':'#settings/'+page));
+}
+function updateSettingsOverview(){
+  const values={name:APP_CONFIG.currentParentLabel,email:signedInAccountEmail||APP_CONFIG.email,coparent:APP_CONFIG.coParentLabel,activities:getConfiguredActivityIds().length+' selected',sync:appAccessState==='offline'?'Offline':document.getElementById('cloud-sync-status')?.textContent||'Ready'};
+  document.querySelectorAll('[data-cloud-unavailable]').forEach(el=>{el.hidden=cloudBackendEnabled()&&appAccessState!=='offline'&&navigator.onLine!==false});
+  Object.entries(values).forEach(([key,value])=>{const el=document.getElementById('settings-'+key+'-summary');if(el){el.textContent=value||'Not set';if(key==='sync')el.dataset.state=document.getElementById('cloud-sync-status')?.dataset.state||'idle'}});
+}
+function openSettingsPage(page,{push=true,focus=true}={}){
+  if(!SETTINGS_PAGES.has(page)||!appHasAccess())return;
+  settingsPage=page;
+  if(page!=='child'){const modal=document.getElementById('child-modal');modal.classList.remove('show');modal.setAttribute('aria-hidden','true');editingChildRow=null;}
+  document.querySelectorAll('#s-setup [data-settings-page]').forEach(el=>{el.hidden=el.dataset.settingsPage!==page});
+  document.querySelector('#s-setup .settings-back').hidden=page==='overview';
+  document.getElementById('settings-overview-title').hidden=page!=='overview';
+  document.getElementById('settings-overview-description').hidden=page!=='overview';
+  const area=document.getElementById('settings-save-area');
+  const target=document.querySelector(`[data-settings-page="${page}"] [data-settings-actions]`);
+  (target||document.querySelector('[data-settings-page="overview"]')).appendChild(area);
+  area.hidden=!['name','coparent','activities'].includes(page)&&!(page==='overview'&&!hasCurrentPolicyAcceptance(APP_CONFIG));
+  const message=document.getElementById('cloud-auth-message');
+  if(message){const host=document.querySelector(`[data-settings-page="${page}"]`);host.appendChild(message);message.textContent='';}
+  document.getElementById('settings-save-message').textContent='';
+  if(page!=='delete'){document.getElementById('cloud-delete-confirm').value='';updateCloudDeleteButton();}
+  updateSettingsOverview();
+  if(push)history.pushState({settingsPage:page},'',location.pathname+location.search+'#settings/'+page);
+  window.scrollTo(0,0);
+  if(focus){const heading=document.getElementById('settings-heading-'+page)||document.getElementById(page==='child'?'child-modal-title':'settings-overview-title');heading?.setAttribute('tabindex','-1');heading?.focus({preventScroll:true});}
+}
+function backToSettings(){
+  if(policySaveBusy)policySaveNavigationToken++;
+  const modal=document.getElementById('child-modal');modal.classList.remove('show');modal.setAttribute('aria-hidden','true');editingChildRow=null;
+  initSetupForm();
+  openSettingsPage('overview',{push:false});
+  history.replaceState({settingsPage:'overview'},'',location.pathname+location.search+'#settings');
+}
+window.addEventListener('popstate',event=>{
+  if(document.getElementById('s-setup').classList.contains('active')&&appHasAccess()){
+    const page=event.state?.settingsPage;
+    if(page&&page!=='child'){
+      initSetupForm();openSettingsPage(page,{push:false});
+    }else backToSettings();
+  }
+});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&settingsPage!=='overview'&&document.getElementById('s-setup').classList.contains('active')){event.preventDefault();backToSettings()}});
+
+function showSetup(){setOnboardingMode(false);initSetupForm();show('s-setup');if(appHasAccess()){openSettingsPage('overview',{push:false,focus:false});history.replaceState({settingsPage:'overview'},'',location.pathname+location.search+'#settings')}}
 function resetWeekCards(){
   const classes={dad:'checkin-decision-card planned',mom:'checkin-decision-card change'};
   Object.entries(classes).forEach(([w,cls])=>{const el=document.getElementById('wk-'+w);if(el)el.className=cls});
@@ -3120,7 +3305,7 @@ function sendWeeklyEmail(){
   document.getElementById('sunday-prompt').style.display='none';
 }
 function reportMailto(subject,body){
-  const recipient=encodeURIComponent((APP_CONFIG.email||'').trim());
+  const recipient=encodeURIComponent((signedInAccountEmail||APP_CONFIG.email||'').trim());
   return `mailto:${recipient}?subject=${subject}&body=${body}`;
 }
 
@@ -3193,8 +3378,10 @@ if(DEMO_MODE==='june')seedJuneDemoData();
 if(DEMO_MODE==='july')seedJulyDemoData();
 renderConfigurableUi();
 applyThemeMode();
-window.addEventListener('online',()=>scheduleCloudSync('online',200));
-window.addEventListener('focus',()=>{resumeLoggedOutLogin();scheduleCloudSync('focus',500)});
+window.addEventListener('online',()=>checkAppAccess().then(()=>scheduleCloudSync('online',200)));
+window.addEventListener('focus',()=>{resumeLoggedOutLogin();checkAppAccess().then(()=>scheduleCloudSync('focus',500))});
+window.addEventListener('pageshow',event=>{if(event.persisted)checkAppAccess({initial:true})});
+window.addEventListener('storage',event=>{if(event.key===SIGNED_OUT_KEY&&event.newValue==='1')lockSignedOutApp()});
 window.addEventListener('offline',()=>{
   clearTimeout(cloudSyncRefreshTimer);
   updateCloudSyncStatusUi({state:'offline',message:'Offline. New logs will sync when this device reconnects.'});
@@ -3202,23 +3389,22 @@ window.addEventListener('offline',()=>{
 document.addEventListener('visibilitychange',()=>{
   if(!document.hidden){
     resumeLoggedOutLogin();
-    scheduleCloudSync('visible',500);
+    checkAppAccess().then(()=>scheduleCloudSync('visible',500));
   }else clearTimeout(cloudSyncRefreshTimer);
 });
-if(ONBOARDING_PREVIEW){
-  initOnboarding();show('s-ob-welcome');
-}else if(hasSavedConfig()&&!accountDeletedOnDevice()){
-  recordAppSession();
-  initHome();
-  setActiveScreenMeta('s-home');
-  syncFeedbackButton('s-home');
+if(isAppPreview()){
+  if(DEMO_MODE==='june'||DEMO_MODE==='july'){recordAppSession();showCal()}
+  else{initOnboarding();show('s-ob-welcome')}
 }else{
   initOnboarding();
-  if(shouldOpenLoggedOutLoginOnBoot())showLoggedOutLogin();
-  else show('s-ob-welcome');
+  show(hasSavedConfig()&&!accountDeletedOnDevice()||shouldOpenLoggedOutLoginOnBoot()?'s-auth-loading':'s-ob-welcome');
+  checkAppAccess({initial:true});
+  window.WhoseDayBackend?.subscribeAuthState?.((event)=>{
+    if(event==='SIGNED_OUT')lockSignedOutApp();
+    else if(event==='SIGNED_IN'&&['s-ob-welcome','s-ob-login','s-auth-loading'].includes(document.querySelector('.screen.active')?.id))checkAppAccess({initial:true});
+    else if(event==='TOKEN_REFRESHED'&&appAccessState==='offline')checkAppAccess();
+  });
 }
-if(DEMO_MODE==='june'||DEMO_MODE==='july')showCal();
-scheduleCloudSync('startup',1200);
 if('serviceWorker' in navigator&&window.isSecureContext&&location.protocol!=='file:'){
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).catch(error=>{

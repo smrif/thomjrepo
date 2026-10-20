@@ -61,6 +61,7 @@ try {
     await page.goto(`http://127.0.0.1:${server.address().port}/`);
     await page.locator('#settings-profile').waitFor({ state: 'attached' });
     await page.locator('[onclick="showSetup()"]:visible').first().click();
+    await page.getByRole('button', {name:'Delete account',exact:true}).click();
     const button = page.locator('#cloud-delete-btn');
     const input = page.locator('#cloud-delete-confirm');
     await button.waitFor({ state: 'visible' });

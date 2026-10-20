@@ -1,5 +1,11 @@
 # Onboarding-first Sign-up and Separate Login
 
+October 20 local follow-up, pending release: signed-out users now stay on
+welcome/login, and signup verifies the email after the name/children/agreement
+questions before opening Today. Settings no longer hosts sign-in. See
+[authenticated entry](auth-required-entry.md); the deployment notes below are
+historical behavior from October 13.
+
 Deployed October 13, 2026 as Worker `d0452630-30ee-4b89-ae29-34a8c275b9e0`.
 See [release verification](deployment-2026-10-13.md).
 

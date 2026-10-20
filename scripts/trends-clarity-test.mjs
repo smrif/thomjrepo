@@ -18,9 +18,11 @@ try{
   browser=await chromium.launch();
   for(const [width,theme] of [[390,'dark'],[1280,'light']]){
     const context=await browser.newContext({viewport:{width,height:900},serviceWorkers:'block'});
-    await context.route('**/supabase-client.js*',r=>r.fulfill({contentType:'text/javascript',body:'window.WhoseDayBackend={isEnabled:()=>false};'}));
+    await context.route('**/supabase-client.js*',r=>r.fulfill({contentType:'text/javascript',body:'window.WhoseDayBackend={isEnabled:()=>true,getSession:async()=>({user:{id:"fixture",email:"fixture@example.com"}}),getProfile:async()=>({user_id:"fixture",terms_accepted_at:"2026-10-13T12:00:00Z"}),getCustodyEntries:async()=>[],upsertSyncDevice:async row=>row};'}));
     const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
     await page.goto(`http://127.0.0.1:${server.address().port}/`);
+    await page.waitForFunction(()=>appAccessState==='signed-in'&&!appAccessTask&&!loggedOutAuthBusy);
+    await page.evaluate(()=>WhoseDayBackend.isEnabled=()=>false);
     await page.evaluate(theme=>{
       saveConfig({...DEFAULT_CONFIG,currentParentLabel:'Alex <Parent>',coParentLabel:'Jordan & Co',children:['Avery','Sam'],themeMode:theme});
       const common={kidsWithDad:['Avery','Sam'],dadHadKids:['Avery','Sam'],momHadKidsOnDadWeek:['Avery'],loggedAt:'2026-06-01T20:00:00Z'};
