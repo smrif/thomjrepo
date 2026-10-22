@@ -87,6 +87,11 @@ profile, secure cached test identity, note and attachment recovered across
 termination/relaunch; the second account was empty, old store access was revoked,
 and local sign-out stayed signed out when auth was reopened. No network was used.
 
+Owner browser smoke test passed October 22: sample account A worked as expected;
+the follow-up sign-out, account B separation, and return to account A also behaved
+as expected. This confirms the browser preview flow; real email handoff and
+physical-device checks remain separate.
+
 Next: connect test-backend profile restoration and custody sync with the existing
 conflict rules; then native Settings, backup/import and report sharing. Real email
 handoff through this account entry, physical-device behavior, and store release

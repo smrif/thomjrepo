@@ -48,6 +48,9 @@ app has not been released. Production provider settings are unchanged.
 
 ## Evidence so far
 
+- Owner confirmed the browser account preview October 22: sample account A,
+  sign-out/switch to account B, and return to account A behaved as expected.
+  This is browser smoke-test evidence, not real-auth or physical-iPhone sign-off.
 - Mobile domain/auth/storage/product-save/account suite: 28 passed. Covers account
   scope/ownership, stale responses and saves during account changes, offline
   auth and durable sign-out, profile failures, and commit/readback failure behavior,
