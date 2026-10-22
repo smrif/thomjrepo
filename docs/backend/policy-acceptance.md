@@ -42,6 +42,13 @@ as authoritative legal evidence. No such guarantee is claimed by this release.
 
 ## Versioned Documents
 
+October 21 follow-up: the owner approved the new policy revision and matching
+agreement links/version constants, deployed as Worker
+`30f76121-9223-431f-b915-5131d51cf91a`. October 13 frozen copies remain unchanged
+and existing acceptance metadata is preserved. See
+[policy refresh review](policy-refresh-2026-10-21.md). The description below
+records the previously deployed revision.
+
 Both current documents are version `2026-10-13`. Agreement links point to the
 frozen HTML copies in `assets/legal/2026-10-13/`, not mutable latest-policy pages.
 Their hashes are recorded in `assets/legal/manifest.json`. Current public policy

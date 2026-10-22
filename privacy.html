@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="policy-version" content="2026-10-13">
+<meta name="policy-version" content="2026-10-21-v2">
 <title>Privacy Policy | Whose Day</title>
 <style>
   *{box-sizing:border-box}
@@ -25,11 +25,11 @@
 <main>
   <div class="brand">Whose Day</div>
   <h1>Privacy Policy</h1>
-  <p class="updated">Last updated: October 13, 2026</p>
+  <p class="updated">Last updated: October 21, 2026</p>
 
   <section class="notice">
-    <h2>Alpha Privacy Summary</h2>
-    <p>Whose Day saves records in this browser on your device. While you are signed in, your profile and custody logs sync automatically to your Whose Day account using Supabase, including notes and attached screenshots. Offline changes stay on this device until the app is open with connectivity again. You choose when to export or share reports.</p>
+    <h2>Privacy Summary</h2>
+    <p>Whose Day is operated by Pueblo Apps LLC. It saves records in this browser on your device. While you are signed in, your profile and custody logs sync automatically to your Whose Day account using Supabase, including notes and attached screenshots. Offline changes stay on this device until the app is open with connectivity again. You choose when to download backups, export, or share reports.</p>
   </section>
 
   <section>
@@ -38,9 +38,15 @@
   </section>
 
   <section>
+    <h2>How Information Is Used</h2>
+    <p>We use account and record information to authenticate you, save and sync your records, restore them, generate the reports you request, and provide account deletion. Agreement metadata records the version and time of your submitted agreement. Device and sync metadata help coordinate changes between devices. Feedback you submit is used to respond to you and improve the product.</p>
+  </section>
+
+  <section>
     <h2>Where Your Data Lives</h2>
     <p>A local copy is stored in this browser. Signing in and completing setup enables automatic profile and custody-log sync; there is no separate backup opt-in. Only successfully synced records can restore on another browser or device. Differences that cannot be safely reconciled are held for review instead of silently overwritten.</p>
-    <p>Signing out stops future automatic sync on that device but does not erase its local records. Browser data and sign-in sessions do not automatically move between website domains. Opening the app on a new domain requires signing in there to restore cloud records.</p>
+    <p>A verified email-link account is required to enter the app. Previously authenticated devices may reopen offline using saved account information. Signing out locks access through the app and stops future automatic sync on that device but does not erase its local records. This screen lock does not encrypt browser storage. Protect access to your device and email account.</p>
+    <p>Browser data and sign-in sessions do not automatically move between browsers, devices, or website domains. Opening the app on a new domain requires signing in there to restore cloud records. Local-only records remain in the original browser and domain until exported or synced.</p>
   </section>
 
   <section>
@@ -52,6 +58,16 @@
   <section>
     <h2>Exports and Sharing</h2>
     <p>If you export a CSV, email a report, print a report, or submit feedback, you control that action. Exported files and shared reports may contain sensitive custody information, so store and send them carefully.</p>
+    <p>Download full backup in Settings creates a JSON file containing the settings and dated records currently saved on this device, including notes, original timestamps, embedded screenshots, account ID and email, and agreement metadata. It does not contain sign-in tokens. This file is not encrypted or password-protected. Your choice of download location or sharing service determines where additional copies are stored.</p>
+    <p>Restore from backup reads the selected file in your browser and presents a preview before applying changes. The backup must belong to the same account ID. Restoring records can make them eligible for automatic cloud sync. Imported agreement metadata does not replace your current agreement history, and the file cannot sign you in. CSV exports cannot be restored through this feature.</p>
+  </section>
+
+  <section>
+    <h2>Usage Analytics and Your Choice</h2>
+    <p>We use Mixpanel to understand where people start, complete, or leave signup and check-in steps, which features they use, and whether authentication, sync, exports, restoration, or account deletion succeed. We send predefined screen and step identifiers, event times, elapsed step time, random browser/flow/visit identifiers, report types and range presets, export formats, Settings section names, and generalized outcome or error categories. Calendar-day views indicate today, a recorded day, or an empty day without the selected date. Check-in saves indicate first or repeat use based on records on that device. Custom activity events do not include the activity text. Sharing and download requests do not confirm that an email was delivered, a report was printed, or a file was saved.</p>
+    <p>These events are associated with a browser rather than your name or sign-in email. Which screens you reach and features you use can indicate which parts of the workflow you used. Sync-conflict resolution records whether you chose the device or cloud copy, without the date or either record's contents.</p>
+    <p>We do not send names, email addresses, child details, custody dates or answers, notes, screenshots, report contents, sign-in links, or authentication tokens as analytics properties. We do not use automatic form capture or session replay. Requests use Mixpanel's US endpoint; Mixpanel necessarily receives network requests, but we disable IP-based geolocation enrichment and omit the page URL and referrer from event payloads.</p>
+    <p>You can turn off usage analytics using the checkbox on the welcome page or in Settings. The choice applies to this browser and website address. We also honor Global Privacy Control and Do Not Track signals. Turning analytics off clears pending analytics events and local analytics identifiers; it does not automatically delete events already delivered to Mixpanel. Analytics events may be queued on this device while offline, capped at 200 events and discarded after four days if not sent. Mixpanel's project retention is separate and must not be confused with this local queue limit.</p>
   </section>
 
   <section>
@@ -61,7 +77,13 @@
 
   <section>
     <h2>Deleting Your Account</h2>
-    <p>From Cloud account in Settings, type DELETE and choose Delete account to permanently remove your sign-in account and its active cloud profile, custody logs, and device sync records. This cannot be undone. Local records on your devices and previously downloaded or shared exports are not erased by this action. You can remove local records by clearing the app's browser data. Copies in service-provider backups or operational logs may remain subject to provider retention policies.</p>
+    <p>In Settings, open Delete account, type DELETE, and confirm deletion to permanently remove your sign-in account and its active cloud profile, custody logs, and device sync records. This cannot be undone. Local records on your devices, JSON backups, and previously downloaded or shared exports are not erased by this action. You can remove local records by clearing the app's browser data separately on each device and website address. Remove downloaded files separately from wherever you saved them.</p>
+    <p>Copies in service-provider backups or operational logs may remain subject to provider retention policies. Account deletion does not remove messages already delivered to email inboxes or copies held by recipients of your reports. Recreating an account with the same email does not restore the deleted account or let it import backups belonging to the old account ID.</p>
+  </section>
+
+  <section>
+    <h2>Retention</h2>
+    <p>Local records remain until you remove them or your browser clears or evicts them. Active cloud records remain associated with your account until account deletion; the app does not apply an automatic age-based expiry to custody records. Provider backups, authentication and delivery logs, and support messages have separate retention arrangements. This policy does not promise a fixed purge deadline for those copies.</p>
   </section>
 
   <section>
@@ -72,6 +94,7 @@
   <section>
     <h2>What We Do Not Do</h2>
     <ul>
+      <li>We do not use advertising trackers or session replay. Optional Mixpanel usage analytics is described above. Service providers may process operational request, authentication, security, and delivery information to operate their services.</li>
       <li>We do not sell your custody records.</li>
       <li>We do not automatically share your records with other parents, attorneys, or courts. Cloud records are processed through Supabase to provide account and sync features.</li>
       <li>Cloud restoration depends on successful sync and access to your sign-in email.</li>
@@ -80,7 +103,7 @@
 
   <section>
     <h2>Future Changes</h2>
-    <p>If payments, analytics, or attorney-sharing features are added later, this policy should be updated before those features are used by testers.</p>
+    <p>If payments, additional analytics collection, or attorney-sharing features are added later, this policy should be updated before those features are used by testers.</p>
   </section>
 
   <a class="back" href="index.html">Back to Whose Day</a>

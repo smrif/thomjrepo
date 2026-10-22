@@ -109,6 +109,12 @@ try {
     await page.goto(origin);
     await page.locator('#s-home').waitFor({ state: 'visible' });
     assert.equal(await page.evaluate(() => getEntries()[todayStr()].diary), 'Saved after an offline reload');
+    const offlineBackup = await page.evaluate(async () => {
+      const backup = await WhoseDayBackup.create({ account: lastSignedInAccount(), config: APP_CONFIG, records: getEntries() });
+      const restored = await WhoseDayBackup.parse(JSON.stringify(backup));
+      return restored.entries[todayStr()].diary;
+    });
+    assert.equal(offlineBackup, 'Saved after an offline reload', 'The backup module and checksum verification must work after a cold offline reopen');
     await page.screenshot({ path: `/tmp/whose-day-offline-home-${theme}.png` });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     await context.setOffline(false);

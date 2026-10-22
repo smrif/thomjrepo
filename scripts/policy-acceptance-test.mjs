@@ -4,8 +4,8 @@ import { createHash } from 'node:crypto';
 import vm from 'node:vm';
 
 const source = await readFile(new URL('../app.js', import.meta.url), 'utf8');
-const current = '2026-10-13';
-const acceptedAt = '2026-10-13T19:00:00.000Z';
+const current = '2026-10-21-v2';
+const acceptedAt = '2026-10-21T19:00:00.000Z';
 const oldAt = '2026-10-01T12:00:00.000Z';
 const clone = value => JSON.parse(JSON.stringify(value));
 let clock = acceptedAt;
@@ -43,7 +43,7 @@ function equal(a, b, label) { assert.deepEqual(clone(a), clone(b), label); check
   equal(recorded, { termsAccepted: true, termsVersion: current, termsAcceptedAt: acceptedAt, privacyVersion: current, privacyAcceptedAt: acceptedAt, policyAcceptanceOwnerId: 'A', policyAcceptanceEmail: 'qa@example.com' }, 'Explicit acceptance captures both versions and the submission time');
   h.context.APP_CONFIG = { ...base, ...recorded };
   equal(h.context.hasCurrentPolicyAcceptance(h.context.APP_CONFIG), true);
-  clock = '2026-10-14T12:00:00.000Z';
+  clock = '2026-10-22T12:00:00.000Z';
   const payload = h.context.profilePayloadFromConfig('A', null, 'qa@example.com');
   equal(acceptance(payload), { terms_version: current, terms_accepted_at: acceptedAt, privacy_version: current, privacy_accepted_at: acceptedAt }, 'Sync uses the actual acceptance time, not now');
   equal(acceptance(h.context.profilePayloadFromConfig('A', payload, 'qa@example.com')), acceptance(payload), 'Retries and ordinary sync never restamp consent');
@@ -81,7 +81,7 @@ for (const failure of ['offline', 'session-error', 'signed-out']) {
   const h = harness({ ...base, termsAccepted: true });
   equal(acceptance(h.context.profilePayloadFromConfig('A', null, 'qa@example.com')), { terms_version: 'alpha-local', terms_accepted_at: null, privacy_version: 'alpha-local', privacy_accepted_at: null }, 'Legacy booleans retain uncertainty; no acceptance time is fabricated');
   equal(h.context.hasCurrentPolicyAcceptance(h.context.APP_CONFIG), false);
-  for (const profile of [remote, { ...remote, privacy_accepted_at: null }, { ...remote, terms_version: '', privacy_version: null }, { ...remote, terms_accepted_at: null }]) {
+  for (const profile of [remote, { ...remote, terms_version: '2026-10-13', privacy_version: '2026-10-13' }, { ...remote, privacy_accepted_at: null }, { ...remote, terms_version: '', privacy_version: null }, { ...remote, terms_accepted_at: null }]) {
     equal(acceptance(h.context.profilePayloadFromConfig('A', profile)), acceptance(profile), 'Preserve every existing cloud field, including missing or unknown metadata');
   }
   h.context.APP_CONFIG = { ...base, termsAccepted: true, termsVersion: current, termsAcceptedAt: acceptedAt, privacyVersion: current, privacyAcceptedAt: acceptedAt, policyAcceptanceOwnerId: 'B' };
@@ -92,6 +92,10 @@ for (const failure of ['offline', 'session-error', 'signed-out']) {
 
 const manifest = JSON.parse(await readFile(new URL('../assets/legal/manifest.json', import.meta.url), 'utf8'));
 const markup = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+for (const [kind, hash] of Object.entries({terms:'b59ce1c860494dcf9b999dc306c092a2477e06da974eec93139c07ba4afa4634',privacy:'d221a8ff858c17646ff5809014db7f533f24f3ff4a2f2d61961c1aff186d9b0c'})) {
+  const archived = await readFile(new URL(`../assets/legal/2026-10-13/${kind}.html`, import.meta.url));
+  equal(createHash('sha256').update(archived).digest('hex'), hash, 'Previously accepted October 13 documents remain unchanged');
+}
 for (const kind of ['terms', 'privacy']) {
   const item = manifest[kind];
   const snapshot = await readFile(new URL('../' + item.path, import.meta.url), 'utf8');

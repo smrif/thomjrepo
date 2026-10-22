@@ -303,16 +303,14 @@ async function assertCustomActivityInDecisionTree() {
   const state = await page.evaluate(() => {
     renderConfigurableUi();
     S.momHelpedOnDadWeek = { Ava: { acts: [], note: '' } };
-    momHelpedQueue = ['Ava'];
-    momHelpedIdx = 0;
-    showMomHelpedStep();
+    S.momHadKidsOnDadWeek = ['Ava'];
+    startMomHelpedLoop();
     const coParentHelpLabels = [...document.querySelectorAll('#mha-acts .act-btn')].map(btn => btn.textContent.trim());
 
     renderConfigurableUi();
     S.helpedData = { Ava: { acts: [], note: '' } };
-    helpedQueue = ['Ava'];
-    helpedIdx = 0;
-    showHelpedStep();
+    S.helpedKids = ['Ava'];
+    startHelpedLoop();
     const parentHelpLabels = [...document.querySelectorAll('#helped-acts .act-btn')].map(btn => btn.textContent.trim());
 
     return {
@@ -661,9 +659,24 @@ try {
     prompt: document.getElementById('mha-q')?.textContent || '',
     firstKid: document.getElementById('mha-kid-name')?.textContent || ''
   }));
-  if (coParentHelpState.active === 's-mom-helped-kids' || coParentHelpState.helpedKids.join(',') !== 'Ava,Ben' || coParentHelpState.prompt !== 'What did Mom help with?' || coParentHelpState.firstKid !== 'Ava') {
-    throw new Error(`Co-parent help should skip helped-kid picker, use kids already with you, and show the generic help prompt. Saw ${JSON.stringify(coParentHelpState)}.`);
+  if (coParentHelpState.active === 's-mom-helped-kids' || coParentHelpState.helpedKids.join(',') !== 'Ava,Ben' || coParentHelpState.prompt !== 'What did Mom help with?' || coParentHelpState.firstKid !== 'Ava, Ben') {
+    throw new Error(`Co-parent help should skip helped-kid picker, use kids already with you together, and ask once. Saw ${JSON.stringify(coParentHelpState)}.`);
   }
+
+  if(await page.locator('#mha-step-lbl').innerText()!=='All children'||!(await page.locator('#mha-next-btn').isDisabled()))throw new Error('Shared help should start empty for all children.');
+  await click('#mha-acts .act-btn:first-child');
+  await page.locator('#mha-note').fill('School pickup for all children.');
+  await click('#mha-next-btn');await expectActive('s-diary');
+  await click('#s-diary .back-btn');await expectActive('s-mom-helped-activity');
+  if(await page.locator('#mha-note').inputValue()!=='School pickup for all children.')throw new Error('Shared co-parent help note should survive Back.');
+  await click('#s-mom-helped-activity .back-btn');await expectActive('s-dad-help-choice');
+  await click('#dad-help-yes');await expectActive('s-mom-helped-activity');
+  if(await page.locator('#mha-note').inputValue()!=='School pickup for all children.')throw new Error('Reconfirming help should retain the shared answer.');
+  await click('#mha-next-btn');await expectActive('s-diary');
+  await click('#diary-next-btn');await expectActive('s-saved');
+  await page.evaluate(()=>hideSuccessOverlay());
+  const savedCoParentHelp=await page.evaluate(()=>getEntries()[todayStr()]);
+  if(savedCoParentHelp.momHelpedOnDadWeek.Ava.note!=='School pickup for all children.'||JSON.stringify(savedCoParentHelp.momHelpedOnDadWeek.Ava)!==JSON.stringify(savedCoParentHelp.momHelpedOnDadWeek.Ben))throw new Error('One shared help answer should save for both children.');
 
   await bootstrap();
   await click('#s-home .home-primary');
@@ -683,9 +696,29 @@ try {
     prompt: document.getElementById('helped-q')?.textContent || '',
     firstKid: document.getElementById('helped-kid-name')?.textContent || ''
   }));
-  if (parentHelpState.active === 's-mom-helped-kids2' || parentHelpState.helpedKids.join(',') !== 'Ava,Ben' || parentHelpState.prompt !== 'What did you help with?' || parentHelpState.firstKid !== 'Ava') {
-    throw new Error(`Co-parent-day help should skip helped-kid picker and use the generic help prompt. Saw ${JSON.stringify(parentHelpState)}.`);
+  if (parentHelpState.active === 's-mom-helped-kids2' || parentHelpState.helpedKids.join(',') !== 'Ava,Ben' || parentHelpState.prompt !== 'What did you help with?' || parentHelpState.firstKid !== 'Ava, Ben') {
+    throw new Error(`Co-parent-day help should ask once for all children. Saw ${JSON.stringify(parentHelpState)}.`);
   }
+
+  if(await page.locator('#helped-step-lbl').innerText()!=='All children'||!(await page.locator('#helped-act-next').isDisabled()))throw new Error('Your help should start empty for all children.');
+  await click('#helped-acts .act-btn:first-child');
+  await page.locator('#helped-note').fill('Dinner for all children.');
+  await click('#s-helped-activity .back-btn');await expectActive('s-mom-easy');
+  await click('#easy-continue-btn');await expectActive('s-helped-activity');
+  if(await page.locator('#helped-note').inputValue()!=='Dinner for all children.')throw new Error('Shared help should survive Back to the help choice.');
+  await click('#helped-act-next');await expectActive('s-diary');
+  await click('#diary-next-btn');await expectActive('s-saved');await page.evaluate(()=>hideSuccessOverlay());
+  const savedHelp=await page.evaluate(()=>getEntries()[todayStr()]);
+  if(savedHelp.helpedData.Ava.note!=='Dinner for all children.'||JSON.stringify(savedHelp.helpedData.Ava)!==JSON.stringify(savedHelp.helpedData.Ben))throw new Error('Your shared help answer should save for both children.');
+  await page.reload();await expectActive('s-home');
+  await click('#s-home .home-primary');await click('#wk-mom');await expectActive('s-mom-mode');
+  await click('#ft-easy');await expectActive('s-mom-easy');await click('#easy-continue-btn');await expectActive('s-helped-activity');
+  if(await page.locator('#helped-note').inputValue()!=='Dinner for all children.')throw new Error('Shared help should reopen for editing.');
+  await page.evaluate(()=>{const ds=todayStr();show('s-cal');showDetail(ds,getEntries()[ds]);});
+  const helpRows=await page.locator('#cal-detail .entry-row').allTextContents();
+  if(helpRows.filter(row=>row.includes('Dinner for all children.')).length!==1)throw new Error('Calendar should show shared help once.');
+  const report=await page.evaluate(()=>{showExport();selectExport('full');return document.getElementById('preview-box').textContent});
+  if(report.split('Dinner for all children.').length!==2)throw new Error('Report should show shared help once.');
 
   await bootstrap();
   await click('#s-home .home-primary');

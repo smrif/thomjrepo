@@ -4,6 +4,11 @@
 > for current release work and [the remaining product specification](docs/product/remaining-product-spec.md)
 > for proposed Trends, Reports, and Settings improvements. The original memo below
 > is retained for context and is not an accurate list of unbuilt features.
+> October 20 clarification: the current backlog explicitly includes a Terms and
+> Privacy Policy refresh and a downloadable iOS App Store app. These are tracked
+> in TODO.md; browser/Home Screen support alone does not complete the iOS goal.
+> Product analytics is also explicit backlog work, with event scope, provider
+> selection, and privacy disclosures to be defined before collection begins.
 >
 > Already implemented: welcome/demo and multi-step onboarding, configurable labels
 > and shared activities, Supabase email-link authentication, automatic profile/log
@@ -15,7 +20,9 @@
 >
 > Still proposals: reason-for-use personalization, per-child activity lists,
 > reminders/push, PIN/biometrics, read-only sharing, chart expansion, and portable
-> backup/import. Custody schedule configuration remains explicitly rejected.
+> backup/import extensions. Initial full JSON backup/import was deployed
+> October 21; owner-assisted QA remains pending. Custody schedule configuration remains
+> explicitly rejected.
 
 **From:** TJ  
 **Date:** June 2026  

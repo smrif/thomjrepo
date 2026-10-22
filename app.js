@@ -27,8 +27,8 @@ const ACCOUNT_DELETED_KEY='whose_day_account_deleted';
 const CLIENT_SCHEMA_VERSION=1;
 const SERVER_SCHEMA_VERSION=1;
 const SIGN_IN_LINK_COOLDOWN_MS=65*1000;
-const CURRENT_TERMS_VERSION='2026-10-13';
-const CURRENT_PRIVACY_VERSION='2026-10-13';
+const CURRENT_TERMS_VERSION='2026-10-21-v2';
+const CURRENT_PRIVACY_VERSION='2026-10-21-v2';
 const DEFAULT_ACTIVITIES=[
   {id:'school',label:'School pickup'},
   {id:'afterschool',label:'After school'},
@@ -50,6 +50,13 @@ let appAccessState='checking';
 let appAccessEpoch=0;
 let appAccessTask=null;
 let signedInAccountEmail='';
+let backupRestoreBusy=false,backupRecoveryError='';
+try{
+  if(!window.WhoseDayPlatform){
+    if(localStorage.getItem('whose_day_restore_journal_v1')&&!window.WhoseDayBackup)throw new Error('Restore recovery could not load. Reconnect and reload; keep this browser’s data and your backup file.');
+    window.WhoseDayBackup?.recover(localStorage);
+  }
+}catch(error){backupRecoveryError=error.message||'Restore recovery needs a reload. Keep your browser data and backup file.';}
 let APP_CONFIG=loadConfig();
 let KIDS=[...APP_CONFIG.children];
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -59,7 +66,7 @@ const FEEDBACK_FORM_URL='https://docs.google.com/forms/d/e/1FAIpQLSfvZbvGndLbr6m
 const FEEDBACK_EMAIL='thomas.j.gamble@gmail.com';
 
 let S={week:null,dadMode:null,momMode:null,kidsWithDad:[],absentData:{},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'',attachment:null,changeAgreed:null,changePressured:null,changeContextNext:null,changeContextBack:null};
-let absentQueue=[],absentIdx=0,helpedQueue=[],helpedIdx=0,momHelpedQueue=[],momHelpedIdx=0;
+let absentQueue=[],absentIdx=0,helpedDetails={acts:[],note:''},momHelpedDetails={acts:[],note:''};
 let easyOpts=[];
 let diaryOrigin='';   // which screen diary came from, for back nav
 let successOverlayTimer=null;
@@ -86,7 +93,11 @@ let cloudDeletionBusy=false;
 let cloudSyncGeneration=0;
 let cloudSyncRetryAttempt=0;
 
+function trackUsage(event,properties={}){window.WhoseDayAnalytics?.track?.(event,properties)}
+function trackFailure(event,error,properties={}){trackUsage(event,{...properties,error_category:window.WhoseDayAnalytics?.errorCategory?.(error)||'unknown'})}
+function reportAnalytics(){return {report_type:currentExportType,range:REPORT_FILTER}}
 function loadConfig(){
+  if(window.WhoseDayPlatform?.config)return structuredClone(window.WhoseDayPlatform.config);
   try{
     const saved=localStorage.getItem(CONFIG_KEY);
     if(!saved)return{...DEFAULT_CONFIG,children:[...DEFAULT_CONFIG.children]};
@@ -347,7 +358,7 @@ function addCustomChip(chipsEl, label, active=false){
   chip.type='button';
   chip.className='activity-chip custom'+(active?' active':'');
   chip.dataset.actId=label;
-  chip.innerHTML=`<span class="activity-line-icon activity-custom" aria-hidden="true"></span><span>${label}</span><span class="activity-check" aria-hidden="true">✓</span>`;
+  chip.innerHTML=`<span class="activity-line-icon activity-custom" aria-hidden="true"></span><span>${escHtml(label)}</span><span class="activity-check" aria-hidden="true">✓</span>`;
   chip.onclick=()=>chip.classList.toggle('active');
   chipsEl.appendChild(chip);
 }
@@ -357,7 +368,7 @@ function addCustomActivity(){
   const val=input?input.value.trim().slice(0,CUSTOM_ACTIVITY_MAX_LENGTH):'';
   if(!val)return;
   const chipsEl=document.getElementById('setup-activity-chips');
-  if(chipsEl)addCustomChip(chipsEl, val, true);
+  if(chipsEl){addCustomChip(chipsEl, val, true);trackUsage('Custom Activity Added');}
   if(input)input.value='';
 }
 
@@ -469,6 +480,7 @@ function initSetupForm(){
   setThemeMode(APP_CONFIG.themeMode,false);
   document.getElementById('setup-continue').textContent=onboarding?'Start tracking →':'Save changes';
   validateSetup(false);
+  const recovery=document.getElementById('backup-recovery-notice');if(recovery){recovery.hidden=!backupRecoveryError;recovery.textContent=backupRecoveryError;}
   updateSettingsOverview();
   if(!onboarding&&appHasAccess())openSettingsPage(settingsPage,{push:false,focus:false});
   initCloudAuthUi();
@@ -599,10 +611,12 @@ function cloudBackendEnabled(){
   return !!(window.WhoseDayBackend&&window.WhoseDayBackend.isEnabled&&window.WhoseDayBackend.isEnabled());
 }
 function isAppPreview(){
+  if(window.WhoseDayPlatform?.synthetic===true)return true;
   const params=new URLSearchParams(location.search);
   return ['june','july'].includes(params.get('demo'))||params.has('onboarding-theme-preview');
 }
 function appHasAccess(){
+  if(backupRecoveryError)return false;
   return isAppPreview()||hasSavedConfig()&&!accountDeletedOnDevice()&&
     !localStorage.getItem(SIGNED_OUT_KEY)&&['signed-in','offline'].includes(appAccessState);
 }
@@ -620,6 +634,7 @@ function lastSignedInAccount(){
   }catch{return null}
 }
 function lockSignedOutApp(explicit=false){
+  cancelBackupImport();
   appAccessEpoch++;
   appAccessState='signed-out';
   signedInAccountEmail='';
@@ -702,7 +717,7 @@ async function finishSetupAccess(email){
 }
 function cloudSyncAllowed(){
   const params=new URLSearchParams(window.location.search);
-  return appAccessState==='signed-in'&&!cloudDeletionBusy&&!accountDeletedOnDevice()&&hasSavedConfig()&&cloudBackendEnabled()&&!params.has('demo')&&!params.has('onboarding-theme-preview')&&navigator.onLine!==false;
+  return appAccessState==='signed-in'&&!backupRestoreBusy&&!backupRecoveryError&&!cloudDeletionBusy&&!accountDeletedOnDevice()&&hasSavedConfig()&&cloudBackendEnabled()&&!params.has('demo')&&!params.has('onboarding-theme-preview')&&navigator.onLine!==false;
 }
 function cloudRedirectUrl(){
   const config=window.WhoseDayBackend?.settings?.()||{};
@@ -968,6 +983,7 @@ function renderCloudConflictReview(){
   if(!panel||!list)return;
   const conflicts=getStoredSyncConflicts();
   panel.hidden=!conflicts.length;
+  window.WhoseDayAnalytics?.visible('conflict',!!conflicts.length&&settingsPage==='sync'&&document.getElementById('s-setup').classList.contains('active'));
   if(!conflicts.length){
     list.innerHTML='';
     return;
@@ -1142,9 +1158,11 @@ async function performCloudSync({reason='manual',showMessage=false}={}){
       : cloudSyncPending?'Syncing remaining changes automatically...'
       : `Cloud sync complete. ${uploaded} ${uploaded===1?'entry':'entries'} updated, ${added} restored from cloud.`;
     updateCloudSyncStatusUi({state,lastSyncedAt:syncedAt,message});
+    if(!cloudSyncPending)window.WhoseDayAnalytics?.health(true);
     if(showMessage)setCloudAuthMessage(message,conflicts.length?'error':'success');
     return{reason,uploaded,cloud:cloudRows.length,added,conflicts:conflicts.length};
   }catch(error){
+    window.WhoseDayAnalytics?.health(false,error);
     cloudSyncPending=true;
     retryDelay=Math.min(60000,2000*2**Math.min(cloudSyncRetryAttempt++,5));
     updateCloudSyncStatusUi({state:navigator.onLine===false?'offline':'error',message:navigator.onLine===false?'Saved on this device. Changes will sync automatically when reconnected.':'Cloud sync interrupted. Retrying automatically...'});
@@ -1317,6 +1335,8 @@ async function deleteCloudAccount(){
     if(input)input.focus();
     return;
   }
+  let deletionConfirmed=false;
+  trackUsage('Account Deletion Started');
   try{
     cloudDeletionBusy=true;
     setCloudAuthBusy(true);
@@ -1325,6 +1345,7 @@ async function deleteCloudAccount(){
     if(cloudSyncTask)await cloudSyncTask;
     if(!window.WhoseDayBackend.deleteAccount)throw new Error('Account deletion is not available in this version yet.');
     await window.WhoseDayBackend.deleteAccount();
+    deletionConfirmed=true;trackUsage('Account Deletion Completed');
     // Keep local records, but do not reopen or sync the deleted account on reload.
     localStorage.setItem(ACCOUNT_DELETED_KEY,'1');
     cloudSyncPending=false;
@@ -1342,6 +1363,7 @@ async function deleteCloudAccount(){
     notice.hidden=false;
     notice.focus();
   }catch(error){
+    if(!deletionConfirmed)trackFailure('Account Deletion Failed',error);
     setCloudAuthMessage(error.message||'Could not delete your account.','error');
   }finally{
     cloudDeletionBusy=false;
@@ -1396,6 +1418,7 @@ async function resolveCloudConflict(entryDate,choice){
     }else{
       throw new Error('Choose which copy to keep.');
     }
+    trackUsage('Sync Conflict Resolved',{copy:choice==='local'?'device':'cloud'});
     updateEntryBackupDetail(Object.keys(getEntries()).length);
   }catch(error){
     setCloudAuthMessage(error.message||'Could not resolve the sync conflict.','error');
@@ -1421,7 +1444,167 @@ function csvCell(value){
 function csvJoin(value){
   return Array.isArray(value)?value.join('; '):(value||'');
 }
+// ── PORTABLE BACKUP / RESTORE ───────────────────────────────
+let backupImportReview=null,backupFileToken=0,backupExportBusy=false;
+function backupMessage(message,error=false){
+  const el=document.getElementById(settingsPage==='import'?'backup-import-message':'backup-export-message');
+  if(el){el.textContent=message;el.dataset.tone=error?'error':'success';}
+}
+function backupAccount(){
+  const account=lastSignedInAccount();
+  if(!appHasAccess()||!account?.id)throw new Error('Sign in to your account before backing up or restoring records.');
+  return {id:account.id,email:account.email||signedInAccountEmail||''};
+}
+function backupState(){
+  const account=backupAccount();
+  const configRaw=localStorage.getItem(CONFIG_KEY),entriesRaw=localStorage.getItem('familylog_entries');
+  const baseRaw=localStorage.getItem(SYNC_BASE_KEY+':'+account.id);
+  let config,records;
+  try{config={...DEFAULT_CONFIG,...JSON.parse(configRaw)};records=JSON.parse(entriesRaw||'{}');}
+  catch{throw new Error('Saved data could not be read. Keep this browser’s data and your backup file; restore has not changed anything.');}
+  return {account,config,records,yesterday:yesterdayStr(),snapshot:JSON.stringify([account.id,configRaw,entriesRaw,baseRaw])};
+}
+async function downloadFullBackup(){
+  if(backupExportBusy||backupRestoreBusy)return;
+  const button=document.getElementById('backup-download');
+  trackUsage('Export Started',{format:'json'});
+  backupExportBusy=true;button.disabled=true;
+  const epoch=appAccessEpoch;
+  try{
+    backupMessage('Preparing your backup…');
+    const state=backupState();
+    const data=await WhoseDayBackup.create(state);
+    if(epoch!==appAccessEpoch||!appHasAccess()||backupAccount().id!==state.account.id)return;
+    const blob=new Blob([JSON.stringify(data)],{type:'application/json'});
+    const url=URL.createObjectURL(blob),link=document.createElement('a');
+    link.href=url;link.download='whose-day-backup-'+todayStr()+'.json';
+    document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+    trackUsage('Export Download Requested',{format:'json'});
+    backupMessage('Backup prepared. Keep the downloaded file somewhere safe.');
+  }catch(error){trackFailure('Export Failed',error,{format:'json'});backupMessage(error.message||'Could not prepare your backup.',true);}
+  finally{backupExportBusy=false;button.disabled=false;}
+}
+function cancelBackupImport(){
+  backupFileToken++;backupImportReview=null;
+  const input=document.getElementById('backup-file');if(input)input.value='';
+  const panel=document.getElementById('backup-preview');if(panel)panel.hidden=true;
+  const message=document.getElementById('backup-import-message');if(message)message.textContent='';
+}
+async function previewBackupFile(input){
+  if(backupRestoreBusy)return;
+  const file=input.files?.[0],token=++backupFileToken;
+  backupImportReview=null;document.getElementById('backup-preview').hidden=true;
+  if(!file)return;
+  try{
+    backupMessage('Checking your backup…');
+    if(file.size>WhoseDayBackup.MAX_BYTES)throw new Error('Choose a backup smaller than 25 MB.');
+    const backup=await WhoseDayBackup.parse(await file.text());
+    if(token!==backupFileToken||settingsPage!=='import')return;
+    const state=backupState();
+    const plan=WhoseDayBackup.plan(backup,state);
+    backupImportReview={backup,plan,fileName:file.name,snapshot:state.snapshot,accountId:state.account.id,epoch:appAccessEpoch,choices:{},restoreProfile:false};
+    renderBackupPreview();trackUsage('Restore Previewed');backupMessage('Preview ready. Nothing has been changed.');
+  }catch(error){if(token===backupFileToken){trackFailure('Restore Failed',error);backupMessage(error.message||'Could not read this backup.',true);}}
+}
+function backupPreviewText(tag,text,parent){const el=document.createElement(tag);el.textContent=text;parent.appendChild(el);return el;}
+function backupRecordDetails(entry,title,parent){
+  const details=document.createElement('details');details.className='backup-record-details';
+  backupPreviewText('summary',title,details);
+  const outcomes={'normal':'Kids at home','mom-had':'Co-parent had kids','dad-helped-mom':'Co-parent helped','easy':'Co-parent had kids','helped':'You helped','dad-had':'You had the kids'};
+  backupPreviewText('p',outcomes[entry.week==='dad'?entry.dadMode:entry.momMode]||'Outcome not recorded',details);
+  for(const [key,label] of [['kidsWithDad','With you'],['momHadKidsOnDadWeek','Co-parent involvement'],['helpedKids','Kids you helped'],['dadHadKids','Kids you had']])if(entry[key]?.length)backupPreviewText('p',label+': '+entry[key].join(', '),details);
+  for(const [key,label] of [['absentData','Away from home'],['helpedData','Your help'],['momHelpedOnDadWeek','Co-parent help']])for(const [kid,info] of (key==='absentData'?Object.entries(entry[key]||{}):helpDetailGroups(entry[key])))backupPreviewText('p',label+' — '+kid+': '+[info.location,(info.acts||[]).map(activityLabel).join(', '),info.note].filter(Boolean).join(' · '),details);
+  if(entry.momOpts?.length)backupPreviewText('p','Contact: '+entry.momOpts.join(', '),details);
+  if(entry.changeAgreed!=null)backupPreviewText('p','Agreed in advance: '+(entry.changeAgreed?'Yes':'No'),details);
+  if(entry.changePressured!=null)backupPreviewText('p','Felt pressured: '+(entry.changePressured?'Yes':'No'),details);
+  backupPreviewText('p',fmtLoggedAt(entry.loggedAt)||'Logged time not recorded',details);
+  backupPreviewText('p',entry.diary||'No note',details);
+  if(/^data:image\/(?:png|jpeg|jpg|gif|webp|avif|bmp|heic|heif);base64,[A-Za-z0-9+/]+=*$/i.test(entry.attachment?.dataUrl||'')){
+    const image=document.createElement('img');image.src=entry.attachment.dataUrl;image.alt='Screenshot in '+title.toLowerCase();details.appendChild(image);
+  }
+  parent.appendChild(details);
+}
+function renderBackupPreview(){
+  const review=backupImportReview;if(!review)return;
+  const {backup,plan}=review,panel=document.getElementById('backup-preview');panel.hidden=false;
+  const summary=document.getElementById('backup-preview-summary');summary.replaceChildren();
+  backupPreviewText('h3',review.fileName,summary);
+  backupPreviewText('p','Created '+new Date(backup.exportedAt).toLocaleString()+' · '+(backup.account.email||'Your account'),summary);
+  backupPreviewText('p',Object.keys(backup.entries).length+' dated records · '+plan.screenshots+' screenshots',summary);
+  const dates=Object.keys(backup.entries).sort();if(dates.length)backupPreviewText('p',fmtDate(dates[0])+' – '+fmtDate(dates[dates.length-1]),summary);
+  backupPreviewText('p',plan.added.length+' new · '+plan.same.length+' identical · '+plan.conflicts.length+' different',summary);
+  const additions=document.getElementById('backup-new-dates');additions.replaceChildren();
+  if(plan.added.length){const details=document.createElement('details');backupPreviewText('summary','Dates to restore ('+plan.added.length+')',details);backupPreviewText('p',plan.added.join(', '),details);additions.appendChild(details);}
+  const conflicts=document.getElementById('backup-conflict-list');conflicts.replaceChildren();
+  for(const conflict of plan.conflicts){
+    const row=document.createElement('div');row.className='backup-conflict';
+    backupPreviewText('h4',fmtDate(conflict.date),row);
+    const describe=entry=>[entry.week==='not-logged'?'Nothing logged':entry.week==='other'?'Other note':entry.week==='dad'?'Your scheduled day':'Co-parent’s scheduled day',entry.diary?.slice(0,140)||'No note',entry.attachment?'Screenshot included':''].filter(Boolean).join(' · ');
+    backupPreviewText('p','On this device: '+describe(conflict.current),row);
+    backupPreviewText('p','In backup: '+describe(conflict.incoming),row);
+    backupRecordDetails(conflict.current,'View current record',row);
+    backupRecordDetails(conflict.incoming,'View backup record',row);
+    if(conflict.locked)backupPreviewText('p','Keep current record — this date is read-only.',row);
+    else{
+      const label=document.createElement('label');label.textContent='Copy to keep';
+      const select=document.createElement('select');select.dataset.backupDate=conflict.date;
+      for(const [value,title] of [['current','Keep current record'],['backup','Use backup record']]){const option=document.createElement('option');option.value=value;option.textContent=title;select.appendChild(option);}
+      select.value=review.choices[conflict.date]||'current';select.addEventListener('change',()=>{review.choices[conflict.date]=select.value;updateBackupRestoreButton();});
+      label.appendChild(select);row.appendChild(label);
+    }
+    conflicts.appendChild(row);
+  }
+  const profile=document.getElementById('backup-restore-profile');profile.checked=review.restoreProfile;profile.disabled=!plan.profileChanged;
+  const profileSummary=document.getElementById('backup-profile-summary');
+  profileSummary.textContent=plan.profileChanged?'Backup profile: '+backup.settings.currentParentLabel+' / '+backup.settings.coParentLabel+' · Children: '+backup.settings.children.join(', ')+' · '+(backup.settings.activityIds?.length||'Default')+' activities · '+backup.settings.themeMode+' appearance.':'Profile and preferences already match.';
+  updateBackupRestoreButton();
+}
+function updateBackupRestoreButton(){
+  const review=backupImportReview,button=document.getElementById('backup-restore-confirm');if(!review){button.disabled=true;return;}
+  review.restoreProfile=document.getElementById('backup-restore-profile').checked;
+  const count=review.plan.added.length+review.plan.conflicts.filter(c=>!c.locked&&review.choices[c.date]==='backup').length;
+  button.disabled=backupRestoreBusy||!(count||review.restoreProfile&&review.plan.profileChanged);
+  document.getElementById('backup-restore-count').textContent=count+' records selected. '+(review.restoreProfile?'Profile and preferences will also be restored.':'Current profile and preferences will be kept.');
+}
+async function restoreBackupSelection(){
+  if(backupRestoreBusy||!backupImportReview||document.getElementById('backup-restore-confirm').disabled)return;
+  const review=backupImportReview;
+  trackUsage('Restore Started');
+  backupRestoreBusy=true;document.getElementById('backup-import-controls').disabled=true;document.getElementById('backup-file').disabled=true;
+  clearTimeout(cloudSyncTimer);clearTimeout(cloudSyncRefreshTimer);
+  try{
+    backupMessage('Saving selected data…');
+    if(cloudSyncTask)await cloudSyncTask;
+    if(review!==backupImportReview||review.epoch!==appAccessEpoch||!appHasAccess())return;
+    if(backupRecoveryError)throw new Error(backupRecoveryError);
+    const state=backupState();
+    if(state.account.id!==review.accountId){cancelBackupImport();throw new Error('Your account changed. Choose the backup again.');}
+    if(state.snapshot!==review.snapshot){
+      review.plan=WhoseDayBackup.plan(review.backup,state);review.snapshot=state.snapshot;review.choices={};review.restoreProfile=false;
+      renderBackupPreview();backupMessage('Your saved data changed while this preview was open. Review the updated preview before restoring.',true);return;
+    }
+    const result=WhoseDayBackup.merge(review.backup,state,{choices:review.choices,restoreProfile:review.restoreProfile});
+    WhoseDayBackup.commit(localStorage,result,state.account.id);
+    trackUsage('Restore Completed');
+    APP_CONFIG=loadConfig();KIDS=[...APP_CONFIG.children];applyThemeMode();
+    try{sessionStorage.setItem('familylog_backup',JSON.stringify(result.records));}catch{}
+    cancelBackupImport();renderConfigurableUi();initSetupForm();
+    backupMessage('Restored '+result.changed.length+' records'+(result.profileChanged?' and your profile/preferences':'')+'. Changes are saved on this device and will sync when connected.');
+  }catch(error){
+    trackFailure('Restore Failed',error);
+    if(error.recoveryRequired){backupRecoveryError=error.message;show('s-backup-recovery');document.getElementById('backup-recovery-notice').hidden=false;document.getElementById('backup-recovery-notice').textContent=error.message;}
+    backupMessage(error.message||'Could not restore this backup.',true);
+  }finally{
+    backupRestoreBusy=false;document.getElementById('backup-import-controls').disabled=false;document.getElementById('backup-file').disabled=false;
+    if(backupImportReview){document.getElementById('backup-restore-profile').disabled=!backupImportReview.plan.profileChanged;updateBackupRestoreButton();}
+    if(!backupRecoveryError)scheduleCloudSync('backup-restore',400);
+  }
+}
+// ── END PORTABLE BACKUP / RESTORE ────────────────────────────
+
 function exportAllData(){
+  trackUsage('Export Started',{format:'csv'});
+  try{
   const exportDate=todayStr();
   const entries=getEntries();
   const headers=[
@@ -1477,6 +1660,8 @@ function exportAllData(){
   a.click();
   a.remove();
   window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+  trackUsage('Export Download Requested',{format:'csv'});
+  }catch(error){trackFailure('Export Failed',error,{format:'csv'});throw error}
 }
 function fmtLoggedAt(iso){
   if(!iso)return'';
@@ -1496,13 +1681,19 @@ function changeContextReportLines(e){
   if(e.changePressured!==null&&e.changePressured!==undefined)lines.push('FELT PRESSURED: '+(e.changePressured?'Yes':'No'));
   return lines;
 }
+function entryForHtml(value){
+  if(typeof value==='string')return escHtml(value);
+  if(Array.isArray(value))return value.map(entryForHtml);
+  if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([key,item])=>[escHtml(key),entryForHtml(item)]));
+  return value;
+}
 function entryMetaHtml(e,{fullAttachment=false}={}){
   const parts=[];
   const logged=fmtLoggedAt(e.loggedAt);
   if(logged)parts.push(`<div class="entry-meta-note">${logged}</div>`);
   const badges=changeContextBadges(e);
   if(badges)parts.push(`<div class="entry-badge-row">${badges}</div>`);
-  if(e.attachment)parts.push(fullAttachment?`<div class="entry-attachment-full"><img src="${e.attachment.dataUrl}" alt="Attached screenshot"></div>`:'<div class="attach-indicator">Screenshot attached</div>');
+  if(e.attachment)parts.push(fullAttachment?`<div class="entry-attachment-full"><img src="${escHtml(e.attachment.dataUrl)}" alt="Attached screenshot"></div>`:'<div class="attach-indicator">Screenshot attached</div>');
   return parts.join('');
 }
 function reportMetaLines(e){
@@ -1540,6 +1731,7 @@ function getMissedDays(){
   return missed;
 }
 function markMissedDays(){
+  if(window.WhoseDayPlatform?.records)return; // Native gaps stay derived until batch migrations are implemented.
   // For any missed days older than yesterday, write a "not-logged" sentinel entry.
   // Yesterday is left alone so the prompt can offer to backfill it.
   const yesterday=yesterdayStr();
@@ -1577,20 +1769,29 @@ function checkMissedPrompt(){
   document.getElementById('missed-date-label').textContent=yLabel;
   prompt.classList.add('primary-missed');
   prompt.style.display='block';
+  if(document.getElementById('s-home').classList.contains('active'))window.WhoseDayAnalytics?.visible('missed',true);
   if(todayCard&&todayCard.parentNode)todayCard.parentNode.insertBefore(prompt,todayCard);
   return true;
 }
 function dismissMissedPrompt(){
+  trackUsage('Missed Check-in Skip Selected');
+  window.WhoseDayAnalytics?.visible('missed',false);
   // Mark yesterday as intentionally skipped (not-logged sentinel)
   const yesterday=yesterdayStr();
   const entries=getEntries();
   if(!entries[yesterday])entries[yesterday]={week:'not-logged',intentional:true,missedAt:new Date().toISOString()};
-  putEntries(entries);
-  localStorage.setItem('missed_dismissed_'+todayStr(),'1');
-  document.getElementById('missed-prompt').style.display='none';
-  initHome();
+  const finish=()=>{
+    localStorage.setItem('missed_dismissed_'+todayStr(),'1');
+    document.getElementById('missed-prompt').style.display='none';
+    initHome();
+  };
+  const result=putEntries(entries);
+  if(result?.then)return result.then(finish).catch(error=>window.WhoseDayPlatform?.saveError(error,()=>dismissMissedPrompt()));
+  finish();
 }
 function startBackfill(){
+  trackUsage('Missed Check-in Log Selected');
+  window.WhoseDayAnalytics?.visible('missed',false);
   // Start check-in flow but target yesterday's date instead of today
   document.getElementById('missed-prompt').style.display='none';
   localStorage.setItem('missed_dismissed_'+todayStr(),'1');
@@ -1616,8 +1817,9 @@ function isLockedEntry(ds){
   return !!(entries[ds] && isLockedDate(ds));
 }
 // ── END ENTRY LOCK ─────────────────────────────────────────────
-function getEntries(){try{const r=localStorage.getItem('familylog_entries');return r?JSON.parse(r):{}}catch(e){return{}}}
+function getEntries(){if(window.WhoseDayPlatform?.records)return window.WhoseDayPlatform.records.snapshot();try{const r=localStorage.getItem('familylog_entries');return r?JSON.parse(r):{}}catch(e){return{}}}
 function putEntries(e,options={}){
+  if(window.WhoseDayPlatform?.records)return window.WhoseDayPlatform.records.commit(e);
   try{
     localStorage.setItem('familylog_entries',JSON.stringify(e));
     try{sessionStorage.setItem('familylog_backup',JSON.stringify(e))}catch(ex){}
@@ -1652,7 +1854,8 @@ function setActiveScreenMeta(screenId){
 }
 
 function show(id,direction){
-  if(!id.startsWith('s-ob-')&&id!=='s-auth-loading'&&!appHasAccess())id='s-ob-welcome';
+  if(backupRecoveryError){id='s-backup-recovery';document.getElementById('backup-recovery-detail').textContent=backupRecoveryError;}
+  if(!id.startsWith('s-ob-')&&id!=='s-auth-loading'&&id!=='s-backup-recovery'&&!appHasAccess())id='s-ob-welcome';
   const next=document.getElementById(id);
   if(!next)return;
   if(policySaveBusy&&document.querySelector('.screen.active')?.id!==id)policySaveNavigationToken++;
@@ -1664,6 +1867,7 @@ function show(id,direction){
   setActiveScreenMeta(id);
   const current=document.querySelector('.screen.active:not(.screen-leave)')||document.querySelector('.screen.active');
   const currentId=current?.id||null;
+  if(currentId==='s-setup'&&id!=='s-setup')cancelBackupImport();
   if(currentId==='s-setup'&&id!=='s-setup'&&location.hash.startsWith('#settings'))history.replaceState(null,'',location.pathname+location.search);
   let navDirection=direction;
   const isCheckinTransition=currentId&&CHECKIN_FLOW_SCREENS.has(currentId)&&CHECKIN_FLOW_SCREENS.has(id);
@@ -1677,6 +1881,8 @@ function show(id,direction){
     if(existingIdx>=0)screenStack=screenStack.slice(0,existingIdx+1);
     else screenStack.push(id);
   }
+  window.WhoseDayAnalytics?.screen(id,navDirection);
+  if(id==='s-cal'&&currentId!==id&&document.getElementById('t-trends')?.classList.contains('active'))trackUsage('Trends Viewed',{range:trendsFilter});
 
   document.querySelectorAll('.screen.screen-leave,.screen-enter').forEach(s=>{
     s.classList.remove('screen-leave','screen-leave-forward','screen-leave-back','screen-enter','screen-enter-forward','screen-enter-back');
@@ -1772,7 +1978,7 @@ function obNext(targetScreen){
   if(targetScreen==='s-ob-activities') obRenderActivities();
 }
 function obBack(targetScreen){
-  show(targetScreen);
+  show(targetScreen,'back');
   window.scrollTo(0,0);
 }
 function obSkip(){
@@ -1790,12 +1996,15 @@ function showLoggedOutLogin(){
 }
 function showLoggedOutSignup(){
   if(loggedOutAuthBusy)return;
+  window.__analyticsSignup=true;
+  window.WhoseDayAnalytics?.begin('signup');
   initOnboarding();
   show('s-ob-name');
 }
 function showLoggedOutAuth(mode){
   if(loggedOutAuthBusy)return;
   loggedOutAuthMode=mode;
+  window.__analyticsSignup=mode==='signup'||!!localStorage.getItem(PENDING_SIGNUP_KEY);
   const signup=mode==='signup';
   document.getElementById('ob-auth-label').textContent=signup?'New account':'Welcome back';
   document.getElementById('ob-auth-title').textContent=signup?'Sign up':'Sign in';
@@ -1844,6 +2053,7 @@ async function refreshLoggedOutLoginUi(showMessage=true){
       if(showMessage)setLoggedOutAuthMessage('Not signed in yet. Use the email link, then return here.');
     }
   }catch(error){
+    trackFailure('Sign-in Verification Failed',error);
     setLoggedOutAuthMessage(error.message||'Could not check sign-in status.','error');
   }finally{
     setLoggedOutAuthBusy(false);
@@ -1876,11 +2086,17 @@ async function sendLoggedOutSignInLink(){
     setLoggedOutAuthBusy(true);
     if(button){button.textContent='Sending...';button.setAttribute('aria-busy','true')}
     setLoggedOutAuthMessage('');
+    if(loggedOutAuthMode==='signup')window.WhoseDayAnalytics?.signupEvent('Signup Link Requested');
+    else trackUsage('Sign-in Link Requested');
     await window.WhoseDayBackend.signInWithEmail(email,cloudRedirectUrl(),{createUser:loggedOutAuthMode==='signup'});
+    if(loggedOutAuthMode==='signup')window.WhoseDayAnalytics?.signupEvent('Signup Link Sent');
+    else trackUsage('Sign-in Link Sent');
     startLoggedOutSignInCooldown();
     setLoggedOutAuthMessage(`${loggedOutAuthMode==='signup'?'Sign-up':'Sign-in'} link sent. Check your inbox or spam folder, then return here from the email link.`,'success');
   }catch(error){
     const message=String(error?.message||'');
+    if(loggedOutAuthMode==='signup')window.WhoseDayAnalytics?.signupEvent('Signup Link Failed');
+    else trackFailure('Sign-in Link Failed',error);
     if(/rate limit/i.test(message)){
       startLoggedOutSignInCooldown();
       setLoggedOutAuthMessage('Supabase is waiting before sending another link. Check your inbox or spam folder, then try again in about a minute if needed.','error');
@@ -1901,6 +2117,8 @@ async function restoreLoggedOutCloudAccount(session=null){
     setLoggedOutAuthBusy(true);
     session=session||await window.WhoseDayBackend.getSession();
     if(!session)throw new Error('Sign in before restoring your account.');
+    trackUsage('Sign-in Verified');
+    if(localStorage.getItem(PENDING_SIGNUP_KEY)===String(session.user.email||'').trim().toLowerCase())window.WhoseDayAnalytics?.signupEvent('Signup Verified');
     signedInAccountEmail=session.user.email||'';
     const profile=await window.WhoseDayBackend.getProfile(session.user.id);
     if(!loggedOutLoginActive())return;
@@ -1908,7 +2126,7 @@ async function restoreLoggedOutCloudAccount(session=null){
     const pendingEmail=localStorage.getItem(PENDING_SIGNUP_KEY);
     if(!profile?.terms_accepted_at&&pendingEmail&&pendingEmail===String(session.user.email||'').trim().toLowerCase()&&hasSavedConfig()&&hasCurrentPolicyAcceptance(APP_CONFIG)){
       localStorage.removeItem(PENDING_SIGNUP_KEY);
-      saveConfig(APP_CONFIG);setOnboardingMode(false);renderConfigurableUi();recordAppSession();show('s-home');return;
+      saveConfig(APP_CONFIG);setOnboardingMode(false);renderConfigurableUi();recordAppSession();window.WhoseDayAnalytics?.finish('signup');show('s-home');return;
     }
     // A profile written by an older startup sync is not completed onboarding.
     if(!profile?.terms_accepted_at){
@@ -1937,8 +2155,10 @@ async function restoreLoggedOutCloudAccount(session=null){
     recordAppSession();
     initHome();
     setLoggedOutAuthMessage('');
+    if(pendingEmail===String(session.user.email||'').trim().toLowerCase())window.WhoseDayAnalytics?.finish('signup');
     show('s-home');
   }catch(error){
+    trackFailure(session?.user?.id?'Account Restore Failed':'Sign-in Verification Failed',error);
     setLoggedOutAuthMessage(error.message||'Could not restore your account.','error');
   }finally{
     setLoggedOutAuthBusy(false);
@@ -2065,6 +2285,7 @@ async function obFinish(){
   setOnboardingMode(false);
   renderConfigurableUi();
   if(!await finishSetupAccess(email))return;
+  window.WhoseDayAnalytics?.finish('signup');
   if(!ONBOARDING_PREVIEW)recordAppSession();
   initHome();
   show('s-home');
@@ -2104,7 +2325,7 @@ function startWelcome(){initOnboarding();show('s-ob-welcome');}
 function skipWelcome(){obSkip();}
 // ── END WELCOME ───────────────────────────────────────
 let settingsPage='overview';
-const SETTINGS_PAGES=new Set(['overview','name','email','coparent','sync','activities','export','logs','delete','child']);
+const SETTINGS_PAGES=new Set(['overview','name','email','coparent','sync','activities','export','backup','import','logs','delete','child']);
 function showInitialApp(){
   const match=location.hash.match(/^#settings(?:\/([a-z]+))?$/);
   if(!match){show('s-home');return;}
@@ -2119,6 +2340,9 @@ function updateSettingsOverview(){
 }
 function openSettingsPage(page,{push=true,focus=true}={}){
   if(!SETTINGS_PAGES.has(page)||!appHasAccess())return;
+  if(page!=='import')cancelBackupImport();
+  if(document.getElementById('s-setup').classList.contains('active'))trackUsage('Settings Section Viewed',{section:page});
+  if(page!=='sync')window.WhoseDayAnalytics?.visible('conflict',false);
   settingsPage=page;
   if(page!=='child'){const modal=document.getElementById('child-modal');modal.classList.remove('show');modal.setAttribute('aria-hidden','true');editingChildRow=null;}
   document.querySelectorAll('#s-setup [data-settings-page]').forEach(el=>{el.hidden=el.dataset.settingsPage!==page});
@@ -2135,6 +2359,7 @@ function openSettingsPage(page,{push=true,focus=true}={}){
   if(page!=='delete'){document.getElementById('cloud-delete-confirm').value='';updateCloudDeleteButton();}
   updateSettingsOverview();
   if(push)history.pushState({settingsPage:page},'',location.pathname+location.search+'#settings/'+page);
+  if(page==='sync')renderCloudConflictReview();
   window.scrollTo(0,0);
   if(focus){const heading=document.getElementById('settings-heading-'+page)||document.getElementById(page==='child'?'child-modal-title':'settings-overview-title');heading?.setAttribute('tabindex','-1');heading?.focus({preventScroll:true});}
 }
@@ -2180,7 +2405,7 @@ function initHome(){
   if(!dates.length)return;
   const last=dates[0],e=entries[last];
   let desc=describeEntry(e);
-  document.getElementById('home-recent-inner').innerHTML=`<div class="entry-date-lbl">${fmtShort(last)}</div><div class="entry-row">${desc}</div>${e.diary?`<div class="entry-row" style="color:#666;font-style:italic;font-size:13px;margin-top:3px">"${e.diary.substring(0,90)}${e.diary.length>90?'…':''}"</div>`:''}`;
+  document.getElementById('home-recent-inner').innerHTML=`<div class="entry-date-lbl">${fmtShort(last)}</div><div class="entry-row">${escHtml(desc)}</div>${e.diary?`<div class="entry-row" style="color:#666;font-style:italic;font-size:13px;margin-top:3px">"${escHtml(e.diary.substring(0,90))}${e.diary.length>90?'…':''}"</div>`:''}`;
   document.getElementById('home-recent').style.display='block';
 }
 function updateHomeTodayState(entry){
@@ -2224,6 +2449,7 @@ function describeEntry(e){
 }
 
 function startCheckin(options={}){
+  window.WhoseDayAnalytics?.begin('checkin');
   S=blankCheckinState();
   if(!options.keepDate)BACKFILL_DATE=null;
   easyOpts=[];diaryOrigin='';
@@ -2236,6 +2462,7 @@ function startCheckin(options={}){
 function startTodayEdit(){
   const entry=getEntries()[todayStr()];
   if(!entry||!entry.week||entry.week==='not-logged'){startCheckin();return}
+  window.WhoseDayAnalytics?.begin('checkin');
   BACKFILL_DATE=todayStr();
   S=entryToCheckinState(entry);
   easyOpts=[...S.momOpts];
@@ -2289,7 +2516,7 @@ function setWeek(w){
 
 // DAD MODE
 function setDadMode(mode){
-  if(S.dadMode!==mode)resetCheckinBranch();
+  if(S.dadMode!==mode&&!(['normal','dad-helped-mom'].includes(S.dadMode)&&['normal','dad-helped-mom'].includes(mode)))resetCheckinBranch();
   S.dadMode=mode;
   document.querySelectorAll('#s-dad-mode .scene-card').forEach(c=>c.className='scene-card');
   const idMap={'normal':'sc-dad-normal','dad-helped-mom':'sc-dad-normal','mom-had':'sc-dad-momhad'};
@@ -2304,38 +2531,60 @@ function toggleMomHelpedKid(name){
   if(idx>=0){S.momHadKidsOnDadWeek.splice(idx,1);btn.classList.remove('with-mom')}else{S.momHadKidsOnDadWeek.push(name);btn.classList.add('with-mom')}
   document.getElementById('mom-helped-next').disabled=S.momHadKidsOnDadWeek.length===0;updateMomHelpedSummary();
 }
-function updateMomHelpedSummary(){const el=document.getElementById('mom-helped-summary');if(!S.momHadKidsOnDadWeek.length){el.textContent='Tap the kids '+coParent()+' was involved with';return}el.innerHTML='<strong style="color:#993c1d">'+coParent()+' helped with:</strong> '+S.momHadKidsOnDadWeek.join(', ')}
-function startMomHelpedLoop(){
-  momHelpedQueue=[...S.momHadKidsOnDadWeek];momHelpedIdx=0;
-  startMomHelpedActivities();
+function updateMomHelpedSummary(){const el=document.getElementById('mom-helped-summary');if(!S.momHadKidsOnDadWeek.length){el.textContent='Tap the kids '+coParent()+' was involved with';return}el.innerHTML='<strong style="color:#993c1d">'+escHtml(coParent())+' helped with:</strong> '+escHtml(S.momHadKidsOnDadWeek.join(', '))}
+// Keep the existing per-child record format for sync/backups, while asking once.
+// Historical child-specific details stay intact unless the shared answer changes.
+function sharedHelpDetails(data,kids){
+  const details=kids.map(k=>[k,data[k]]).filter(([,v])=>v);
+  const acts=[...new Set(details.flatMap(([,v])=>v.acts||[]))];
+  const notes=[...new Set(details.map(([,v])=>v.note||'').filter(Boolean))];
+  const note=notes.length<=1?(notes[0]||''):details.filter(([,v])=>v.note).map(([k,v])=>k+': '+v.note).join(' · ');
+  return {acts,note};
 }
+function applySharedHelp(data,kids,detail){
+  const original=sharedHelpDetails(data,kids);
+  if(JSON.stringify(original.acts)===JSON.stringify(detail.acts)&&original.note===detail.note)return data;
+  return Object.fromEntries(kids.map(k=>[k,{acts:[...detail.acts],note:detail.note}]));
+}
+function helpDetailGroups(data){
+  const groups=new Map();
+  for(const [kid,detail] of Object.entries(data||{})){
+    const key=JSON.stringify([[...(detail.acts||[])].sort(),detail.note||'']);
+    if(!groups.has(key))groups.set(key,{kids:[],detail});
+    groups.get(key).kids.push(kid);
+  }
+  return [...groups.values()].map(({kids,detail})=>[kids.join(', '),detail]);
+}
+function startMomHelpedLoop(){startMomHelpedActivities()}
 function startMomHelpedActivities(){
-  momHelpedIdx=0;showMomHelpedStep();
+  momHelpedDetails=sharedHelpDetails(S.momHelpedOnDadWeek,S.momHadKidsOnDadWeek);
+  showMomHelpedStep();
 }
 function showMomHelpedStep(){
-  const kid=momHelpedQueue[momHelpedIdx],total=momHelpedQueue.length;
-  document.getElementById('mha-step-lbl').textContent='Kid '+(momHelpedIdx+1)+' of '+total;
-  document.getElementById('mha-kid-name').textContent=kid;document.getElementById('mha-avatar').textContent=kid[0];
+  const kids=S.momHadKidsOnDadWeek;
+  document.getElementById('mha-step-lbl').textContent=kids.length===KIDS.length?'All children':'Children with you';
+  document.getElementById('mha-kid-name').textContent=kids.join(', ');
   document.getElementById('mha-q').textContent='What did '+coParent()+' help with?';
-  if(!S.momHelpedOnDadWeek[kid])S.momHelpedOnDadWeek[kid]={acts:[],note:''};
-  document.getElementById('mha-note').value=S.momHelpedOnDadWeek[kid].note||'';
-  document.querySelectorAll('#mha-acts .act-btn').forEach(b=>{b.classList.toggle('sel',S.momHelpedOnDadWeek[kid].acts.includes(activityButtonId(b)))});
-  document.getElementById('mha-next-btn').disabled=S.momHelpedOnDadWeek[kid].acts.length===0;
-  document.getElementById('mha-next-btn').textContent=momHelpedIdx<total-1?'Next kid →':'Continue →';
+  document.getElementById('mha-note').value=momHelpedDetails.note;
+  document.querySelectorAll('#mha-acts .act-btn').forEach(b=>b.classList.toggle('sel',momHelpedDetails.acts.includes(activityButtonId(b))));
+  document.getElementById('mha-next-btn').disabled=momHelpedDetails.acts.length===0;
   setProg('prog-mom-helped-activity',2,5);show('s-mom-helped-activity');
 }
 function toggleMomAct(el,key){
-  el.classList.toggle('sel');const kid=momHelpedQueue[momHelpedIdx];
-  if(!S.momHelpedOnDadWeek[kid])S.momHelpedOnDadWeek[kid]={acts:[],note:''};
-  const i=S.momHelpedOnDadWeek[kid].acts.indexOf(key);if(i>=0)S.momHelpedOnDadWeek[kid].acts.splice(i,1);else S.momHelpedOnDadWeek[kid].acts.push(key);
-  document.getElementById('mha-next-btn').disabled=S.momHelpedOnDadWeek[kid].acts.length===0;
+  el.classList.toggle('sel');
+  const i=momHelpedDetails.acts.indexOf(key);if(i>=0)momHelpedDetails.acts.splice(i,1);else momHelpedDetails.acts.push(key);
+  document.getElementById('mha-next-btn').disabled=momHelpedDetails.acts.length===0;
+}
+function captureMomHelpedDetails(){
+  momHelpedDetails.note=document.getElementById('mha-note').value.trim();
+  S.momHelpedOnDadWeek=applySharedHelp(S.momHelpedOnDadWeek,S.momHadKidsOnDadWeek,momHelpedDetails);
 }
 function nextMomHelpedKid(){
-  const kid=momHelpedQueue[momHelpedIdx];S.momHelpedOnDadWeek[kid].note=document.getElementById('mha-note').value.trim();momHelpedIdx++;
-  if(momHelpedIdx<momHelpedQueue.length)showMomHelpedStep();
-  else{goToDiary('s-mom-helped-activity','Anything else to note?','A quick diary — how was today?',4,5)}
+  if(!momHelpedDetails.acts.length)return;
+  window.WhoseDayAnalytics?.completeStep();captureMomHelpedDetails();
+  goToDiary('s-mom-helped-activity','Anything else to note?','A quick diary — how was today?',4,5);
 }
-function goBackFromMomHelped(){if(momHelpedIdx>0){momHelpedIdx--;showMomHelpedStep()}else show('s-dad-help-choice')}
+function goBackFromMomHelped(){captureMomHelpedDetails();show('s-dad-help-choice','back')}
 
 function toggleDadWkMomKid(name){
   const all=document.getElementById('dwm-all');if(all)all.classList.remove('with-mom');
@@ -2344,7 +2593,7 @@ function toggleDadWkMomKid(name){
   document.getElementById('dwm-next').disabled=S.momHadKidsOnDadWeek.length===0;updateDadWkMomSummary();
 }
 function setDadWkMomAll(){S.momHadKidsOnDadWeek=[...KIDS];KIDS.forEach(k=>kidBtn('dwm',k).classList.add('with-mom'));const all=document.getElementById('dwm-all');if(all)all.classList.add('with-mom');document.getElementById('dwm-next').disabled=false;updateDadWkMomSummary()}
-function updateDadWkMomSummary(){const el=document.getElementById('dad-wk-mom-summary');if(!S.momHadKidsOnDadWeek.length){el.textContent='Tap the kids who are at '+coParentPoss()+' tonight';return}el.innerHTML='<strong style="color:#993c1d">At '+coParentPoss()+':</strong> '+S.momHadKidsOnDadWeek.join(', ')}
+function updateDadWkMomSummary(){const el=document.getElementById('dad-wk-mom-summary');if(!S.momHadKidsOnDadWeek.length){el.textContent='Tap the kids who are at '+coParentPoss()+' tonight';return}el.innerHTML='<strong style="color:#993c1d">At '+escHtml(coParentPoss())+':</strong> '+escHtml(S.momHadKidsOnDadWeek.join(', '))}
 function goDadWkMomDiary(){showChangeContext('s-dad-wk-mom-had','dad-to-mom')}
 function goToDadWkViaContext(){goDadWkMomDiary()}
 
@@ -2375,12 +2624,12 @@ function setAllMom(){S.kidsWithDad=[];KIDS.forEach(k=>kidBtn('kb',k).classList.r
 function updateWhoSummary(){
   const allMomBtn=document.getElementById('kb-allMom');
   const el=document.getElementById('who-summary-text'),allMom=allMomBtn&&allMomBtn.classList.contains('all-mom');
-  if(allMom){el.innerHTML='<strong>'+kidsCountLabel()+'</strong> are at '+coParentPoss()+' tonight';return}
+  if(allMom){el.innerHTML='<strong>'+kidsCountLabel()+'</strong> are at '+escHtml(coParentPoss())+' tonight';return}
   if(!S.kidsWithDad.length){el.textContent='Tap the kids who are with you tonight';return}
   if(S.kidsWithDad.length===KIDS.length){el.innerHTML='<strong>'+kidsCountLabel()+'</strong> are with you tonight';return}
   const absent=KIDS.filter(k=>!S.kidsWithDad.includes(k));
-  let h='<strong style="color:#3c3489">With you:</strong> '+S.kidsWithDad.join(', ');
-  if(absent.length)h+='<br><strong style="color:#712b13">Not home:</strong> '+absent.join(', ')+' — you\'ll be asked about them next';
+  let h='<strong style="color:#3c3489">With you:</strong> '+escHtml(S.kidsWithDad.join(', '));
+  if(absent.length)h+='<br><strong style="color:#712b13">Not home:</strong> '+escHtml(absent.join(', '))+' — you\'ll be asked about them next';
   el.innerHTML=h;
 }
 function startAbsentLoop(){
@@ -2408,6 +2657,7 @@ function showAbsentStep(){
 }
 function setAbsentLoc(el,loc){document.querySelectorAll('#absent-opts .opt').forEach(o=>o.classList.remove('sel'));el.classList.add('sel');el.dataset.loc=loc;document.getElementById('absent-next-btn').disabled=false}
 function nextAbsent(){
+  window.WhoseDayAnalytics?.completeStep();
   const kid=absentQueue[absentIdx],locEl=document.querySelector('#absent-opts .opt.sel');
   S.absentData[kid]={location:locEl?locEl.dataset.loc:'other',note:document.getElementById('absent-note-input').value.trim()};
   absentIdx++;
@@ -2417,7 +2667,7 @@ function nextAbsent(){
     else{showDadHelpChoice('s-absent');}
   }
 }
-function goBackFromAbsent(){if(absentIdx>0){absentIdx--;showAbsentStep()}else show('s-whichkids')}
+function goBackFromAbsent(){if(absentIdx>0){absentIdx--;window.WhoseDayAnalytics?.screen('s-absent','back',true);showAbsentStep()}else show('s-whichkids','back')}
 function goBackFromDiary(){show(diaryOrigin||'s-week')}
 
 function showDadHelpChoice(backTarget){
@@ -2444,7 +2694,7 @@ function setDadHelpedChoice(helped){
   }
   S.dadMode='dad-helped-mom';
   S.momHadKidsOnDadWeek=[...S.kidsWithDad];
-  S.momHelpedOnDadWeek={};
+  S.momHelpedOnDadWeek=Object.fromEntries(Object.entries(S.momHelpedOnDadWeek).filter(([kid])=>S.momHadKidsOnDadWeek.includes(kid)));
   setTimeout(()=>{
     if(!S.momHadKidsOnDadWeek.length){
       goToDiary('s-dad-help-choice','Anything else to note?','A quick diary — how was today?',4,5);
@@ -2467,50 +2717,51 @@ function continueMomEasy(){
   if(easyOpts.includes('helped')){
     S.momMode='helped';
     S.helpedKids=[...KIDS];
-    S.helpedData={};
+    S.momOpts=[...easyOpts];
     setTimeout(()=>startHelpedLoop(),180);
     return;
   }
   S.momMode='easy';
+  S.helpedKids=[];S.helpedData={};
   S.momOpts=[...easyOpts];
   saveEntry();
 }
 function setMomMode(mode){
-  if(S.momMode!==mode)resetCheckinBranch();
+  if(S.momMode!==mode&&!(['easy','helped'].includes(S.momMode)&&['easy','helped'].includes(mode)))resetCheckinBranch();
   S.momMode=mode;
   document.querySelectorAll('#s-mom-mode .scene-card').forEach(c=>c.className='scene-card');
   const idMap={easy:'ft-easy',helped:'ft-easy','dad-had':'ft-dad'};
   document.getElementById(idMap[mode]).classList.add(mode==='dad-had'?'sel-warn':'sel-dad');
-  if(mode==='easy')setTimeout(()=>{setProg('prog-mom-easy',1,3);document.querySelectorAll('#easy-opts .opt').forEach(o=>o.classList.remove('sel'));easyOpts=[];document.getElementById('easy-note').value='';document.getElementById('easy-continue-btn').disabled=true;show('s-mom-easy')},250);
-  else if(mode==='helped')setTimeout(()=>{S.helpedKids=[...KIDS];S.helpedData={};startHelpedLoop()},250);
+  if(mode==='easy')setTimeout(()=>{prepareEditTarget('s-mom-easy');show('s-mom-easy')},250);
+  else if(mode==='helped')setTimeout(()=>{S.helpedKids=[...KIDS];startHelpedLoop()},250);
   else setTimeout(()=>{KIDS.forEach(k=>kidBtn('dh',k).classList.remove('with-dad'));const all=document.getElementById('dh-allThree');if(all)all.classList.remove('with-dad');S.dadHadKids=[];updateDadHadSummary();document.getElementById('dad-had-next').disabled=true;setProg('prog-mom-dad-had',1,3);show('s-mom-dad-had')},250);
 }
-function startHelpedLoop(){helpedQueue=[...S.helpedKids];helpedIdx=0;showHelpedStep()}
+function startHelpedLoop(){helpedDetails=sharedHelpDetails(S.helpedData,S.helpedKids);showHelpedStep()}
 function showHelpedStep(){
-  const kid=helpedQueue[helpedIdx],total=helpedQueue.length;
-  document.getElementById('helped-step-lbl').textContent='Kid '+(helpedIdx+1)+' of '+total;
-  document.getElementById('helped-kid-name').textContent=kid;document.getElementById('helped-avatar').textContent=kid[0];
+  document.getElementById('helped-step-lbl').textContent=S.helpedKids.length===KIDS.length?'All children':'Children';
+  document.getElementById('helped-kid-name').textContent=S.helpedKids.join(', ');
   document.getElementById('helped-q').textContent='What did you help with?';
-  if(!S.helpedData[kid])S.helpedData[kid]={acts:[],note:''};
-  document.getElementById('helped-note').value=S.helpedData[kid].note||'';
-  document.querySelectorAll('#helped-acts .act-btn').forEach(b=>{b.classList.toggle('sel',S.helpedData[kid].acts.includes(activityButtonId(b)))});
-  document.getElementById('helped-act-next').disabled=S.helpedData[kid].acts.length===0;
-  document.getElementById('helped-act-next').textContent=helpedIdx<total-1?'Next kid →':'Continue →';
+  document.getElementById('helped-note').value=helpedDetails.note;
+  document.querySelectorAll('#helped-acts .act-btn').forEach(b=>b.classList.toggle('sel',helpedDetails.acts.includes(activityButtonId(b))));
+  document.getElementById('helped-act-next').disabled=helpedDetails.acts.length===0;
   setProg('prog-helped-activity',2,3);show('s-helped-activity');
 }
 function toggleAct(el,key){
-  el.classList.toggle('sel');const kid=helpedQueue[helpedIdx];
-  if(!S.helpedData[kid])S.helpedData[kid]={acts:[],note:''};
-  const i=S.helpedData[kid].acts.indexOf(key);if(i>=0)S.helpedData[kid].acts.splice(i,1);else S.helpedData[kid].acts.push(key);
-  document.getElementById('helped-act-next').disabled=S.helpedData[kid].acts.length===0;
+  el.classList.toggle('sel');
+  const i=helpedDetails.acts.indexOf(key);if(i>=0)helpedDetails.acts.splice(i,1);else helpedDetails.acts.push(key);
+  document.getElementById('helped-act-next').disabled=helpedDetails.acts.length===0;
+}
+function captureHelpedDetails(){
+  helpedDetails.note=document.getElementById('helped-note').value.trim();
+  S.helpedData=applySharedHelp(S.helpedData,S.helpedKids,helpedDetails);
 }
 function nextHelpedKid(){
-  const kid=helpedQueue[helpedIdx];if(!S.helpedData[kid])S.helpedData[kid]={acts:[],note:''};
-  S.helpedData[kid].note=document.getElementById('helped-note').value.trim();helpedIdx++;
-  if(helpedIdx<helpedQueue.length)showHelpedStep();
-  else{goToDiary('s-helped-activity','Anything else to note?','A quick diary — how was today?',3,4)}
+  if(!helpedDetails.acts.length)return;
+  window.WhoseDayAnalytics?.completeStep();captureHelpedDetails();
+  goToDiary('s-helped-activity','Anything else to note?','A quick diary — how was today?',3,4);
 }
-function goBackFromHelped(){if(helpedIdx>0){helpedIdx--;showHelpedStep()}else show('s-mom-easy')}
+function goBackFromHelped(){captureHelpedDetails();prepareEditTarget('s-mom-easy');show('s-mom-easy','back')}
+
 function toggleDadHadKid(name){
   const all=document.getElementById('dh-allThree');if(all)all.classList.remove('with-dad');
   const btn=kidBtn('dh',name),idx=S.dadHadKids.indexOf(name);
@@ -2518,7 +2769,7 @@ function toggleDadHadKid(name){
   document.getElementById('dad-had-next').disabled=S.dadHadKids.length===0;updateDadHadSummary();
 }
 function setDadHadAll(){S.dadHadKids=[...KIDS];KIDS.forEach(k=>kidBtn('dh',k).classList.add('with-dad'));const all=document.getElementById('dh-allThree');if(all)all.classList.add('with-dad');document.getElementById('dad-had-next').disabled=false;updateDadHadSummary()}
-function updateDadHadSummary(){const el=document.getElementById('dad-had-summary');if(!S.dadHadKids.length){el.textContent='Tap the kids who were actually with you';return}el.innerHTML='<strong style="color:#3c3489">With you:</strong> '+S.dadHadKids.join(', ')}
+function updateDadHadSummary(){const el=document.getElementById('dad-had-summary');if(!S.dadHadKids.length){el.textContent='Tap the kids who were actually with you';return}el.innerHTML='<strong style="color:#3c3489">With you:</strong> '+escHtml(S.dadHadKids.join(', '))}
 function goDadHadDiary(){showChangeContext('s-mom-dad-had','mom-to-dad')}
 function goToDadHadViaContext(){goDadHadDiary()}
 
@@ -2546,6 +2797,7 @@ function setChangeButtonSelected(id,selectedClass){
   btn.setAttribute('aria-pressed','true');
 }
 function setAgreed(value){
+  window.WhoseDayAnalytics?.screen(value?'s-context-followup':'s-change-context',value?'forward':'back');
   S.changeAgreed=value;S.changePressured=null;
   document.getElementById('agreed-yes').className='change-yn-btn';
   document.getElementById('agreed-no').className='change-yn-btn';
@@ -2668,7 +2920,7 @@ function prepareEditTarget(target){
     setProg('prog-mom-helped-kids',4,5);
   }
   if(target==='s-mom-easy'){
-    easyOpts=[...(S.momOpts.length?S.momOpts:['none'])];
+    easyOpts=[...(S.momOpts.length?S.momOpts:S.helpedKids.length?['helped']:[])];
     document.querySelectorAll('#easy-opts .opt').forEach(o=>{
       const key=(o.getAttribute('onclick')||'').match(/'([^']+)'/)?.[1];
       o.classList.toggle('sel',easyOpts.includes(key));
@@ -2707,6 +2959,7 @@ function returnToDeviationDocs(){
   document.getElementById('diary-input').focus();
 }
 function saveEntry(options={}){
+  if(saveEntry.pending)return saveEntry.pending;
   captureEntryInputs();
   if(!options.allowEmptyDeviation&&needsDeviationDocumentationPrompt()){
     document.getElementById('deviation-empty-confirm').style.display='block';
@@ -2721,10 +2974,30 @@ function saveEntry(options={}){
     momHadKidsOnDadWeek:[...S.momHadKidsOnDadWeek],
     momHelpedOnDadWeek:{...S.momHelpedOnDadWeek},
     diary:S.diary,attachment:S.attachment,changeAgreed:S.changeAgreed,changePressured:S.changePressured,loggedAt:new Date().toISOString()};
-  const saveDate=BACKFILL_DATE||todayStr();BACKFILL_DATE=null;
+  const saveDate=BACKFILL_DATE||todayStr();
   if(isLockedEntry(saveDate)){alert('This entry is locked. Entries for dates before yesterday cannot be changed in the app.');return;}
-  entries[saveDate]=e;putEntries(entries);
-  showSavedEntry(e,saveDate,{celebrate:true});
+  const usage=loggedEntryCount(entries)===0?'first':'repeat';
+  const finish=()=>{
+    if(JSON.stringify(getEntries()[saveDate])!==JSON.stringify(e))throw new Error('Save could not be verified.');
+    BACKFILL_DATE=null;
+    window.WhoseDayAnalytics?.finish('checkin');trackUsage('Check-in Saved',{usage});
+    showSavedEntry(e,saveDate,{celebrate:true});
+  };
+  const failed=error=>{
+    trackFailure('Check-in Save Failed',error);
+    if(window.WhoseDayPlatform?.saveError)window.WhoseDayPlatform.saveError(error,()=>saveEntry(options));
+    else alert('Could not confirm your save. Your answers are still here. Please try again.');
+  };
+  entries[saveDate]=e;
+  try{
+    const result=putEntries(entries);
+    if(result?.then){
+      window.WhoseDayPlatform?.saving(true);
+      saveEntry.pending=result.then(finish).catch(failed).finally(()=>{saveEntry.pending=null;window.WhoseDayPlatform?.saving(false)});
+      return saveEntry.pending;
+    }
+    finish();
+  }catch(error){failed(error)}
 }
 
 function captureEntryInputs(){
@@ -2780,7 +3053,7 @@ function renderSavedReceipt(e,saveDate){
     ['Logged',new Date(e.loggedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}).toLowerCase()],
     ['Entry type',savedEntryType(e)],
     ['Kids',savedKidsLine(e)],
-    ['Status','Older dates are read-only'],
+    ['Status',window.WhoseDayPlatform?.saveStatusLabel||'Older dates are read-only'],
   ];
   if(e.diary)rows.splice(3,0,['Note','Added']);
   if(e.attachment)rows.splice(3,0,['Attachment','Screenshot included']);
@@ -2851,6 +3124,7 @@ function renderCal(){
   }
 }
 function showEmptyDetail(ds){
+  trackUsage('Calendar Day Viewed',{day_state:ds===todayStr()?'today':'empty'});
   selectedCalDate=ds;renderCal();
   const el=document.getElementById('cal-detail');el.style.display='block';
   const canBackfill=ds===yesterdayStr();
@@ -2868,6 +3142,8 @@ function revealCalendarDetail(){
   requestAnimationFrame(()=>el.scrollIntoView({behavior:'smooth',block:'center'}));
 }
 function showDetail(ds,e,{reveal=true}={}){
+  if(reveal)trackUsage('Calendar Day Viewed',{day_state:ds===todayStr()?'today':e?.week==='not-logged'?'empty':'record'});
+  e=entryForHtml(e);
   selectedCalDate=ds;renderCal();
   const el=document.getElementById('cal-detail');el.style.display='block';
   let tag,body;
@@ -2879,12 +3155,12 @@ function showDetail(ds,e,{reveal=true}={}){
     return;
   }
   if(e.week==='other'){tag='<span class="tag tag-mom">Pre-agreed day note</span>';body=`<div class="entry-row" style="font-style:italic;color:#666">${e.diary||'No note'}</div>`}
-  else if(e.dadMode==='mom-had'){tag='<span class="tag tag-teal">Your day · Kids at '+coParentPoss()+'</span>';body=`<div class="entry-row"><strong>At ${coParentPoss()}: ${(e.momHadKidsOnDadWeek||[]).join(', ')}</strong></div>${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
-  else if(e.dadMode==='dad-helped-mom'){tag='<span class="tag tag-dad">Your day</span>';const n=(e.kidsWithDad||[]).length;const acts=Object.entries(e.momHelpedOnDadWeek||{}).map(([k,v])=>`<div class="entry-row" style="color:#666">${k}: ${coParent()} — ${(v.acts||[]).map(activityLabel).join(', ')}</div>`).join('');body=`<div class="entry-row"><strong>${n===KIDS.length?kidsCountLabel()+' home':n===0?'No kids':(e.kidsWithDad||[]).join(', ')+' home'}</strong></div>${acts}${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
-  else if(e.momMode==='easy'){tag='<span class="tag tag-mom">'+coParentPoss()+' day</span>';body=`<div class="entry-row">${coParent()} had ${kidsCountLabel()}</div>${e.diary?`<div class="entry-row" style="color:#666;margin-top:4px">${e.diary}</div>`:''}`}
-  else if(e.momMode==='helped'){tag='<span class="tag tag-mom">'+coParentPoss()+' day · You helped</span>';const acts=Object.entries(e.helpedData||{}).map(([k,v])=>`<div class="entry-row" style="color:#666">${k}: ${(v.acts||[]).map(activityLabel).join(', ')}${v.note?' — '+v.note:''}</div>`).join('');body=`<div class="entry-row"><strong>You helped: ${(e.helpedKids||[]).join(', ')}</strong></div>${acts}${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
-  else if(e.momMode==='dad-had'){tag='<span class="tag tag-other">'+coParentPoss()+' day · You had</span>';body=`<div class="entry-row"><strong>You had: ${(e.dadHadKids||[]).join(', ')}</strong></div>${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
-  else{tag='<span class="tag tag-dad">Your day</span>';const n=(e.kidsWithDad||[]).length;const kids=n===KIDS.length?kidsCountLabel()+' home':n===0?'All at '+coParentPoss():(e.kidsWithDad||[]).join(', ')+' home';body=`<div class="entry-row"><strong>${kids}</strong></div>${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
+  else if(e.dadMode==='mom-had'){tag='<span class="tag tag-teal">Your day · Kids at '+escHtml(coParentPoss())+'</span>';body=`<div class="entry-row"><strong>At ${escHtml(coParentPoss())}: ${(e.momHadKidsOnDadWeek||[]).join(', ')}</strong></div>${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
+  else if(e.dadMode==='dad-helped-mom'){tag='<span class="tag tag-dad">Your day</span>';const n=(e.kidsWithDad||[]).length;const acts=helpDetailGroups(e.momHelpedOnDadWeek).map(([k,v])=>`<div class="entry-row" style="color:#666">${escHtml(k)}: ${escHtml(coParent())} — ${escHtml((v.acts||[]).map(activityLabel).join(', '))}${v.note?' — '+escHtml(v.note):''}</div>`).join('');body=`<div class="entry-row"><strong>${n===KIDS.length?kidsCountLabel()+' home':n===0?'No kids':(e.kidsWithDad||[]).join(', ')+' home'}</strong></div>${acts}${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
+  else if(e.momMode==='easy'){tag='<span class="tag tag-mom">'+escHtml(coParentPoss())+' day</span>';body=`<div class="entry-row">${escHtml(coParent())} had ${kidsCountLabel()}</div>${e.diary?`<div class="entry-row" style="color:#666;margin-top:4px">${e.diary}</div>`:''}`}
+  else if(e.momMode==='helped'){tag='<span class="tag tag-mom">'+escHtml(coParentPoss())+' day · You helped</span>';const acts=helpDetailGroups(e.helpedData).map(([k,v])=>`<div class="entry-row" style="color:#666">${escHtml(k)}: ${escHtml((v.acts||[]).map(activityLabel).join(', '))}${v.note?' — '+escHtml(v.note):''}</div>`).join('');body=`<div class="entry-row"><strong>You helped: ${(e.helpedKids||[]).join(', ')}</strong></div>${acts}${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
+  else if(e.momMode==='dad-had'){tag='<span class="tag tag-other">'+escHtml(coParentPoss())+' day · You had</span>';body=`<div class="entry-row"><strong>You had: ${(e.dadHadKids||[]).join(', ')}</strong></div>${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
+  else{tag='<span class="tag tag-dad">Your day</span>';const n=(e.kidsWithDad||[]).length;const kids=n===KIDS.length?kidsCountLabel()+' home':n===0?'All at '+escHtml(coParentPoss()):(e.kidsWithDad||[]).join(', ')+' home';body=`<div class="entry-row"><strong>${kids}</strong></div>${e.diary?`<div class="entry-row" style="font-style:italic;color:#666;margin-top:4px">"${e.diary}"</div>`:''}`}
   const locked=isLockedDate(ds);
   const lockBadge=locked?'<span class="cal-lock-badge">Locked</span>':'';
   el.innerHTML=`<div class="entry-card"><div class="entry-date-lbl">${fmtDate(ds)} ${tag} ${lockBadge}</div>${body}${entryMetaHtml(e,{fullAttachment:true})}</div>`;
@@ -2896,6 +3172,7 @@ let trendsFilter='month';
 let trendsM=new Date().getMonth(), trendsY=new Date().getFullYear();
 
 function setTrendsFilter(val){
+  if(val!==trendsFilter)trackUsage('Trends Filter Changed',{range:val});
   trendsFilter=val;
   document.querySelectorAll('.trends-pill').forEach(p=>p.classList.remove('active'));
   document.getElementById('tpill-'+val).classList.add('active');
@@ -3016,11 +3293,14 @@ function renderLog(){
     else if(e.momMode==='helped'){tagCls='tag-mom';tagTxt=coParent()+'/'+currentParent()+' helped';desc='You helped: '+(e.helpedKids||[]).join(', ')}
     else if(e.momMode==='dad-had'){tagCls='tag-other';tagTxt=coParent()+'/'+currentParent()+' had';desc='You had: '+(e.dadHadKids||[]).join(', ')}
     else{tagCls='tag-dad';tagTxt='Your day';const n=(e.kidsWithDad||[]).length;desc=n===KIDS.length?kidsCountLabel()+' home':n===0?'No kids':(e.kidsWithDad||[]).join(', ')}
-    return`<div class="entry-card"><div class="entry-date-lbl">${fmtShort(date)} <span class="tag ${tagCls}">${tagTxt}</span></div><div class="entry-row">${desc}</div>${e.diary?`<div class="entry-row" style="color:#666;font-style:italic;font-size:13px;margin-top:3px">"${e.diary.substring(0,80)}${e.diary.length>80?'…':''}"</div>`:''}${entryMetaHtml(e)}</div>`;
+    return`<div class="entry-card"><div class="entry-date-lbl">${fmtShort(date)} <span class="tag ${tagCls}">${escHtml(tagTxt)}</span></div><div class="entry-row">${escHtml(desc)}</div>${e.diary?`<div class="entry-row" style="color:#666;font-style:italic;font-size:13px;margin-top:3px">"${escHtml(e.diary.substring(0,80))}${e.diary.length>80?'…':''}"</div>`:''}${entryMetaHtml(e)}</div>`;
   }).join('');
 }
 function changeMonth(dir){calM+=dir;if(calM>11){calM=0;calY++}if(calM<0){calM=11;calY--}document.getElementById('stats-lbl').textContent=MONTHS[calM]+' '+calY;renderCal();renderStats()}
 function switchTab(t){
+  const previous=document.querySelector('.nav-tab.active')?.id;
+  if(t==='trends'&&previous!=='t-trends')trackUsage('Trends Viewed',{range:trendsFilter});
+  if(t==='cal'&&previous!=='t-cal')trackUsage('Calendar Viewed');
   ['cal','trends'].forEach(x=>{
     const tab=document.getElementById('t-'+x),panel=document.getElementById('tc-'+x);
     if(tab)tab.classList.toggle('active',x===t);
@@ -3084,6 +3364,7 @@ function renderReportsStats(){
     </div>`;
 }
 function setReportFilter(range){
+  if(range!==REPORT_FILTER)trackUsage('Reports Filter Changed',{range});
   REPORT_FILTER=range;
   document.querySelectorAll('.report-pill').forEach(p=>p.classList.toggle('active',p.id==='pill-'+range));
   renderReportsStats();
@@ -3093,6 +3374,7 @@ function showExport(){currentExportType=null;document.querySelectorAll('.export-
 function selectExport(type){
   currentExportType=type;document.querySelectorAll('.export-card').forEach(c=>c.classList.remove('sel'));document.getElementById('exp-'+type).classList.add('sel');
   currentReportText=buildReport(type);
+  trackUsage('Report Generated',reportAnalytics());
   const title=document.getElementById('preview-title');if(title)title.textContent=reportTitle(type)+' · '+reportPeriodLabel();
   document.getElementById('preview-box').textContent=currentReportText||'No entries found.';
   document.getElementById('export-preview-section').style.display='block';document.getElementById('copy-toast').style.display='none';
@@ -3111,9 +3393,9 @@ function buildReportBody(type){
       if(e.week==='not-logged'){L.push('STATUS: Nothing logged; custody unknown.')}
       else if(e.week==='other'){L.push('TYPE: Legacy day note; custody unknown');L.push('NOTE: '+(e.diary||'—'))}
       else if(e.dadMode==='mom-had'){L.push('SCHEDULED DAY: '+currentParentPoss()+' scheduled day — KIDS AT '+coParent().toUpperCase());L.push('KIDS AT '+coParent().toUpperCase()+': '+(e.momHadKidsOnDadWeek||[]).join(', '));if(e.diary)L.push('NOTE: '+e.diary)}
-      else if(e.dadMode==='dad-helped-mom'){L.push('SCHEDULED DAY: '+currentParentPoss()+' scheduled day');const n=(e.kidsWithDad||[]).length;L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(n===KIDS.length?kidsCountLabel():n===0?'None':(e.kidsWithDad||[]).join(', ')));L.push(coParent().toUpperCase()+' HELPED:');Object.entries(e.momHelpedOnDadWeek||{}).forEach(([k,v])=>L.push('  '+k+': '+(v.acts||[]).map(activityLabel).join(', ')+(v.note?' ('+v.note+')':'')));if(e.diary)L.push('NOTE: '+e.diary)}
+      else if(e.dadMode==='dad-helped-mom'){L.push('SCHEDULED DAY: '+currentParentPoss()+' scheduled day');const n=(e.kidsWithDad||[]).length;L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(n===KIDS.length?kidsCountLabel():n===0?'None':(e.kidsWithDad||[]).join(', ')));L.push(coParent().toUpperCase()+' HELPED:');helpDetailGroups(e.momHelpedOnDadWeek).forEach(([k,v])=>L.push('  '+k+': '+(v.acts||[]).map(activityLabel).join(', ')+(v.note?' ('+v.note+')':'')));if(e.diary)L.push('NOTE: '+e.diary)}
       else if(e.momMode==='easy'){L.push('SCHEDULED DAY: '+coParentPoss()+' scheduled day');L.push('STATUS: '+coParent()+' had the kids');if(e.diary)L.push('NOTE: '+e.diary)}
-      else if(e.momMode==='helped'){L.push('SCHEDULED DAY: '+coParentPoss()+' scheduled day');L.push(currentParent().toUpperCase()+' HELPED WITH: '+(e.helpedKids||[]).join(', '));Object.entries(e.helpedData||{}).forEach(([k,v])=>L.push('  '+k+': '+(v.acts||[]).map(activityLabel).join(', ')+(v.note?' ('+v.note+')':'')));if(e.diary)L.push('NOTE: '+e.diary)}
+      else if(e.momMode==='helped'){L.push('SCHEDULED DAY: '+coParentPoss()+' scheduled day');L.push(currentParent().toUpperCase()+' HELPED WITH: '+(e.helpedKids||[]).join(', '));helpDetailGroups(e.helpedData).forEach(([k,v])=>L.push('  '+k+': '+(v.acts||[]).map(activityLabel).join(', ')+(v.note?' ('+v.note+')':'')));if(e.diary)L.push('NOTE: '+e.diary)}
       else if(e.momMode==='dad-had'){L.push('SCHEDULED DAY: '+coParentPoss()+' scheduled day — KIDS WITH '+currentParent().toUpperCase());L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(e.dadHadKids||[]).join(', '));if(e.diary)L.push('NOTE: '+e.diary)}
       else{const n=(e.kidsWithDad||[]).length;L.push('SCHEDULED DAY: '+currentParentPoss()+' scheduled day');L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(n===KIDS.length?kidsCountLabel():n===0?'None':(e.kidsWithDad||[]).join(', ')));if(e.diary)L.push('NOTES: '+e.diary)}
       L.push(D,'');
@@ -3138,7 +3420,7 @@ function buildReportBody(type){
     const filt=sorted.filter(([,e])=>e.week==='mom'&&(e.momMode==='helped'||e.momMode==='dad-had'));
     if(!filt.length)return'No '+coParentPoss()+' week entries with '+currentParent()+' involvement found.';
     let L=['WHOSE DAY — '+coParent().toUpperCase()+"'S SCHEDULED DAY / "+currentParent().toUpperCase()+"'S INVOLVEMENT",gen,'Total: '+filt.length,'',D,''];
-    for(const[ds,e]of filt){L.push('DATE: '+fmtDate(ds));L.push(...reportMetaLines(e));if(e.momMode==='dad-had'){L.push('Kids ended up with '+currentParent());L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(e.dadHadKids||[]).join(', '))}else{L.push(currentParent()+' helped out');Object.entries(e.helpedData||{}).forEach(([k,v])=>L.push('  '+k+': '+(v.acts||[]).map(activityLabel).join(', ')+(v.note?' — '+v.note:'')))}if(e.diary)L.push('NOTE: '+e.diary);L.push(D,'');}return L.join('\n');
+    for(const[ds,e]of filt){L.push('DATE: '+fmtDate(ds));L.push(...reportMetaLines(e));if(e.momMode==='dad-had'){L.push('Kids ended up with '+currentParent());L.push('KIDS WITH '+currentParent().toUpperCase()+': '+(e.dadHadKids||[]).join(', '))}else{L.push(currentParent()+' helped out');helpDetailGroups(e.helpedData).forEach(([k,v])=>L.push('  '+k+': '+(v.acts||[]).map(activityLabel).join(', ')+(v.note?' — '+v.note:'')))}if(e.diary)L.push('NOTE: '+e.diary);L.push(D,'');}return L.join('\n');
   }
   if(type==='notes'){
     const filt=sorted.filter(([,e])=>e.diary&&e.diary.trim());if(!filt.length)return'No diary notes found.';
@@ -3160,6 +3442,7 @@ function shareReport(){
   const names={full:'Full Diary',dadactual:currentParentPoss()+' Actual Time',honest:'Custody Deviation Report',momsweek:coParentPoss()+' Day',notes:'Diary Notes'};
   const subject=encodeURIComponent('Whose Day — '+(names[currentExportType]||'Report')+' '+new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'}));
   const body=encodeURIComponent(currentReportText);
+  trackUsage('Report Share Requested',{...reportAnalytics(),method:navigator.share?'native':'email'});
   if(navigator.share){navigator.share({title:'Whose Day',text:currentReportText}).catch(()=>{})}
   else window.location.href=reportMailto(subject,body);
 }
@@ -3194,10 +3477,11 @@ Context:
 }
 async function copyReport(){
   if(!currentReportText)return;
-  try{await navigator.clipboard.writeText(currentReportText);const el=document.getElementById('copy-toast');el.style.display='block';setTimeout(()=>el.style.display='none',2500)}catch(e){}
+  try{await navigator.clipboard.writeText(currentReportText);trackUsage('Report Copy Completed',reportAnalytics());const el=document.getElementById('copy-toast');el.style.display='block';setTimeout(()=>el.style.display='none',2500)}catch(e){}
 }
 function printReport(){
   if(!currentReportText)return;
+  const printAnalytics=reportAnalytics();
   const w=window.open('','_blank');
   if(!w)return;
   const reportTitle=document.getElementById('preview-title')?document.getElementById('preview-title').textContent:'Whose Day Report';
@@ -3272,7 +3556,7 @@ ${'─'.repeat(60)}`;
   w.document.querySelectorAll('pre')[0].textContent=currentReportText;
   w.document.querySelectorAll('pre')[1].textContent=attestation;
   w.document.close();w.focus();
-  setTimeout(()=>w.print(),600);
+  setTimeout(()=>{trackUsage('Report Print Requested',printAnalytics);w.print()},600);
 }
 
 // SUNDAY EMAIL
@@ -3298,6 +3582,7 @@ function buildWeeklyReport(){
   return L.join('\n');
 }
 function sendWeeklyEmail(){
+  trackUsage('Weekly Report Email Requested');
   const report=buildWeeklyReport();
   const subject=encodeURIComponent('Whose Day — Weekly Report '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}));
   window.location.href=reportMailto(subject,encodeURIComponent(report));
@@ -3392,7 +3677,9 @@ document.addEventListener('visibilitychange',()=>{
     checkAppAccess().then(()=>scheduleCloudSync('visible',500));
   }else clearTimeout(cloudSyncRefreshTimer);
 });
-if(isAppPreview()){
+if(window.WhoseDayPlatform?.synthetic===true){
+  show('s-home');
+}else if(isAppPreview()){
   if(DEMO_MODE==='june'||DEMO_MODE==='july'){recordAppSession();showCal()}
   else{initOnboarding();show('s-ob-welcome')}
 }else{

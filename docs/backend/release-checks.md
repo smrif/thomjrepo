@@ -1,5 +1,17 @@
 # Automated Release Checks
 
+October 22 shared-help release: all 48 local results passed with zero
+failures/skips. The owner-approved single help step is deployed; all 48 live
+static files match the tested build, and both help directions passed production
+browser checks on mobile/dark and desktop/light. See
+[deployment evidence](deployment-2026-10-22-shared-help.md).
+
+October 21 release: all 46 local results passed with zero failures/skips in
+about 111 seconds. Owner-approved backup/restore and login-message changes are
+deployed; all 42 live static files match the build, and responsive production
+login/backup download/preview checks pass. See
+[deployment evidence](deployment-2026-10-21.md). No hosted CI run was started.
+
 Run `node scripts/release-check.mjs` (or `pnpm test:release`) before a release.
 This builds the static app, verifies the build boundary/public configuration,
 and runs the explicit local/mock regression suite serially, including database
@@ -236,3 +248,37 @@ merged to main as `c6d10b3` with an identical tree. Worker
 `e0c935c1-bc15-4890-9f0d-e0cf0db73c70` is live. All 41 production assets
 matched the build and mobile/desktop deployed Settings regressions passed.
 See [Settings deployment verification](deployment-2026-10-20-settings.md).
+
+## October 20, 2026 Portable Backup and Restore (local)
+
+Added full, versioned JSON download and same-account import with checksums,
+embedded screenshots, preview-before-apply, optional profile/preferences,
+editable-date copy choices, read-only protection, stale-preview revalidation,
+sync coordination, quota rollback, and restart recovery. No credentials or
+sync/device bookkeeping are imported. Current identity and policy acceptance
+remain unchanged. Rendering escapes imported text without changing stored notes.
+The production build and offline shell include `backup.js`; app/cache asset
+version is `portable-backup-1`. See [portable backups](portable-backups.md).
+
+The first full run passed 45 of 46 results, hitting the previously recorded
+service-worker update/reopen timeout at `offline-shell-test.mjs:138`. The final
+full rerun passed all 46 results, zero failed/skipped, in about 95 seconds; the
+42-file build boundary passed. The new 11 format/recovery checks and responsive
+browser suite are part of the release command. A separate 12-result focused run
+also passed after using valid synthetic PNG bytes and asserting the restored
+screenshot decodes, not just that its bytes and image element exist. Preview UI
+was inspected in the local in-app browser using a synthetic same-account file;
+no restore was applied to the user's preview data.
+
+No production release, real sign-in email, cloud account/data operation, legal
+policy update, or owner-assisted QA was performed. The earlier service-worker
+intermittency remains a monitoring item; this work changes no worker lifecycle
+logic. Hosted CI and production release remain separate.
+
+Final follow-up: the full 46-result suite passed again in about 95 seconds after
+profile restoration was corrected to remove stale legacy activities absent from
+the file. Cold offline reopening now explicitly exercises JSON creation and
+checksum verification. The final read-only conflict comparison adds expandable
+full record details and screenshots for both copies; the focused 12-result backup
+suite passed afterward. A final static build, contract check, and whitespace check
+also passed. Production and owner-assisted QA remain unchanged.

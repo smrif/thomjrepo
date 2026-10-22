@@ -1,0 +1,17 @@
+body[data-checkin-state]:not([data-checkin-state="ready"]) :is(#app,#shell-header,#shell-tabs) { display:none!important; }
+body[data-checkin-state] #shell-profile { display:none!important; }
+body[data-checkin-state] :is(#activity-prompt,#sunday-prompt,#weekly-report-row) { display:none!important; }
+.checkin-loading { max-width:430px; margin:0 auto; padding:calc(env(safe-area-inset-top,0px) + 80px) 24px 40px; font:400 16px/1.5 var(--font-ui); color:var(--daily-ink); }
+.checkin-loading h1 { font:600 32px/1.2 var(--font-display); margin:16px 0; }
+.checkin-loading-label { font-size:12px; letter-spacing:1px; color:var(--daily-primary-strong); }
+.checkin-loading .btn { margin-top:24px; }
+.checkin-local-note { font:400 12px/1.5 var(--font-ui); color:var(--daily-ink-soft); margin:-8px 0 24px; }
+.checkin-save-status,.checkin-attachment-error { position:fixed; left:16px; right:16px; bottom:calc(var(--shell-safe-bottom) + 20px); max-width:520px; margin:auto; z-index:50; padding:18px; border:1px solid var(--daily-border); border-radius:16px; background:var(--daily-card); color:var(--daily-ink); box-shadow:0 4px 30px #0002; font:500 15px/1.5 var(--font-ui); }
+.checkin-attachment-error { bottom:calc(var(--shell-safe-bottom) + 84px); }
+.checkin-save-error { padding:18px; margin-top:20px; border:2px solid var(--daily-warning-strong); border-radius:16px; background:var(--daily-card); color:var(--daily-ink); font:500 15px/1.5 var(--font-ui); scroll-margin-top:calc(var(--shell-header-height) + 16px); }
+.checkin-save-error .btn { margin-top:14px; width:100%; }
+body[data-checkin-state] button:disabled { opacity:.4; cursor:default; }
+body[data-checkin-state] :is(.scene-card,.kid-btn,.btn,.opt,.cal-nav-btn) { min-height:44px; }
+body[data-checkin-state] :is(.cal-cell,.scene-card,.opt):focus-visible { outline:2px solid var(--daily-primary-strong); outline-offset:2px; }
+body[data-checkin-state] :is(.checkin-loading,.checkin-save-status,.checkin-attachment-error)[hidden] { display:none!important; }
+@media(prefers-reduced-motion:reduce) { body[data-checkin-state] .success-pop { animation:none!important; } }

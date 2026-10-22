@@ -8,6 +8,124 @@
   isolation/deletion sessions, physical-device offline recovery, both conflict
   choices, old-origin transition, support delivery, and policy-acceptance QA.
 
+## Terms and Privacy Policy Refresh
+
+- [x] October 13, 2026 technical update: both documents describe automatic cloud
+  sync, service providers, offline/local records, account deletion, and export
+  boundaries. Versioned documents and acceptance tracking are deployed. This was
+  a technical consistency update, not final owner/legal approval.
+- [x] Prepare October 21 updates to both documents against the current authenticated entry,
+  Settings subpages, account deletion path, exports, and planned iOS App Store app.
+  Corrected the removed "Cloud account in Settings" reference and documented
+  JSON backups, account-bound restore, local storage and deletion boundaries.
+  Owner reviewed and approved the wording; new versioned copies and acceptance
+  links were published October 21. See `docs/backend/policy-refresh-2026-10-21.md`.
+- [ ] Finalize the support contact and provider backup/log retention wording
+  after delivery and actual retention settings are confirmed. Coordinate with
+  the existing support and provider-retention tasks below.
+- [ ] Complete owner/legal review and reconcile the policy text with the App
+  Store privacy disclosures before the iOS release.
+- [x] Publish approved changes as new versioned documents, update agreement
+  links/version metadata, and verify acceptance handling. Keep the October 13
+  snapshots and existing acceptance history intact; mandatory re-consent needs
+  an explicit owner/legal decision.
+
+## iOS App Store App
+
+- Owner clarification October 20, 2026: iOS support means a downloadable App
+  Store app, beyond Safari/Home Screen support. A separate feasibility app is
+  now in progress; no full-product mobile release, TestFlight release, or App
+  Store submission exists yet.
+- October 21 planning: reviewed reuse and native integration gaps, compared
+  Capacitor with a native UI rewrite, and prepared the iOS-first/future-Android
+  recommendation and staged acceptance criteria in
+  [mobile app plan](docs/product/mobile-app-plan.md). Capacitor feasibility build
+  was approved by the owner; implementation and evidence are tracked in
+  [feasibility status](docs/product/mobile-feasibility-status.md).
+- [x] Define the iOS implementation approach: owner approved Capacitor, shared
+  product/UI code and platform adapters, with an iOS-first feasibility build
+  and early Android validation. Broader scope remains in the mobile plan.
+- [ ] Complete the feasibility gate: native durable save/reopen with attachment,
+  protected session storage and real email return, local PDF/sharing, physical
+  iPhone confirmation, and a small Android build. See the status document for
+  actual results and pending setup.
+  October 22: real test-email code exchange and secure session recovery passed
+  on the simulator using a callback replay around a frozen Safari sheet.
+  Android debug compilation/lint and native SQLite/image, Keystore and PDF
+  recovery probes also passed. Physical installation awaits Apple Support's
+  resolution of the owner's account issues. Uninterrupted Safari handoff,
+  Android email return and actual photo/share-destination checks remain.
+- [ ] Build the iOS app, including email-link return into the app, persistent
+  sign-in/sign-out, offline storage/reopening and reconnect sync, Settings and
+  account deletion, screenshot attachments, and export/report sharing.
+- [x] Build the first mobile app shell preview: shared header, safe-area spacing,
+  Today/Calendar/Reports/Settings tabs, scroll restoration and contextual back
+  navigation. October 22 browser layout/navigation checks passed in five
+  configurations; native product integration and physical iPhone QA remain.
+- [x] Build the first persistent Today → check-in → save → reopen/edit slice.
+  October 22: shared product save/edit plus note/image recovery passed across
+  iOS simulator process termination; browser failure/retry and reopen tests also
+  passed. Synthetic scopes only; live account binding/sync, native Settings,
+  report sharing and physical-device QA remain in the full iOS app task.
+- [ ] Verify layout, keyboard behavior, accessibility, attachments, and sharing
+  on physical iPhones, alongside the existing account/offline/conflict QA.
+- [ ] Set up app identity, signing, and a TestFlight build. Confirm Apple
+  Developer account access; any enrollment/payment remains a separate approval.
+- [ ] Prepare the App Store listing, icon/screenshots, support and policy links,
+  privacy disclosures, and review access/instructions; test through TestFlight
+  before submission. Coordinate policy changes with the refresh above.
+- [ ] Submit the approved build and complete review/release follow-up.
+
+## Product Analytics
+
+- October 21: owner chose Mixpanel, supplied project token and project `899617`.
+  Verified US residency; implemented signup/check-in started/completed/back/exit
+  events, verification/save completion, repeated visits, bounded offline retry,
+  production-only collection, browser opt-out and GPC/DNT handling locally.
+  Core production-filtered funnel reports are saved in Mixpanel; 49 synthetic
+  QA-labeled setup events were accepted. All 48 local release results passed.
+  Owner approved deployment; analytics and the `2026-10-21-v2` policy were
+  published October 21. See `docs/product/mixpanel-analytics.md`.
+  - Follow-up: added page/section and calendar-day views, Trends/report presets,
+    report generation/print/share/copy, CSV/JSON exports and restore outcomes,
+    custom activity addition, confirmed deletion, Today email requests,
+    missed-check-in actions, first/repeat saves, and sign-in/sync/conflict health.
+    Properties are restricted to per-event enums; dates/content/counts and raw
+    errors are excluded. No additional live analytics were sent. These additions
+    and the expanded v2 privacy disclosure are deployed. Provider retention,
+    access and deletion-process verification remain open.
+
+- [ ] Define the questions and success metrics: signup/onboarding completion,
+  first successful check-in, repeat use, Reports/export adoption, and sync or
+  sign-in failures. Cover both the web app and planned iOS App Store app.
+- [ ] Choose an analytics provider and a small, documented event/property list;
+  decide identity, retention, access, and user controls before enabling collection.
+- [ ] Keep custody content out of analytics: no names, email addresses, child
+  details, custody dates/outcomes, notes, screenshots, report contents, or auth
+  tokens. Avoid automatic form capture and session replay; sanitize URLs/errors.
+- [ ] Implement and validate events with synthetic data, exclude development
+  and QA traffic, and check offline/retry behavior for duplicate events. Build
+  a simple dashboard for the agreed metrics.
+- [ ] Include the actual analytics collection/providers in the Privacy Policy
+  refresh and App Store disclosures, and resolve applicable user-control/consent
+  decisions before production collection begins. Analytics is not enabled by
+  adding this backlog item.
+
+## Restorable Backup and Import
+
+- [x] Implement full JSON download and local import preview (October 20): saved
+  settings, dated records, notes, and full screenshots; version/checksum/file
+  validation; same-account restore; optional profile/preferences; explicit
+  editable-date conflict choices; existing read-only records kept; stale-preview
+  checks; quota rollback and interrupted-restore recovery. Auth identity and
+  current policy acceptance are preserved. See `docs/backend/portable-backups.md`.
+- [x] Add synthetic format/recovery and mobile/desktop browser regression tests,
+  including offline operation and differing cloud copies held for sync review.
+- [x] Release the approved backup/import feature after automated verification.
+  Deployed October 21 with clearer login messages; all 46 checks and 42 live
+  assets verified. See `docs/backend/deployment-2026-10-21.md`.
+  Owner-involved/live QA stays deferred.
+
 ## Backend / Cloud Sync Handoff
 
 - [x] Declare the evening-journal illustration as the preferred link-preview
@@ -62,6 +180,12 @@
   - Success returns to the logged-out home with a dismissible confirmation; a local marker preserves that state on reload until setup/restoration completes. Mobile dark and desktop light regression tests verify navigation, confirmation, failure/retry, and retained local records. Deployed October 12, 2026 as Worker version `d3fbb88b-4715-4a24-9841-1dd6c41168a1` (`account-deletion-2`).
   - [ ] Finish production QA: confirm retained local records, a separate control account is unaffected, and old sessions on a second device cannot restore/sync the deleted account.
   - [ ] Finalize provider backup/log retention before beta. Published limits and proposed support/restore handling are documented in `docs/backend/provider-retention.md` (October 13); actual plans/settings, Auth audit retention, and owner/legal sign-off remain pending. Account deletion removes active records, not previously downloaded files or provider backups.
+    - October 21: verified Supabase Free (no scheduled backups/PITR; no log drain;
+      database Auth audit writes off), Cloudflare Workers Free (logs/traces off;
+      no telemetry destinations), and Resend Free (no webhooks). Matched official
+      retention documentation. Operator database backup/recovery, support-mail
+      retention, and exact residual-provider/audit purge boundaries remain open;
+      no provider settings changed. See the updated retention inventory.
 - Database security review completed October 12, 2026 (see `docs/backend/database-security.md`):
   - [x] Captured app schema, indexes, triggers, owner-only policies, and grants in a baseline migration, plus repeatable catalog/read-isolation checks.
   - [x] Removed unnecessary authenticated TRUNCATE/REFERENCES/TRIGGER/MAINTAIN access and obsolete postgres-owned default client table grants in Supabase; authenticated owner CRUD remains enabled.
@@ -103,10 +227,10 @@
   - [x] Owner confirmed new-domain sign-in and profile/log restoration on October 13, 2026.
   - Automated/live checks pass for HTTPS, public release/configuration, canonical redirects, new-domain offline loading, and storage isolation with preserved old-origin access. Physical-device cross-device/offline recovery on the new domain and old-link completion remain to be confirmed separately.
 - [ ] Update support/contact links, privacy/terms URLs, and release documentation for the new domain. Set up a working support inbox or forwarding address before publishing it.
-  - Relative privacy/terms links already resolve on the new domain. The existing `Team@whoseday.com` support address is unverified.
+  - Relative privacy/terms links resolve on the new domain. Public support links now use the confirmed `support@whosedayapp.com` address locally; publication remains pending.
   - [x] Google Workspace domain verification, Gmail activation, SPF, and 2048-bit DKIM setup completed October 13, 2026. Added Google's MX/TXT records in Cloudflare without changing Resend or website records.
   - [x] Added `support@whosedayapp.com` as an alias for `ryan@whosedayapp.com` with owner approval. Cloudflare forwarding was not configured; Google Workspace receives domain email instead.
-  - [ ] Confirm actual delivery to the support alias before replacing public contact links. No end-to-end delivery confirmation yet.
+  - [x] Owner confirmed support-alias delivery October 21. Updated homepage contact/footer links locally; no additional test message sent.
   - [ ] Optional/later: configure Gmail to send/reply as `support@whosedayapp.com` and test it. Owner deferred this October 13, 2026; the Gmail setup popup did not open inside Codex. This does not prevent receiving at the saved alias.
 - [ ] Redirect the old app URL after the data transition is verified, then remove obsolete auth redirect URLs when no longer needed.
 
@@ -211,7 +335,8 @@
 - [x] Draft Trends, Reports, and Settings specifications from the implemented
   screens: `docs/product/remaining-product-spec.md`.
 - [ ] Review/approve the proposed product increments, including charts/counting,
-  child identity and optional fields, activity editing, and portable backup/import.
+  child identity and optional fields, and later activity/backup extensions.
+  Shared activity editing and initial portable backup/import are deployed.
 - [x] Returning-user Settings already keeps bottom navigation visible.
 - [x] Reconcile `TODO_EXTENDED.md` with implemented features; original June memo
   remains clearly labeled historical context.

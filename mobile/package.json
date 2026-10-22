@@ -1,0 +1,33 @@
+{
+  "name": "whose-day-mobile-feasibility",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "sync": "node scripts/build.mjs && cap sync",
+    "test": "node --test test/*.test.mjs",
+    "test:ui": "node test/ui.mjs",
+    "test:checkin": "node test/checkin-ui.mjs",
+    "ios": "cap open ios",
+    "android": "cap open android",
+    "build:ios": "node scripts/build-ios.mjs",
+    "probe:ios": "node scripts/probe-ios.mjs",
+    "probe:checkin:ios": "node scripts/probe-checkin-ios.mjs",
+    "build:android": "node scripts/build-android.mjs",
+    "probe:android": "node scripts/probe-android.mjs"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/camera": "8.2.6",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/ios": "8.5.3",
+    "@capacitor/share": "8.0.3",
+    "@supabase/supabase-js": "2.117.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3",
+    "esbuild": "0.28.2"
+  }
+}

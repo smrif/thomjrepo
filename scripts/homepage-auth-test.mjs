@@ -8,6 +8,7 @@ for (const state of ['new', 'incomplete', 'existing']) {
   const events = [];
   const input = { value: '' };
   const context = {
+    trackUsage(){},trackFailure(){},
     loggedOutAuthBusy: false, OB_STATE: {}, PENDING_SIGNUP_KEY:'pending',localStorage:{getItem:()=>null,removeItem:()=>{}},rememberSignedInAccount:()=>{},
     loggedOutLoginActive: () => true,
     document: { getElementById: () => input },
@@ -39,6 +40,7 @@ for (const signedIn of [false, true]) {
   const button = { hidden: true };
   const session = signedIn ? { user: { id: 'test' } } : null;
   const context = {
+    trackUsage(){},trackFailure(){},
     loggedOutAuthBusy: false,
     loggedOutAuthEnabled: () => true,
     loggedOutLoginActive: () => true,
@@ -68,6 +70,7 @@ for (const signedIn of [false, true]) {
 
 const syncAllowed = source.slice(source.indexOf('function cloudSyncAllowed(){'), source.indexOf('\nfunction cloudRedirectUrl'));
 const syncContext = {
+  backupRestoreBusy:false, backupRecoveryError:'',
   URLSearchParams, cloudDeletionBusy: false, appAccessState:'signed-in',
   window: { location: { search: '' } }, navigator: { onLine: true },
   hasSavedConfig: () => false, cloudBackendEnabled: () => true, accountDeletedOnDevice: () => false
@@ -76,6 +79,12 @@ vm.runInNewContext(syncAllowed, syncContext);
 assert.equal(syncContext.cloudSyncAllowed(), false, 'Never upload default settings before onboarding or restoration');
 syncContext.hasSavedConfig = () => true;
 assert.equal(syncContext.cloudSyncAllowed(), true, 'Completed setup should still sync automatically');
+syncContext.backupRestoreBusy = true;
+assert.equal(syncContext.cloudSyncAllowed(), false, 'Restore must pause cloud writes while committing local records');
+syncContext.backupRestoreBusy = false;
+syncContext.backupRecoveryError = 'Recovery pending';
+assert.equal(syncContext.cloudSyncAllowed(), false, 'Unfinished restore recovery must not sync partial data');
+syncContext.backupRecoveryError = '';
 syncContext.accountDeletedOnDevice = () => true;
 assert.equal(syncContext.cloudSyncAllowed(), false, 'Retained local records must not sync before completing sign-in/setup again');
 
@@ -83,6 +92,7 @@ assert.equal(syncContext.cloudSyncAllowed(), false, 'Retained local records must
   const events = [];
   const button = { hidden: true, value: '' };
   const context = {
+    trackUsage(){},trackFailure(){},
     loggedOutAuthBusy: false, OB_STATE: {}, PENDING_SIGNUP_KEY:'pending',localStorage:{getItem:()=>null,removeItem:()=>{}},rememberSignedInAccount:()=>{},
     loggedOutAuthEnabled: () => true, loggedOutLoginActive: () => true,
     document: { getElementById: () => button },

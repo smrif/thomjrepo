@@ -1,0 +1,7 @@
+{
+  "appId": "com.whoseday.feasibility",
+  "appName": "Whose Day Lab",
+  "webDir": "www",
+  "ios": { "contentInset": "automatic" },
+  "android": { "allowMixedContent": false }
+}

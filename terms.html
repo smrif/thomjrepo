@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="policy-version" content="2026-10-13">
+<meta name="policy-version" content="2026-10-21-v2">
 <title>Terms of Use | Whose Day</title>
 <style>
   *{box-sizing:border-box}
@@ -25,11 +25,11 @@
 <main>
   <div class="brand">Whose Day</div>
   <h1>Terms of Use</h1>
-  <p class="updated">Last updated: October 13, 2026</p>
+  <p class="updated">Last updated: October 21, 2026</p>
 
   <section class="notice">
-    <h2>Alpha Notice</h2>
-    <p>Whose Day is currently an early alpha product. It may change, contain bugs, or lose data if your browser storage is cleared. Please export your records regularly.</p>
+    <h2>Early Access Notice</h2>
+    <p>Whose Day is an early access product operated by Pueblo Apps LLC. Features may change or contain bugs. Keep independent backups of important records and check that your records have synced before changing devices or clearing browser storage.</p>
   </section>
 
   <section>
@@ -54,7 +54,21 @@
 
   <section>
     <h2>Accounts and Data Storage</h2>
-    <p>Records are saved in this browser and sync automatically to your account while signed in, including notes and screenshots. Offline changes sync when the app is open with connectivity again. Keep access to your sign-in email secure. Unsynced records may be lost if browser storage is cleared or you change devices. Export regularly; only successfully synced records can restore on another browser or device. Older entries becoming read-only in the app does not independently verify their accuracy or make them tamper-proof.</p>
+    <p>A verified email-link account is required to use the app. Keep access to your sign-in email secure and do not share sign-in links. Records are saved in this browser and sync automatically to your account while signed in, including notes and screenshots. Offline changes sync when the app is open with connectivity again. Previously authenticated devices may reopen offline with saved setup and account information; a new sign-in requires connectivity.</p>
+    <p>Signing out locks access through the app and stops sync, but does not erase local records. Browser storage is not encrypted by Whose Day. Different browsers, devices, and website addresses have separate local storage. Unsynced records may be lost if that storage is cleared or unavailable.</p>
+    <p>Older entries becoming read-only in the app does not independently verify their accuracy or make them tamper-proof. Device timestamps, cloud sync, and backup checksums do not independently establish that an event occurred.</p>
+  </section>
+
+  <section>
+    <h2>Backups, Reports, and Recovery</h2>
+    <p>Settings provides a full JSON backup of records and settings saved on this device, including notes and embedded screenshots. Backups are not password-protected. Store them securely. Records present only on another device or in the cloud must sync here before they can be included.</p>
+    <p>JSON restoration requires the same account identity that created the backup. A deleted account recreated with the same email is a different account. Import shows a preview before you apply changes; historical records and differing cloud copies remain subject to the app's read-only and conflict-review rules. Storage limits or damaged files can prevent restoration.</p>
+    <p>CSV and printed or emailed reports serve different purposes and cannot be imported through JSON restore. Cloud recovery depends on successful sync and access to your account. No backup or recovery method is guaranteed.</p>
+  </section>
+
+  <section>
+    <h2>Account Deletion</h2>
+    <p>In Settings, open Delete account, type DELETE, and confirm deletion to permanently remove your sign-in account and its active cloud profile, custody logs, and device sync records. Local records, downloaded backups, shared reports, and provider backup or log copies are not erased by this action. See the <a href="privacy.html">Privacy Policy</a> for the storage and deletion boundaries.</p>
   </section>
 
   <section>
@@ -64,7 +78,7 @@
 
   <section>
     <h2>Changes</h2>
-    <p>These terms may be updated as the product evolves. Continued use of the app after updates means you accept the revised terms.</p>
+    <p>These terms may be updated as the product evolves. Each version shows its update date. The app records the document version when you explicitly submit agreement; installing an update, syncing, or restoring a backup does not itself record a new agreement.</p>
   </section>
 
   <a class="back" href="index.html">Back to Whose Day</a>

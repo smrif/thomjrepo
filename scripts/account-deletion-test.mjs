@@ -154,10 +154,13 @@ const appSource = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
 const handler = appSource.slice(appSource.indexOf('async function deleteCloudAccount(){'), appSource.indexOf('\nasync function resolveCloudConflict'));
 for (const fail of [false, true]) {
   const events = [];
+  const telemetry=[];
   let finishSync;
   const input = { value: 'DELETE', focus: () => events.push('notice-focused') };
   const storage = new Map();
   const context = {
+    trackUsage:(event,properties)=>telemetry.push({event,properties}),
+    trackFailure:event=>telemetry.push({event}),
     cloudAuthBusy: false, cloudDeletionBusy: false, cloudSyncPending: true, cloudSyncTimer: null,
     cloudSyncTask: new Promise(resolve => { finishSync = resolve; }),
     document: { getElementById: () => input },
@@ -184,6 +187,8 @@ for (const fail of [false, true]) {
   finishSync();
   await operation;
   assert(events.includes('delete'));
+  assert.equal(telemetry.filter(e=>e.event==='Account Deletion Completed').length,fail?0:1);
+  assert.equal(telemetry.filter(e=>e.event==='Account Deletion Failed').length,fail?1:0);
   assert.equal(context.cloudDeletionBusy, false);
   assert.equal(context.cloudAuthBusy, false);
   assert.equal(events.some(event => event.tone === 'success'), !fail);
@@ -196,6 +201,7 @@ for (const fail of [false, true]) {
 
 // New sync tasks and queued timers must remain blocked throughout deletion.
 const syncContext = {
+  backupRestoreBusy:false, backupRecoveryError:'',
   appAccessState:'signed-in', cloudDeletionBusy: true, cloudSyncBusy: false, cloudSyncPending: false,
   URLSearchParams, window: { location: { search: '' } }, navigator: { onLine: true },
   cloudBackendEnabled: () => true,

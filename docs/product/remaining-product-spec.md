@@ -130,8 +130,11 @@ Goal: make saved profile changes, account identity, cloud state, and exports cle
   preserve old entry activity identifiers/labels. Per-child lists are later scope.
 - Retain automatic sync status, conflict review, retry/restore actions, and deletion
   confirmation. Deletion copy must explain retained local records and exports.
-- Label CSV export accurately. A restorable export/import format needs a separate
-  versioned schema, attachment strategy, validation and conflict/import design.
+- Label CSV export accurately. A complete JSON backup/import is implemented locally
+  October 20 with a versioned schema, embedded screenshots, file validation,
+  preview/conflict choices, read-only record protection, and failure recovery.
+  CSV stays available separately. See `docs/backend/portable-backups.md`; release
+  and owner-assisted QA remain separate.
 - Keep appearance options and explicit policy-review behavior. Show reminders
   or biometric settings only once the corresponding functionality exists.
 
@@ -139,6 +142,39 @@ Acceptance examples: the signed-in email cannot be edited as a profile field;
 sign-out returns to welcome and remains effective after reload; changing a
 child display name does not rewrite historical entries; failed profile save
 preserves form input; local export works offline; long names do not hide navigation.
+
+## Terms, Privacy, and iOS App Store Follow-up
+
+Owner clarification October 20, 2026: a Terms and Privacy Policy refresh and a
+downloadable iOS App Store app are explicit outstanding work. iOS support is not
+complete with Safari/Home Screen compatibility alone. The app implementation
+approach is still to be chosen; no iOS build or store submission exists yet.
+
+The October 13 technical policy update and version/acceptance tracking are
+deployed. Final review must account for authenticated entry, current Settings
+and deletion navigation, verified support/retention details, and the eventual
+iOS app's actual behavior and store disclosures. Approved revisions need new
+versioned snapshots; preserve existing documents and acceptance history.
+
+The iOS work includes implementation planning/build, in-app email-link return,
+session/offline/sync behavior, attachments and sharing, physical-device QA,
+signing/TestFlight, listing/disclosures, and submission. Developer enrollment or
+paid services require separate approval. The actionable checklist is in
+`TODO.md`; deferred live-account and physical-device QA remains in
+`docs/backend/owner-qa.md`.
+
+## Product Analytics Follow-up
+
+Owner requested analytics in the backlog October 20, 2026. Define a small event
+plan covering onboarding, first check-in, repeat use, Reports/export adoption,
+and sign-in/sync reliability across web and the planned iOS app. Choose the
+provider, identity approach, retention, access, and user controls before enabling
+collection. Measure feature usage without recording custody contents or direct
+personal identifiers; avoid automatic form capture/session replay and sanitize
+URLs/errors. Validate using synthetic data and exclude QA/development traffic.
+Coordinate actual collection and provider disclosures with the policy refresh
+and App Store work. The actionable checklist is in `TODO.md`; no analytics SDK
+or production collection is added by this planning update.
 
 ## Decisions reserved for the owner
 

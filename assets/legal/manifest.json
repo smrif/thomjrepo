@@ -1,12 +1,12 @@
 {
   "terms": {
-    "version": "2026-10-13",
-    "path": "assets/legal/2026-10-13/terms.html",
-    "sha256": "b59ce1c860494dcf9b999dc306c092a2477e06da974eec93139c07ba4afa4634"
+    "version": "2026-10-21-v2",
+    "path": "assets/legal/2026-10-21-v2/terms.html",
+    "sha256": "fbecaa4aca66a798d6666d87f177a51bbc07221402072a18be2a3fced02acfa7"
   },
   "privacy": {
-    "version": "2026-10-13",
-    "path": "assets/legal/2026-10-13/privacy.html",
-    "sha256": "d221a8ff858c17646ff5809014db7f533f24f3ff4a2f2d61961c1aff186d9b0c"
+    "version": "2026-10-21-v2",
+    "path": "assets/legal/2026-10-21-v2/privacy.html",
+    "sha256": "28f2eff4f2f631e653bbbbe159fb15704d19ce7083fbd0846da0556783abc58f"
   }
 }

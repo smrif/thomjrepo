@@ -2,7 +2,7 @@
 
 This document describes the current check-in flow as implemented in `index.html` and `app.js`.
 
-Reviewed October 13, 2026. “Save entry” below is the save action, not a separate
+Reviewed October 22, 2026. “Save entry” below is the save action, not a separate
 pre-save Review screen. The app shows a receipt after saving; notes and screenshot
 prompts appear before save on the applicable branches.
 
@@ -31,7 +31,7 @@ flowchart TD
   CoParentHelped --> NoCoParentHelp["No"]
   CoParentHelped --> YesCoParentHelp["Yes"]
   NoCoParentHelp --> Diary["Diary + optional screenshot"]
-  YesCoParentHelp --> CoParentHelpedActivity["For each kid already with you: what did co-parent do?"]
+  YesCoParentHelp --> CoParentHelpedActivity["Once for all children with you: what did co-parent help with?"]
   CoParentHelpedActivity --> Diary
   Diary --> Review
 
@@ -47,7 +47,7 @@ flowchart TD
   IHelped --> NoIHelped["No"]
   IHelped --> YesIHelped["Yes"]
   NoIHelped --> Review
-  YesIHelped --> HelpedActivity["For each kid: what did you help with?"]
+  YesIHelped --> HelpedActivity["Once for all children: what did you help with?"]
   HelpedActivity --> Diary
 
   KidsWithMe --> PickKidsWithMe["Pick kids who ended up with you"]
@@ -104,6 +104,11 @@ Core shape:
 - Help is captured only after actual overnight location is selected.
 - On your scheduled day, co-parent help uses the kids already confirmed as staying with you instead of asking a second kid-selection question.
 - On the co-parent's scheduled day, your help uses the kids already staying with the co-parent instead of asking a second kid-selection question.
+- Both help branches ask for activities and an optional note once for all applicable
+  children, then continue directly to the diary. There is no per-child help loop.
+  Shared answers retain the existing record format for sync and backups; identical
+  details display together in calendars and reports. Older child-specific answers
+  remain intact when reopened and continued without changes.
 - Schedule-change context is captured only for true custody deviations, not ordinary help.
 - Legacy stored values such as `dad-helped-mom` and `momMode: helped` are still supported, but users now reach them through nested help questions.
 - Changing the scheduled parent or actual-custody branch clears answers from the

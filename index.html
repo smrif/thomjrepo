@@ -27,7 +27,7 @@
 <meta name="twitter:image:alt" content="An illustrated journal, phone, and cup of tea on a quiet evening table.">
 <link rel="icon" type="image/svg+xml" href="assets/whose-day-icon.svg">
 <link rel="stylesheet" href="styles.css?v=settings-pages-1-separate-auth-1">
-<link rel="stylesheet" href="theme.css?v=settings-pages-1-cloud-disclosures-1">
+<link rel="stylesheet" href="theme.css?v=policy-refresh-1">
 </head>
 <body>
 <div class="app" id="app" style="padding-bottom:80px">
@@ -38,6 +38,7 @@
 </div>
 
 <div class="screen" id="s-auth-loading" role="status" aria-live="polite"><div class="auth-loading"><h1>Opening your account</h1><p>Checking your saved sign-in…</p></div></div>
+<div class="screen" id="s-backup-recovery" role="alert"><div class="auth-loading"><h1>Restore needs recovery</h1><p id="backup-recovery-detail"></p><p>Keep your backup file and this browser’s data. Reload to retry recovery of the previous records.</p><button class="btn primary" type="button" onclick="location.reload()">Reload app</button></div></div>
 <!-- SETUP -->
 <!-- ONBOARDING STEP 1: Welcome -->
 <div class="screen active" id="s-ob-welcome">
@@ -52,9 +53,9 @@
       <section class="landing-section" id="landing-how"><p class="landing-eyebrow">HOW IT WORKS</p><h2>Three steps. A few minutes a day.</h2><div class="landing-grid"><article><span class="landing-number">01</span><h3>Check in before bed</h3><p>Record who had the kids, what was scheduled, and anything that changed. Add a note or screenshot for context.</p></article><article><span class="landing-number">02</span><h3>See the picture build</h3><p>Your entries become a dated calendar and diary. Today and yesterday stay editable; older entries become read-only in the app.</p></article><article><span class="landing-number">03</span><h3>Ready when you need it</h3><p>Create a dated report to print or share with an attorney, a mediator, or just yourself. Download a CSV backup of your records, too.</p></article></div></section>
       <section class="landing-section"><p class="landing-eyebrow">SEE IT IN ACTION</p><h2>A small habit. An organized record.</h2><p class="landing-small">Actual app screens with sample data.</p><div class="landing-grid landing-examples" tabindex="0" role="group" aria-label="App screen previews. Scroll horizontally on smaller screens to see all three."><figure><div class="landing-screen-image"><img src="assets/homepage/checkin-preview.png" alt="Check-in screen asking whether it was your scheduled parenting day" width="390" height="844" loading="lazy"></div><figcaption><h3>A few taps tonight</h3><p>Start with what was scheduled.</p></figcaption></figure><figure><div class="landing-screen-image"><img src="assets/homepage/calendar-preview.png" alt="June calendar showing parenting days and schedule changes using sample records" width="390" height="844" loading="lazy"></div><figcaption><h3>Your month, together</h3><p>See parenting time at a glance.</p></figcaption></figure><figure><div class="landing-screen-image"><img src="assets/homepage/reports-preview.png" alt="Reports screen showing sample logged days and report options" width="390" height="844" loading="lazy"></div><figcaption><h3>Ready to review</h3><p>Choose a summary to print or share.</p></figcaption></figure></div><aside class="landing-callout"><h3>Organized for a conversation with your attorney</h3><p>Review your own dated entries in one place instead of piecing together notes later. Whose Day is a personal record-keeping tool; it doesn't independently verify entries or guarantee acceptance in court.</p></aside></section>
       <section class="landing-section landing-join"><p class="landing-eyebrow">START YOUR RECORD</p><h2>A little less to keep in your head.</h2><p>Create your account with a secure email link, then set up your parenting log.</p><button class="landing-button" onclick="showLoggedOutSignup()">Sign up</button><p>Already have an account? <button class="landing-text-button" onclick="showLoggedOutLogin()">Sign in</button></p></section>
-      <section class="landing-section landing-contact"><p class="landing-eyebrow">QUESTIONS FIRST?</p><h2>We're happy to walk you through it.</h2><p>Have a question about getting started?</p><a class="landing-outline" href="mailto:Team@whoseday.com">Email us</a></section>
+      <section class="landing-section landing-contact"><p class="landing-eyebrow">QUESTIONS FIRST?</p><h2>We're happy to walk you through it.</h2><p>Have a question about getting started?</p><a class="landing-outline" href="mailto:support@whosedayapp.com">Email us</a></section>
     </main>
-    <footer class="landing-footer"><span class="landing-brand">Whose Day</span><nav aria-label="Footer"><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Use</a><a href="mailto:Team@whoseday.com">Support</a></nav><p>© 2026 Pueblo Apps LLC. Whose Day is a personal record-keeping tool, not a substitute for legal advice.</p></footer>
+    <footer class="landing-footer"><span class="landing-brand">Whose Day</span><nav aria-label="Footer"><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Use</a><a href="mailto:support@whosedayapp.com">Support</a></nav><label><input type="checkbox" data-analytics-choice checked> Allow usage analytics</label><p>© 2026 Pueblo Apps LLC. Whose Day is a personal record-keeping tool, not a substitute for legal advice.</p></footer>
   </div>
 </div>
 
@@ -69,11 +70,11 @@
     <label class="ob-label" for="ob-login-email">Email address</label>
     <input class="ob-input" type="email" id="ob-login-email" placeholder="your@email.com" autocomplete="email">
     <button class="ob-btn-primary" type="button" id="ob-login-send" onclick="sendLoggedOutSignInLink()">Send sign-in link</button>
+    <div class="ob-login-message" id="ob-login-message" role="status" aria-live="polite" aria-atomic="true"></div>
     <button class="ob-btn-secondary" type="button" id="ob-login-restore" onclick="restoreLoggedOutCloudAccount()" hidden>Continue</button>
     <p class="ob-privacy-note" id="ob-auth-switch-signup">New here? <button class="ob-auth-switch" type="button" onclick="showLoggedOutSignup()">Sign up</button></p>
     <p class="ob-privacy-note" id="ob-auth-switch-login" hidden>Already have an account? <button class="ob-auth-switch" type="button" onclick="showLoggedOutLogin()">Sign in</button></p>
     <button class="ob-btn-back" onclick="obBack('s-ob-welcome')">← Back</button>
-    <div class="ob-login-message" id="ob-login-message" role="status" aria-live="polite"></div>
   </div>
 </div>
 
@@ -152,7 +153,7 @@
     <input class="ob-input" type="email" id="ob-email" placeholder="your@email.com" autocomplete="email" oninput="obValidateStep('s-ob-finish')">
     <div class="ob-terms-row">
       <input type="checkbox" id="ob-terms" onchange="obValidateStep('s-ob-finish')">
-      <label for="ob-terms">I agree to the <a href="assets/legal/2026-10-13/terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="assets/legal/2026-10-13/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</label>
+      <label for="ob-terms">I agree to the <a href="assets/legal/2026-10-21-v2/terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="assets/legal/2026-10-21-v2/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</label>
     </div>
     <div class="ob-error" id="ob-finish-error" style="display:none">Please enter a valid email and accept the terms.</div>
     <button class="ob-btn-primary ob-disabled" id="btn-ob-finish" onclick="obFinish()">Continue →</button>
@@ -172,6 +173,7 @@
       <span id="settings-profile" hidden></span>
     </div>
     <div class="setup-alert" id="setup-alert"></div>
+    <p id="backup-recovery-notice" class="auth-message" role="alert" hidden></p>
     <div data-settings-page="overview">
       <section class="settings-section settings-overview-card">
         <div class="settings-section-head">
@@ -231,6 +233,7 @@
           <button class="theme-mode-btn" type="button" data-theme-mode="dark" onclick="setThemeMode('dark')">Dark</button>
         </div>
       </section>
+      <section class="settings-section settings-overview-card"><h2>Usage analytics</h2><p>Help improve signup and check-in. Names, email addresses, answers, notes, and screenshots are excluded.</p><label><input type="checkbox" data-analytics-choice checked> Allow usage analytics on this browser</label></section>
       <section class="settings-section settings-overview-card">
         <div class="settings-section-head">
           <span class="settings-library-icon" style="--settings-icon:url(assets/icons/calendar-days.svg)" aria-hidden="true"></span>
@@ -252,10 +255,12 @@
           <span class="settings-library-icon" style="--settings-icon:url(assets/icons/document-arrow-down.svg)" aria-hidden="true"></span>
           <div>
             <h2>Data &amp; export</h2>
-            <p>Download a copy of your records.</p>
+            <p>Back up, restore, or export your records.</p>
           </div>
         </div>
         <div class="settings-row-group">
+          <button type="button" class="settings-link" onclick="openSettingsPage('backup')"><span>Download full backup</span><span class="settings-row-value"></span><span class="settings-library-icon" style="--settings-icon:url(assets/icons/chevron-right.svg)" aria-hidden="true"></span></button>
+          <button type="button" class="settings-link" onclick="openSettingsPage('import')"><span>Restore from backup</span><span class="settings-row-value"></span><span class="settings-library-icon" style="--settings-icon:url(assets/icons/chevron-right.svg)" aria-hidden="true"></span></button>
           <button type="button" class="settings-link" onclick="openSettingsPage('export')">
             <span>Export all data (CSV)</span>
             <span class="settings-row-value"></span>
@@ -387,6 +392,43 @@
       </div>
       <div data-settings-actions></div>
     </section>
+    <section class="settings-detail" data-settings-page="backup" hidden aria-labelledby="settings-heading-backup">
+      <h2 id="settings-heading-backup" tabindex="-1">Download full backup</h2>
+      <p class="settings-detail-description">A restorable copy of the settings and records saved on this device, including notes and full screenshot files.</p>
+      <div class="settings-card backup-card">
+        <p>Save this JSON file somewhere safe. It contains your private family records and is not password-protected.</p>
+        <p>It includes local changes that may not have synced. Records only on another device or in the cloud must sync here first.</p>
+        <button class="settings-export-btn" type="button" id="backup-download" onclick="downloadFullBackup()">Download backup (.json)</button>
+      </div>
+      <div class="auth-message" id="backup-export-message" role="status" aria-live="polite"></div>
+      <div data-settings-actions></div>
+    </section>
+    <section class="settings-detail" data-settings-page="import" hidden aria-labelledby="settings-heading-import">
+      <h2 id="settings-heading-import" tabindex="-1">Restore from backup</h2>
+      <p class="settings-detail-description">Choose a Whose Day JSON backup to review. Nothing changes until you choose Restore selected data.</p>
+      <div class="settings-card backup-card">
+        <label for="backup-file">Backup file (.json, up to 25 MB)</label>
+        <input type="file" id="backup-file" accept=".json,application/json" onchange="previewBackupFile(this)">
+        <p>Use a backup from this account. CSV exports cannot be restored.</p>
+      </div>
+      <div class="auth-message" id="backup-import-message" role="status" aria-live="polite"></div>
+      <div id="backup-preview" hidden>
+        <fieldset id="backup-import-controls">
+          <div class="settings-card backup-card" id="backup-preview-summary"></div>
+          <div class="backup-card" id="backup-new-dates"></div>
+          <div id="backup-conflict-list"></div>
+          <div class="settings-card backup-card">
+            <label class="backup-checkbox"><input type="checkbox" id="backup-restore-profile" onchange="updateBackupRestoreButton()"><span>Restore profile and preferences</span></label>
+            <p id="backup-profile-summary"></p>
+            <p>Your sign-in email and current policy acceptance stay unchanged. Existing read-only records are kept. Restored changes sync to this account when connected; differing cloud copies stay subject to sync conflict review.</p>
+            <p id="backup-restore-count"></p>
+            <button type="button" class="settings-export-btn" id="backup-restore-confirm" onclick="restoreBackupSelection()" disabled>Restore selected data</button>
+            <button type="button" class="auth-secondary-btn" onclick="cancelBackupImport()">Cancel</button>
+          </div>
+        </fieldset>
+      </div>
+      <div data-settings-actions></div>
+    </section>
     <section class="settings-detail" data-settings-page="logs" hidden aria-labelledby="settings-heading-logs">
       <h2 id="settings-heading-logs" tabindex="-1">Custody log sync</h2>
       <p class="settings-detail-description">Sync your dated entries, notes, and screenshots.</p>
@@ -442,7 +484,7 @@
       <div class="setup-terms" id="setup-terms-field">
         <label>
           <input type="checkbox" id="setup-terms" onchange="handlePolicyAcceptanceInput()">
-          <span>I agree to the <a href="assets/legal/2026-10-13/terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="assets/legal/2026-10-13/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span>
+          <span>I agree to the <a href="assets/legal/2026-10-21-v2/terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="assets/legal/2026-10-21-v2/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span>
         </label>
         <div class="setup-error">Please accept the Terms of Use and Privacy Policy.</div>
       </div>
@@ -735,14 +777,15 @@
   </div>
   <div class="progress phase-progress" id="prog-mom-helped-activity"></div>
   <div class="kid-loop-header">
-    <div class="avatar av-mom" id="mha-avatar">T</div>
-    <div><div class="step-lbl" id="mha-step-lbl">Kid 1 of 2</div><div style="font-size:17px;font-weight:600" id="mha-kid-name">Thomas</div></div>
+    <div class="avatar av-mom" aria-hidden="true">🤝</div>
+    <div><div class="step-lbl" id="mha-step-lbl">All children</div><div style="font-size:17px;font-weight:600" id="mha-kid-name"></div></div>
   </div>
+  <p class="sub">Choose everything they helped with. Answer once for the children listed above.</p>
   <p class="q" id="mha-q">What did your co-parent help with?</p>
   <div class="activity-grid" id="mha-acts"></div>
   <p class="sec-lbl">Quick note (optional)</p>
-  <input type="text" id="mha-note" placeholder="e.g. Took Thomas to his Saturday match...">
-  <button class="btn primary" id="mha-next-btn" onclick="nextMomHelpedKid()" style="width:100%" disabled>Next →</button>
+  <input type="text" id="mha-note" placeholder="e.g. School pickup and dinner for the kids...">
+  <button class="btn primary" id="mha-next-btn" onclick="nextMomHelpedKid()" style="width:100%" disabled>Continue →</button>
 </div>
 
 <!-- DAD WK: KIDS AT MOM'S -->
@@ -819,14 +862,15 @@
   </div>
   <div class="progress phase-progress" id="prog-helped-activity"></div>
   <div class="kid-loop-header">
-    <div class="avatar av-dad" id="helped-avatar">T</div>
-    <div><div class="step-lbl" id="helped-step-lbl">Kid 1 of 2</div><div style="font-size:17px;font-weight:600" id="helped-kid-name">Thomas</div></div>
+    <div class="avatar av-dad" aria-hidden="true">🤝</div>
+    <div><div class="step-lbl" id="helped-step-lbl">All children</div><div style="font-size:17px;font-weight:600" id="helped-kid-name"></div></div>
   </div>
+  <p class="sub">Choose everything you helped with. Answer once for the children listed above.</p>
   <p class="q" id="helped-q">What did you help with?</p>
   <div class="activity-grid" id="helped-acts"></div>
   <p class="sec-lbl">Quick note (optional)</p>
   <input type="text" id="helped-note" placeholder="e.g. Sports tournament in San Diego...">
-  <button class="btn primary" id="helped-act-next" onclick="nextHelpedKid()" style="width:100%" disabled>Next →</button>
+  <button class="btn primary" id="helped-act-next" onclick="nextHelpedKid()" style="width:100%" disabled>Continue →</button>
 </div>
 
 <!-- MOM WK: DAD HAD KIDS -->
@@ -1230,6 +1274,9 @@
 </div><!-- end .app -->
 <script src="supabase-config.js?v=production-domain-1"></script>
 <script src="supabase-client.js?v=auth-entry-1"></script>
-<script src="app.js?v=settings-pages-1"></script>
+<script src="backup.js?v=policy-refresh-1"></script>
+<script src="analytics-config.js?v=analytics-1"></script>
+<script src="analytics.js?v=analytics-1"></script>
+<script src="app.js?v=analytics-1"></script>
 </body>
 </html>

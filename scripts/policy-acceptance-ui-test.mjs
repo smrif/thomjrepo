@@ -55,8 +55,8 @@ try {
     await page.evaluate(() => { document.getElementById('btn-ob-finish').click(); qaGate=false; qaResolve(); });
     await page.locator('#s-home.active').waitFor();
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem(CONFIG_KEY)));
-    assert.equal(saved.termsVersion, '2026-10-13');
-    assert.equal(saved.privacyVersion, '2026-10-13');
+    assert.equal(saved.termsVersion, '2026-10-21-v2');
+    assert.equal(saved.privacyVersion, '2026-10-21-v2');
     assert.equal(saved.termsAcceptedAt, saved.privacyAcceptedAt);
     assert.equal(saved.policyAcceptanceOwnerId, 'A');
     assert(Number.isFinite(Date.parse(saved.termsAcceptedAt)));
@@ -86,10 +86,10 @@ try {
     await page.locator('#setup-terms').check();
     await page.locator('#setup-continue').click();
     await page.locator('[data-settings-page=overview]:visible').waitFor();
-    assert.equal(await page.evaluate(() => APP_CONFIG.termsVersion), '2026-10-13');
+    assert.equal(await page.evaluate(() => APP_CONFIG.termsVersion), '2026-10-21-v2');
     assert.notEqual(await page.evaluate(() => APP_CONFIG.termsAcceptedAt), legacy.terms_accepted_at, 'Only an explicit checkbox resubmission upgrades acceptance');
     await page.evaluate(async () => { clearTimeout(cloudSyncTimer); await syncCloudData({reason:'policy-test'}); });
-    assert.equal(await page.evaluate(() => qaLastProfile.terms_version), '2026-10-13');
+    assert.equal(await page.evaluate(() => qaLastProfile.terms_version), '2026-10-21-v2');
     assert.equal(await page.evaluate(() => qaLastProfile.terms_accepted_at===APP_CONFIG.termsAcceptedAt), true);
     await page.evaluate(() => showSetup());
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth<=innerWidth), true);
@@ -98,8 +98,8 @@ try {
     await page.screenshot({ path: `/tmp/whose-day-policy-acceptance-${width}.png` });
     for (const kind of ['terms', 'privacy']) {
       const policy = await context.newPage();
-      await policy.goto(`${origin}/assets/legal/2026-10-13/${kind}.html`);
-      assert.equal(await policy.locator('meta[name="policy-version"]').getAttribute('content'), '2026-10-13');
+      await policy.goto(`${origin}/assets/legal/2026-10-21-v2/${kind}.html`);
+      assert.equal(await policy.locator('meta[name="policy-version"]').getAttribute('content'), '2026-10-21-v2');
       assert.equal(new URL(await policy.locator('a.back').getAttribute('href'), policy.url()).pathname, '/index.html');
       assert.equal(await policy.evaluate(() => document.documentElement.scrollWidth<=innerWidth), true);
       await policy.close();
@@ -155,7 +155,7 @@ try {
   });
   const offline = await page.evaluate(() => JSON.parse(localStorage.getItem(CONFIG_KEY)));
   assert.equal(offline.policyAcceptanceOwnerId, null);
-  assert.equal(offline.termsVersion, '2026-10-13');
+  assert.equal(offline.termsVersion, '2026-10-21-v2');
   await context.setOffline(false);
   await page.reload();
   assert.equal(await page.evaluate(() => APP_CONFIG.termsAcceptedAt), offline.termsAcceptedAt);

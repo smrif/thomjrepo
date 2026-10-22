@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test:analytics": "node scripts/analytics-test.mjs && node scripts/analytics-ui-test.mjs",
     "build": "node scripts/build-static.mjs",
     "deploy": "npx wrangler deploy",
     "test": "npm run test:contracts && npm run test:api && npm run test:homepage && npm run test:account && npm run test:db && npm run test:sync && npm run test:domain",
@@ -32,6 +33,7 @@
     "test:release": "node scripts/release-check.mjs",
     "test:trends": "node scripts/trends-clarity-test.mjs",
     "test:reports": "node scripts/reports-clarity-test.mjs",
+    "test:backup": "node scripts/backup-test.mjs && node scripts/backup-ui-test.mjs",
     "test:settings": "node scripts/settings-account-test.mjs",
     "test:auth-entry": "node scripts/auth-entry-test.mjs"
   },
