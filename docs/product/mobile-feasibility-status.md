@@ -2,11 +2,19 @@
 
 The owner approved Capacitor and the small feasibility build. Implementation is
 isolated in `mobile/`, with small platform hooks and verified-save handling in
-the shared website check-in source. The production website has not been deployed;
-the release pipeline and production provider settings are unchanged.
+the shared website check-in source. The shared help fix and browser-compatible
+platform hooks were subsequently deployed to the website October 22; the native
+app has not been released. Production provider settings are unchanged.
 
 ## Implemented
 
+- Account integration at `account/index.html`: test-project native sign-in,
+  verified local family profile, per-project/account record scopes, offline
+  session recovery, store revocation on account changes and durable local
+  sign-out. The browser offers two separate fictional accounts. Normal native
+  launch opens this flow; original lab tools remain accessible. Cloud profile
+  restoration and custody sync are not connected. See
+  [account integration](mobile-account-integration.md).
 - Separate pinned native project/dependency lock for iOS and Android.
 - Bundled current website UI preview, with production backend/analytics removed
   and network connections blocked.
@@ -40,9 +48,17 @@ the release pipeline and production provider settings are unchanged.
 
 ## Evidence so far
 
-- Mobile domain/auth/storage/product-save suite: 15 passed. Covers commit/readback failure behavior,
+- Mobile domain/auth/storage/product-save/account suite: 28 passed. Covers account
+  scope/ownership, stale responses and saves during account changes, offline
+  auth and durable sign-out, profile failures, and commit/readback failure behavior,
   attachment/date validation, strict callback routes, secure-storage adapter,
   PKCE/existing-account configuration, duplicate callbacks and production refusal.
+- October 22 account probes passed on the signed iOS 17.5 simulator: isolated
+  synthetic Keychain identity, profile and the shared product note/image recovered
+  across process termination; a second account had no first-account records,
+  closed stores rejected old snapshots, and offline sign-out survived auth reopen.
+  Evidence: ignored `mobile/.build/ios-account-probe.json`. This does not establish
+  real email handoff through the new account entry or physical-device behavior.
 - Persistent check-in browser flow passed at 390px and 320px: actual UI save,
   duplicate taps, note/image recovery after closing/reopening with offline mode,
   edit and injected write failure/retry, co-parent branch, and fail-closed startup
@@ -82,7 +98,8 @@ the release pipeline and production provider settings are unchanged.
   entitlement-configured probes passed. Simulator install/launch operations also
   timed out during initial setup; the clean reboot resolved that run. No general
   cause of every simulator delay has been established.
-- Existing website contract test and static build still pass. No website deployment.
+- The shared-help website release passed all 48 local release checks and live
+  asset/browser verification. Mobile account work changes no website source.
 - Real test-project email authentication passed on the simulator October 22.
   The 07:59 PDT email's pending callback was delivered to the native app at
   08:01 after working around Safari's frozen first confirmation sheet. The

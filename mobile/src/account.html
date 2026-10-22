@@ -1,0 +1,41 @@
+<section id="account-welcome" class="account-page" hidden>
+  <p class="account-eyebrow">WHOSE DAY · ACCOUNT TEST</p>
+  <h1>Your check-ins, together</h1>
+  <p id="account-intro">Sign in to the test app. Use made-up family details and notes.</p>
+  <form id="account-login" hidden>
+    <label for="account-email">Test account email</label>
+    <input id="account-email" type="email" autocomplete="email" required maxlength="254">
+    <button class="btn primary" id="account-send" type="submit">Send sign-in link</button>
+  </form>
+  <div id="account-preview" hidden>
+    <p>Choose a sample account to try separate profiles and saved check-ins. This browser preview does not sign in to a real account.</p>
+    <button class="btn primary" id="account-preview-a">Use sample account A</button>
+    <button class="btn" id="account-preview-b">Use sample account B</button>
+  </div>
+  <p id="account-unconfigured" hidden>Test sign-in is not configured in this build.</p>
+  <p id="account-message" role="status" aria-live="polite"></p>
+  <button class="btn" id="account-retry-signout" hidden>Try signing out again</button>
+  <a href="../checkin/index.html">Open sample check-in</a>
+  <a href="../index.html?lab=1">Open native lab</a>
+</section>
+<section id="account-profile" class="account-page" hidden>
+  <p class="account-eyebrow">YOUR TEST PROFILE</p><h1>Who’s in your family?</h1>
+  <p>Use sample names for this build. Your profile and check-ins stay with this account on this device. Cloud sync is not connected.</p>
+  <p id="account-profile-email"></p>
+  <form id="account-profile-form">
+    <label for="account-parent">Your name or label</label><input id="account-parent" maxlength="100" autocomplete="off" required>
+    <label for="account-coparent">Co-parent name or label</label><input id="account-coparent" maxlength="100" autocomplete="off" required>
+    <label for="account-children">Children (one name per line)</label><textarea id="account-children" rows="4" maxlength="2020" required></textarea>
+    <button class="btn primary" id="account-profile-save" type="submit">Save profile and continue</button>
+    <p id="account-profile-message" role="alert"></p>
+  </form>
+  <button class="btn account-signout">Sign out</button>
+</section>
+<section id="account-panel" class="account-page" hidden>
+  <p class="account-eyebrow">ACCOUNT TEST</p><h1>Your account</h1>
+  <p id="account-identity"></p>
+  <p>Your profile and check-ins are saved on this device for this account. Signing out keeps that saved copy, hidden until this account signs in again.</p>
+  <p>Cloud sync, account deletion and backup/import are not connected in this build. Use sample data only.</p>
+  <button class="btn primary" id="account-back">Back to check-ins</button>
+  <button class="btn account-signout">Sign out</button>
+</section>

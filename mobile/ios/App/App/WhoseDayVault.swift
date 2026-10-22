@@ -16,7 +16,7 @@ public class WhoseDayVaultPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func testMode(_ call: CAPPluginCall) {
         #if DEBUG && targetEnvironment(simulator)
         let args = ProcessInfo.processInfo.arguments
-        let mode = args.contains("--lab-checkin-write") ? "checkin-write" : args.contains("--lab-checkin-read") ? "checkin-read" : args.contains("--lab-probe-write") ? "write" : args.contains("--lab-probe-read") ? "read" : args.contains("--lab-auth") ? "auth" : ""
+        let mode = args.contains("--lab-account-write") ? "account-write" : args.contains("--lab-account-read") ? "account-read" : args.contains("--lab-checkin-write") ? "checkin-write" : args.contains("--lab-checkin-read") ? "checkin-read" : args.contains("--lab-probe-write") ? "write" : args.contains("--lab-probe-read") ? "read" : args.contains("--lab-auth") ? "auth" : ""
         call.resolve(["mode": mode])
         #else
         call.resolve(["mode": ""])

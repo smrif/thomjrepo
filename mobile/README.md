@@ -6,6 +6,13 @@ website and its dependencies are unchanged.
 
 ## What is implemented
 
+- Account entry at `account/index.html`: separate-test-project native email
+  sign-in, first-run local family profile, verified per-account saves, offline
+  session recovery and durable local sign-out. Profiles/records and secure auth
+  are scoped by project/account; the browser review uses two fictional accounts.
+  Normal native launch opens this flow; use `index.html?lab=1` for the lab tools.
+  This remains synthetic-data-only, with no cloud profile restoration or sync.
+  See [account integration](../docs/product/mobile-account-integration.md).
 - Pinned Capacitor 8.5.3 iOS and Android projects, using bundled assets rather than
   a hosted-site URL. Provisional debug app ID: `com.whoseday.feasibility`.
 - Small synthetic check-in with SQLite commit/readback before success, a bounded
@@ -52,6 +59,7 @@ pnpm sync
 pnpm test
 pnpm test:ui
 pnpm test:checkin
+pnpm test:accounts
 pnpm ios
 ```
 
@@ -78,9 +86,12 @@ before publishing the new in-memory state or the saved confirmation. The
 browser review uses committed IndexedDB transactions; browser results alone do
 not establish native persistence. Neither mode imports old localStorage records.
 
-The 15 mobile unit/integration checks cover verified saves, invalid stored data,
+The 28 mobile unit/integration checks cover verified saves, invalid stored data,
 scope separation, stale edits, duplicate saves and preserving answers/backfill
-dates on failure. `test:checkin` additionally exercises the shared UI at 390px
+dates on failure, account switching, offline auth, sign-out/callback races and
+profile ownership/recovery. `test:accounts` exercises profile setup/failure retry,
+separate accounts, note/image recovery, offline reopen and sign-out/reload at
+390px and 320px. `test:checkin` additionally exercises the shared UI at 390px
 and 320px: save, close/offline reopen, attachment/edit recovery, injected failure
 and retry, duplicate taps, the co-parent branch and corrupt-data startup blocking.
 Screenshots are in ignored `.build/checkin/`.

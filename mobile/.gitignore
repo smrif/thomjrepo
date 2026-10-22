@@ -17,3 +17,4 @@ android/app/src/main/assets/capacitor.config.json
 .DS_Store
 config.generated.json
 ios/App/App/config*.xml
+android/app/src/main/res/xml/config*.xml

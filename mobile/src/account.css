@@ -1,0 +1,14 @@
+body[data-account-view]:not([data-account-view="product"]) :is(#app,#shell-header,#shell-tabs) { display:none!important; }
+.account-page { max-width:440px; margin:auto; padding:calc(env(safe-area-inset-top,0px) + 48px) 24px 40px; color:var(--daily-ink); font:400 16px/1.55 var(--font-ui); }
+.account-page[hidden] { display:none!important; }
+.account-page h1 { font:600 34px/1.15 var(--font-display); margin:16px 0 20px; }
+.account-page p { margin:16px 0; }
+.account-eyebrow { font-size:12px; letter-spacing:1px; color:var(--daily-primary-strong); }
+.account-page label { display:block; font-weight:600; margin:20px 0 8px; }
+.account-page :is(input,textarea) { box-sizing:border-box; width:100%; font:inherit; }
+.account-page .btn { min-height:48px; width:100%; margin:16px 0 0; }
+.account-page a { display:block; margin-top:24px; color:var(--daily-primary-strong); }
+.account-page :is(#account-message,#account-profile-message) { overflow-wrap:anywhere; }
+.account-page :is(button,input,textarea,a):focus-visible { outline:2px solid var(--daily-primary-strong); outline-offset:3px; }
+.account-open { min-width:64px; min-height:44px; cursor:pointer; font:inherit; color:inherit; }
+body[data-account-view="product"] #checkin-loading { display:none!important; }

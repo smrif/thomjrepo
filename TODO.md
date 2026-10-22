@@ -58,6 +58,12 @@
 - [ ] Build the iOS app, including email-link return into the app, persistent
   sign-in/sign-out, offline storage/reopening and reconnect sync, Settings and
   account deletion, screenshot attachments, and export/report sharing.
+- [x] Connect the test-project sign-in client to a verified local family profile
+  and account-specific shared check-ins. October 22: 28 unit/integration checks
+  and two-account UI walkthroughs at 390px/320px passed, including offline reopen,
+  sign-out and note/image recovery. Normal native launch opens the account flow.
+  Cloud profile restoration/sync and physical-device sign-in remain outstanding;
+  see [account integration](docs/product/mobile-account-integration.md).
 - [x] Build the first mobile app shell preview: shared header, safe-area spacing,
   Today/Calendar/Reports/Settings tabs, scroll restoration and contextual back
   navigation. October 22 browser layout/navigation checks passed in five

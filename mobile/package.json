@@ -9,11 +9,13 @@
     "test": "node --test test/*.test.mjs",
     "test:ui": "node test/ui.mjs",
     "test:checkin": "node test/checkin-ui.mjs",
+    "test:accounts": "node test/account-ui.mjs",
     "ios": "cap open ios",
     "android": "cap open android",
     "build:ios": "node scripts/build-ios.mjs",
     "probe:ios": "node scripts/probe-ios.mjs",
     "probe:checkin:ios": "node scripts/probe-checkin-ios.mjs",
+    "probe:account:ios": "node scripts/probe-account-ios.mjs",
     "build:android": "node scripts/build-android.mjs",
     "probe:android": "node scripts/probe-android.mjs"
   },

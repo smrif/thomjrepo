@@ -57,7 +57,9 @@ $('sign-out').onclick=()=>action(async()=>{await auth.signOut();message('Signed 
   lock(true);
   try {
     const {mode}=await vault.testMode();
+    if(mode.startsWith('account-')){location.replace('account/index.html');return}
     if(mode.startsWith('checkin-')){location.replace('checkin/index.html');return}
+    if(!mode&&!new URLSearchParams(location.search).has('lab')){location.replace('account/index.html');return}
     if(mode)await runProbe(vault,mode);
     render(await repo.load(localDay()));ready=true;
     auth=createAuth({config:config.auth,vault,createClient,onSession:session=>{$('auth-state').textContent=session?'Test account signed in.':'Signed out.';if(session)vault.write({key:'probe:auth-verified',value:JSON.stringify({verified:true,at:new Date().toISOString()})}).catch(()=>{})},onError:text=>message(text,true)});

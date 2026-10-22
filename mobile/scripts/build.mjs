@@ -2,11 +2,12 @@ import {readFile,writeFile,rm,mkdir,cp} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {resolve,join} from 'node:path';
 import {build} from 'esbuild';
+import {testProject} from '../src/auth.js';
 const root=fileURLToPath(new URL('..',import.meta.url)),repo=resolve(root,'..'),out=join(root,'www');
 await rm(out,{recursive:true,force:true});await mkdir(out,{recursive:true});
 let config={auth:{enabled:false}};
 try{config=JSON.parse(await readFile(join(root,'config.local.json'),'utf8'))}catch(e){if(e.code!=='ENOENT')throw e}
-if(config.auth?.enabled && (config.auth.url==='https://hdfuknggfkmaycnantxv.supabase.co' || !/^sb_publishable_/.test(config.auth.publishableKey||'')))throw new Error('A separate test Supabase project and publishable key are required.');
+const project=config.auth?.enabled?testProject(config.auth):null;
 await writeFile(join(root,'config.generated.json'),JSON.stringify(config));
 try{await build({entryPoints:[join(root,'src/main.js')],bundle:true,outfile:join(out,'lab.js'),format:'iife',target:'es2022',minify:false})}finally{await rm(join(root,'config.generated.json'))}
 for(const file of ['index.html','lab.css'])await cp(join(root,'src',file),join(out,file));
@@ -35,4 +36,17 @@ productHtml=productHtml.replace('</body>','<script src="checkin-runtime.js" defe
 await writeFile(join(checkin,'index.html'),productHtml);
 await cp(join(root,'src/checkin.css'),join(checkin,'checkin.css'));
 await build({entryPoints:[join(root,'src/checkin-runtime.js')],bundle:true,outfile:join(checkin,'checkin-runtime.js'),format:'iife',target:'es2022',minify:false});
-console.log('Bundled native lab, shell preview and persistent check-in slice (no production backend or telemetry).');
+// Account flow reuses the product screens and native bridge. Only this entry
+// may reach the configured, validated test auth origin. No production SDK/config.
+const account=join(out,'account');await cp(checkin,account,{recursive:true});
+let accountHtml=productHtml.replace('data-checkin-state="loading"','data-checkin-state="loading" data-account-view="loading"');
+accountHtml=accountHtml.replace('</head>','<link rel="stylesheet" href="account.css"></head>');
+accountHtml=accountHtml.replace('</body>',await readFile(join(root,'src/account.html'),'utf8')+'</body>');
+accountHtml=accountHtml.replace('src="checkin-runtime.js"','src="account-runtime.js"');
+if(project)accountHtml=accountHtml.replace("connect-src 'none'","connect-src https://"+project+'.supabase.co');
+await writeFile(join(account,'index.html'),accountHtml);
+await cp(join(root,'src/account.css'),join(account,'account.css'));
+await rm(join(account,'checkin-runtime.js'));
+await writeFile(join(root,'config.generated.json'),JSON.stringify(config));
+try{await build({entryPoints:[join(root,'src/account-runtime.js')],bundle:true,outfile:join(account,'account-runtime.js'),format:'iife',target:'es2022',minify:false})}finally{await rm(join(root,'config.generated.json'))}
+console.log('Bundled lab, shell, sample check-in and account flow (test auth only; no production backend or telemetry).');

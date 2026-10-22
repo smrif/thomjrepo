@@ -32,10 +32,10 @@ export function validateEntry(day,entry){
 export function createRecordStore(vault,{scope}){
   if(!/^[A-Za-z0-9_-]{1,80}$/.test(scope))throw new Error('Invalid record scope.');
   const prefix='checkin:v1:'+scope+':',snapshots=new WeakMap();
-  let records={},ready=false,busy=false;
+  let records={},ready=false,busy=false,closed=false;
   return {
     async open(){
-      if(busy)throw new Error('Storage is busy.');
+      if(closed||busy)throw new Error('Storage is closed or busy.');
       ready=false;const loaded={};
       const {keys}=await vault.keys({prefix});
       if(!Array.isArray(keys)||keys.length>20000||new Set(keys).size!==keys.length)throw new Error('Invalid record listing.');
@@ -45,8 +45,10 @@ export function createRecordStore(vault,{scope}){
         if(!plain(row)||Object.keys(row).sort().join(',')!=='day,entry,schema,scope'||row.schema!==1||row.scope!==scope||key!==prefix+row.day)throw new Error('Unrecognized stored record.');
         loaded[row.day]=validateEntry(row.day,row.entry);
       }
+      if(closed)throw new Error('Storage is closed.');
       records=loaded;ready=true;
     },
+    close(){closed=true;ready=false;records={};},
     snapshot(){
       if(!ready)throw new Error('Records are not ready.');
       const snapshot=clone(records);snapshots.set(snapshot,clone(records));return snapshot;
@@ -66,6 +68,7 @@ export function createRecordStore(vault,{scope}){
       try{
         await vault.write({key,value});
         if((await vault.read({key})).value!==value)throw new Error('Saved record could not be verified.');
+        if(closed)throw new Error('The account changed during saving.');
         records={...records,[day]:entry};
       }finally{busy=false;}
     }
