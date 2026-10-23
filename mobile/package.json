@@ -28,7 +28,8 @@
     "probe:reports:android": "node scripts/probe-reports-android.mjs",
     "release:inventory": "node scripts/release-inventory.mjs",
     "test:accessibility": "node test/accessibility-ui.mjs",
-    "test:policies": "node test/policies-ui.mjs"
+    "test:policies": "node test/policies-ui.mjs",
+    "probe:files:ios": "node scripts/probe-files-ios.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",

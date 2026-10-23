@@ -309,3 +309,12 @@ release registration/consent work; native test profiles still force acceptance f
 run platform sync before compilation, so the native app cannot accidentally use
 the previous copied UI. The account iOS probe requires the current policy-reader
 markers and rejects an older installed/built app.
+
+For actual native system-sheet QA, boot a dedicated iOS 17.5+ simulator and run
+`pnpm probe:files:ios SIMULATOR_UUID`. The separate simulator-only `NativeExportQA`
+bundle seeds its own synthetic records and checks real PDF/CSV/JSON picker and
+share cancellation, swipe dismissal, and a local JSON save/read-back preview.
+Optional final arguments `cancellation` or `local-backup` run one case. The runner
+refreshes assets, records source hashes and exports XCTest screenshots under
+`.build/ios-files-ui/`. It never chooses a share recipient or a cloud destination.
+See [native file QA](../docs/product/mobile-native-file-qa.md).

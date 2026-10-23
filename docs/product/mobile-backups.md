@@ -98,6 +98,12 @@ outputs and a fresh copy of the current source now live in a temporary build
 workspace to avoid duplicate generated resources/bytecode in the cloud-managed
 checkout. This is compile/lint evidence, not Android provider runtime QA.
 
-Real Files-provider destinations/cancellation, large histories, physical-device
+The separate simulator-only XCTest bundle also saves a uniquely named backup
+to On My iPhone, selects it through Files and validates its checksum/account
+preview (eight records, one screenshot). Import/export cancellation and cancelling
+the preview preserve the complete diary report. Both UI cases pass together;
+see [native file QA](mobile-native-file-qa.md).
+
+Physical/cloud Files-provider behavior, large histories, physical-device
 accessibility and real authenticated sync remain owner/device QA. This does not
 claim physical-iPhone sign-off or a production migration path.

@@ -81,6 +81,10 @@ No external recipient is contacted in automated QA.
   text matches and all eight CSV records/notes/images are intact. The real
   share sheet opens and cancels cleanly without choosing a recipient. These
   checks do not establish iPhone/iCloud or recipient-app delivery.
+- iOS 17.5 native UI tests pass real PDF/CSV Files cancellation, CSV swipe
+  dismissal and PDF/CSV share-sheet closure without selecting recipients.
+  The complete diary report is unchanged afterward. Both native UI cases pass
+  together; see [native Files/share QA](mobile-native-file-qa.md).
 
 Reproduce with `pnpm --dir mobile test:reports`, `node scripts/reports-clarity-test.mjs`,
 `pnpm --dir mobile probe:reports:ios SIMULATOR_UUID`, or
@@ -90,6 +94,6 @@ run the bundled Python interpreter with `mobile/scripts/verify-report-pdfs.py`
 inspect them. Evidence is ignored under `mobile/.build/reports/` and the native
 probe JSON files.
 
-Actual iPhone Files/share/clipboard destinations, cancellation and VoiceOver are
+Physical iPhone Files/share/clipboard destinations, interruption and VoiceOver are
 tracked in [owner QA](mobile-owner-qa.md). Physical iPhone provisioning, real auth
 handoff/sync, deletion activation and App Store approval remain separate gates.

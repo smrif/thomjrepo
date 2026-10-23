@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Scheme LastUpgradeVersion="2710" version="1.7">
+ <BuildAction parallelizeBuildables="NO" buildImplicitDependencies="YES"><BuildActionEntries>
+  <BuildActionEntry buildForTesting="YES" buildForRunning="NO" buildForProfiling="NO" buildForArchiving="NO" buildForAnalyzing="NO"><BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="504EC3031FED79650016851F" BuildableName="App.app" BlueprintName="App" ReferencedContainer="container:App.xcodeproj"/></BuildActionEntry>
+  <BuildActionEntry buildForTesting="YES" buildForRunning="NO" buildForProfiling="NO" buildForArchiving="NO" buildForAnalyzing="NO"><BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="BEEF00000000000000000001" BuildableName="NativeExportQA.xctest" BlueprintName="NativeExportQA" ReferencedContainer="container:App.xcodeproj"/></BuildActionEntry>
+ </BuildActionEntries></BuildAction>
+ <TestAction buildConfiguration="Debug" selectedDebuggerIdentifier="Xcode.DebuggerFoundation.Debugger.LLDB" selectedLauncherIdentifier="Xcode.IDEFoundation.Launcher.LLDB" shouldUseLaunchSchemeArgsEnv="YES"><Testables><TestableReference skipped="NO" parallelizable="NO"><BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="BEEF00000000000000000001" BuildableName="NativeExportQA.xctest" BlueprintName="NativeExportQA" ReferencedContainer="container:App.xcodeproj"/></TestableReference></Testables></TestAction>
+</Scheme>

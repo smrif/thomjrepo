@@ -36,6 +36,9 @@
   a first QA pass. Keep owner/device/provider checks in
   [iOS owner QA](docs/product/mobile-owner-qa.md); record evidence without
   replacing the existing live-account or release approvals.
+- Review checkpoint October 23: finish the native Files/share QA round, then
+  review progress and next steps with the owner before starting another item.
+  Automatic continuation is paused for that review; photo-picker QA is next.
 
 - Owner clarification October 20, 2026: iOS support means a downloadable App
   Store app, beyond Safari/Home Screen support. A separate feasibility app is
@@ -115,6 +118,13 @@
   October 23: 87 checkpoints at small-phone, standard-phone and landscape widths;
   fixed field labeling, enlarged-text clipping and tab overlap. See
   [accessibility evidence](docs/product/mobile-accessibility-qa.md).
+- [x] Add simulator-only native Files/share UI QA. October 23: PDF/CSV/JSON
+  cancellation, swipe dismissal and unchanged records pass; simulator-local JSON
+  save/re-selection and validated preview also pass. See
+  [native file QA](docs/product/mobile-native-file-qa.md).
+- [ ] Run a first simulator photo-picker → save → cold-reopen walkthrough using
+  a seeded non-sensitive image, then retain physical photo/keyboard/VoiceOver
+  checks in owner QA. Use the new native UI-test runner and synthetic scopes.
 - [ ] Verify layout, keyboard behavior, accessibility, attachments, and sharing
   on physical iPhones, alongside the existing account/offline/conflict QA.
 - [ ] Set up app identity, signing, and a TestFlight build. Confirm Apple

@@ -12,6 +12,7 @@ Owner checks are tracked by ID in [mobile owner QA](mobile-owner-qa.md).
 | Display name | Whose Day Lab | Owner approves final name; update Capacitor and native identity together. |
 | Bundle identifier | `com.whoseday.feasibility` | Owner confirms registered identifier and developer team. Do not migrate signed-in storage by silently changing identifiers. |
 | Version/build | Xcode marketing version 1.0, build 1 | Choose version/build for the release and advance uploaded build numbers. |
+| Deployment target | iOS 15.0 in the application target; first native runtime evidence is iOS 17.5 | Confirm the release minimum and test its APIs/layout. The separate UI-test bundle requires 17.5+. |
 | Supported device family | iPhone and iPad (`1,2`) | Decide iPad scope; current first-pass phone checks do not establish iPad readiness. |
 | Authentication | Separate Supabase test project; `whoseday-feasibility` custom callback | Confirm release environment and callback identity; keep the production block until separately reviewed. Real Safari return remains IOS-QA-02. |
 | Signing | Personal-team development settings; simulator build works | Resolve Apple account restriction and verify physical signing (IOS-QA-01). No enrollment purchase is authorized by this packet. |

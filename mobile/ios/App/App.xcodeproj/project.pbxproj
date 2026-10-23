@@ -53,6 +53,7 @@
 			children = (
 				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
 				504EC3061FED79650016851F /* App */,
+				BEEF0000000000000000000D /* NativeExportQA */,
 				504EC3051FED79650016851F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -61,6 +62,7 @@
 			isa = PBXGroup;
 			children = (
 				504EC3041FED79650016851F /* App.app */,
+				BEEF00000000000000000003 /* NativeExportQA.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -115,6 +117,7 @@
 				LastSwiftUpdateCheck = 0920;
 				LastUpgradeCheck = 0920;
 				TargetAttributes = {
+					BEEF00000000000000000001 = { CreatedOnToolsVersion = 27.1; TestTargetID = 504EC3031FED79650016851F; };
 					504EC3031FED79650016851F = {
 						CreatedOnToolsVersion = 9.2;
 						LastSwiftMigration = 1100;
@@ -139,6 +142,7 @@
 			projectRoot = "";
 			targets = (
 				504EC3031FED79650016851F /* App */,
+				BEEF00000000000000000001 /* NativeExportQA */,
 			);
 		};
 /* End PBXProject section */
@@ -387,6 +391,21 @@
 			productName = "CapApp-SPM";
 		};
 /* End XCSwiftPackageProductDependency section */
+/* Native export UI QA: a separate simulator test bundle. */
+		BEEF00000000000000000002 /* NativeExportQATests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeExportQATests.swift; sourceTree = "<group>"; };
+		BEEF00000000000000000003 /* NativeExportQA.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NativeExportQA.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BEEF0000000000000000000D /* NativeExportQA */ = {isa = PBXGroup; children = (BEEF00000000000000000002,); path = NativeExportQA; sourceTree = "<group>"; };
+		BEEF00000000000000000004 /* NativeExportQATests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEEF00000000000000000002; };
+		BEEF00000000000000000005 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (BEEF00000000000000000004,); runOnlyForDeploymentPostprocessing = 0; };
+		BEEF00000000000000000006 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		BEEF00000000000000000007 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		BEEF0000000000000000000B = {isa = PBXContainerItemProxy; containerPortal = 504EC2FC1FED79650016851F; proxyType = 1; remoteGlobalIDString = 504EC3031FED79650016851F; remoteInfo = App; };
+		BEEF0000000000000000000C = {isa = PBXTargetDependency; target = 504EC3031FED79650016851F; targetProxy = BEEF0000000000000000000B; };
+		BEEF00000000000000000009 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; DEVELOPMENT_TEAM = A5TLPHT4PG; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.5; PRODUCT_BUNDLE_IDENTIFIER = com.whoseday.feasibility.ExportQA; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphonesimulator; SUPPORTED_PLATFORMS = iphonesimulator; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 1; TEST_TARGET_NAME = App;}; name = Debug; };
+		BEEF0000000000000000000A /* Release */ = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; DEVELOPMENT_TEAM = A5TLPHT4PG; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.5; PRODUCT_BUNDLE_IDENTIFIER = com.whoseday.feasibility.ExportQA; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphonesimulator; SUPPORTED_PLATFORMS = iphonesimulator; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 1; TEST_TARGET_NAME = App;}; name = Release; };
+		BEEF00000000000000000008 = {isa = XCConfigurationList; buildConfigurations = (BEEF00000000000000000009,BEEF0000000000000000000A,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Debug; };
+		BEEF00000000000000000001 /* NativeExportQA */ = {isa = PBXNativeTarget; buildConfigurationList = BEEF00000000000000000008; buildPhases = (BEEF00000000000000000005,BEEF00000000000000000006,BEEF00000000000000000007,); buildRules = (); dependencies = (BEEF0000000000000000000C,); name = NativeExportQA; productName = NativeExportQA; productReference = BEEF00000000000000000003; productType = "com.apple.product-type.bundle.ui-testing"; };
+
 	};
 	rootObject = 504EC2FC1FED79650016851F /* Project object */;
 }

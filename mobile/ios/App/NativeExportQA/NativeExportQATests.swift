@@ -1,0 +1,139 @@
+import XCTest
+
+@MainActor
+final class NativeExportQATests: XCTestCase {
+    private func picture(_ app: XCUIApplication, _ name: String) {
+        let picture = XCTAttachment(screenshot: app.screenshot())
+        picture.name = name
+        picture.lifetime = .keepAlways
+        add(picture)
+    }
+    private func tap(_ app: XCUIApplication, _ name: String) {
+        let button = app.buttons[name].firstMatch
+        XCTAssertTrue(button.waitForExistence(timeout: 20), name)
+        for _ in 0..<5 { if button.isHittable { break }; app.webViews.firstMatch.swipeUp() }
+        XCTAssertTrue(button.isHittable, "Unreachable control: " + name)
+        button.tap()
+    }
+    private func text(_ app: XCUIApplication, _ value: String) {
+        let found = app.staticTexts[value].firstMatch.waitForExistence(timeout: 30)
+        if !found {
+            picture(app, "Missing UI result: " + value)
+            print("UI_CHECK_FAILURE_BEGIN\n" + String(app.debugDescription.prefix(18000)) + "\nUI_CHECK_FAILURE_END")
+        }
+        XCTAssertTrue(found, value)
+    }
+    private func cancelFiles(_ app: XCUIApplication, _ name: String, swipe: Bool = false) {
+        if swipe {
+            let bar = app.navigationBars.firstMatch
+            XCTAssertTrue(bar.waitForExistence(timeout: 15))
+            picture(app, name)
+            let start = bar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
+            start.press(forDuration: 0.1, thenDragTo: end)
+            return
+        }
+        let cancel = app.buttons["Cancel"].firstMatch
+        let browse = app.buttons["Browse"].firstMatch
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            cancel.exists || browse.exists
+        }, object: app)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 20), .completed, "Files picker did not appear")
+        if !cancel.exists {
+            XCTAssertTrue(browse.exists)
+            browse.tap()
+        }
+        let found = cancel.waitForExistence(timeout: 10)
+        picture(app, name)
+        print("SYSTEM_PICKER_BUTTONS " + app.buttons.allElementsBoundByIndex.map(\.label).joined(separator: " | "))
+        XCTAssertTrue(found, "Files cancellation control missing")
+        cancel.tap()
+    }
+    private func cancelShare(_ app: XCUIApplication, _ name: String) {
+        let close = app.buttons["Close"].firstMatch
+        let cancel = app.buttons["Cancel"].firstMatch
+        let found = close.waitForExistence(timeout: 15) || cancel.waitForExistence(timeout: 5)
+        picture(app, name)
+        print("SYSTEM_SHARE_BUTTONS " + app.buttons.allElementsBoundByIndex.map(\.label).joined(separator: " | "))
+        XCTAssertTrue(found, "Share cancellation control missing")
+        if close.exists { close.tap() } else { cancel.tap() }
+    }
+    private func preparedApp() -> XCUIApplication {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.whoseday.feasibility")
+        app.launchArguments = ["--lab-reports-write"]
+        app.launch()
+        text(app, "Synthetic report fixture ready")
+        app.terminate()
+        app.launchArguments = ["--lab-reports-read"]
+        app.launch()
+        text(app, "Synthetic reports ready for QA.")
+        return app
+    }
+    func testLocalBackupRoundTrip() throws {
+        let app = preparedApp()
+        let originalNote = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "END-LONG-NOTE")).firstMatch.label
+        tap(app, "Settings"); tap(app, "Download full backup"); tap(app, "Save backup to Files (.json)")
+        // Use the observed provider root, not the navigation bar's own label.
+        let local = app.otherElements.matching(NSPredicate(format: "identifier BEGINSWITH %@", "DOC.browsingRoot Source: com.apple.FileProvider.LocalStorage")).firstMatch
+        if !local.waitForExistence(timeout: 10) {
+            let browse = app.buttons["Browse"].firstMatch
+            if browse.exists { browse.tap() }
+            let place = app.staticTexts["On My iPhone"].firstMatch
+            picture(app, "Choose simulator-local storage")
+            print("LOCAL_DESTINATION_UI\n" + String(app.debugDescription.prefix(14000)))
+            XCTAssertTrue(place.waitForExistence(timeout: 10), "Choose only simulator-local storage")
+            place.tap()
+        }
+        XCTAssertTrue(local.waitForExistence(timeout: 10), "Local Files destination is required")
+        let stem = "whose-day-backup-uiqa-" + UUID().uuidString.prefix(8)
+        let file = app.textFields.matching(NSPredicate(format: "value BEGINSWITH %@", "whose-day-backup-")).firstMatch
+        picture(app, "Local JSON save before filename edit")
+        print("LOCAL_SAVE_FIELDS " + app.textFields.allElementsBoundByIndex.map { $0.label + ":" + String(describing: $0.value) }.joined(separator: " | "))
+        XCTAssertTrue(file.waitForExistence(timeout: 10))
+        let count = (file.value as? String)?.count ?? 0
+        file.tap(); file.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: count) + stem)
+        XCTAssertTrue((file.value as? String)?.hasPrefix(stem) == true)
+        tap(app, "Save"); text(app, "Backup saved to the location you chose. Keep the file safe.")
+        tap(app, "Back to Settings"); tap(app, "Restore from backup"); tap(app, "Choose backup from Files")
+        var saved = app.cells.matching(NSPredicate(format: "identifier BEGINSWITH %@", stem)).firstMatch
+        if !saved.waitForExistence(timeout: 5) {
+            let browse = app.tabBars.buttons["Browse"].firstMatch
+            if browse.exists { browse.tap() }
+            let place = app.staticTexts["On My iPhone"].firstMatch
+            if place.exists { place.tap() }
+            saved = app.cells.matching(NSPredicate(format: "identifier BEGINSWITH %@", stem)).firstMatch
+        }
+        picture(app, "Local JSON backup in Files")
+        XCTAssertTrue(saved.waitForExistence(timeout: 20), "Saved backup must exist in the chosen local provider")
+        XCTAssertTrue(saved.isEnabled); XCTAssertTrue(saved.images.firstMatch.exists)
+        saved.images.firstMatch.tap(); text(app, "Preview ready. Nothing has been changed."); text(app, "8 dated records · 1 screenshots")
+        picture(app, "JSON read-back preview")
+        tap(app, "Cancel")
+        tap(app, "Back to Settings"); tap(app, "Reports")
+        let notes = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Diary notes only")).firstMatch
+        XCTAssertTrue(notes.waitForExistence(timeout: 10)); notes.tap()
+        let currentNote = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "END-LONG-NOTE")).firstMatch
+        XCTAssertTrue(currentNote.waitForExistence(timeout: 10)); XCTAssertEqual(currentNote.label, originalNote)
+    }
+    func testSystemSheetCancellation() throws {
+        let app = preparedApp()
+        let note = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "END-LONG-NOTE")).firstMatch
+        XCTAssertTrue(note.exists)
+        let before = note.label
+        tap(app, "Save PDF"); cancelFiles(app, "PDF Files picker"); text(app, "PDF save cancelled.")
+        tap(app, "Share PDF"); cancelShare(app, "PDF share sheet"); text(app, "Sharing cancelled.")
+        tap(app, "Settings"); tap(app, "Export all data (CSV)")
+        tap(app, "Save CSV to Files"); cancelFiles(app, "CSV Files picker swipe dismissal", swipe: true); text(app, "CSV export cancelled.")
+        tap(app, "Share CSV"); cancelShare(app, "CSV share sheet"); text(app, "CSV export cancelled.")
+        tap(app, "Back to Settings"); tap(app, "Download full backup")
+        tap(app, "Save backup to Files (.json)"); cancelFiles(app, "JSON backup Files picker"); text(app, "Backup export cancelled.")
+        tap(app, "Back to Settings"); tap(app, "Restore from backup")
+        tap(app, "Choose backup from Files"); cancelFiles(app, "JSON import Files picker"); text(app, "No backup selected.")
+        picture(app, "Recovered import screen after cancellation")
+        tap(app, "Back to Settings"); tap(app, "Reports")
+        let notes = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Diary notes only")).firstMatch
+        XCTAssertTrue(notes.waitForExistence(timeout: 10)); notes.tap()
+        XCTAssertTrue(note.waitForExistence(timeout: 10)); XCTAssertEqual(note.label, before, "Cancellation changed the saved report")
+    }
+}

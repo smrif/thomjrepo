@@ -5,7 +5,7 @@ export async function runReportsProbe({accounts,vault,mode}){
     const state=accounts.backupSnapshot(),backup=await portable.create({...state,config:{...state.config,...reportProfile},records:reportFixture()}),plan=portable.plan(backup,state);
     const choices=Object.fromEntries(plan.conflicts.filter(c=>!c.locked).map(c=>[c.date,'backup']));
     await accounts.restoreBackup(backup,state.snapshot,{choices,restoreProfile:true});
-    await vault.write({key:'probe:'+mode,value:JSON.stringify({passed:true,fixtureStored:true,at:new Date().toISOString()})});return;
+    await vault.write({key:'probe:'+mode,value:JSON.stringify({passed:true,fixtureStored:true,at:new Date().toISOString()})});document.getElementById('file-restore-title').textContent='Synthetic report fixture ready';return;
   }
   showExport();setReportFilter('30');const pdfs=[];
   for(const type of REPORT_TYPES){
@@ -17,5 +17,6 @@ export async function runReportsProbe({accounts,vault,mode}){
   const csv=allDataCsv();if(!csv.text.includes('END-LONG-NOTE')||!csv.text.includes('data:image/png;base64,'))throw Error('CSV did not include full notes and images.');
   const file=await vault.makeTextFile({text:csv.text,name:'whose-day-records-'+todayStr()+'.csv',scope:accounts.state.account.scope});
   await vault.write({key:'probe:'+mode,value:JSON.stringify({passed:true,pdfs,csv:{uri:file.uri,text:csv.text},at:new Date().toISOString()})});
+  document.getElementById('mobile-report-status').textContent='Synthetic reports ready for QA.';
  }catch(error){await vault.write({key:'probe:'+mode,value:JSON.stringify({passed:false,error:error.message||'Reports probe failed.'})})}
 }

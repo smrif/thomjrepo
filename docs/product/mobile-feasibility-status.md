@@ -75,6 +75,14 @@ app has not been released. Production provider settings are unchanged.
 
 ## Evidence so far
 
+- October 23 native Files/share UI round: both simulator-only XCTest cases pass
+  together (zero failures, 151 seconds). Real PDF/CSV/JSON cancellation, CSV swipe
+  dismissal and a simulator-local JSON save/re-selection/checksum preview preserve
+  the complete diary report. Ten screenshots were visually checked. All 73 mobile
+  unit checks and application-only release inventory pass. See
+  [native file QA](mobile-native-file-qa.md). The owner requested a review after
+  this round; automatic continuation is paused before photo-picker QA.
+
 - October 23 reports/release increment: 73 mobile unit checks, all mobile UI
   suites and 49 repository release checks passed. Signed iOS and Android each
   generated five complete PDFs (29 pages) and full CSV; final render/content
