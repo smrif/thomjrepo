@@ -8,6 +8,13 @@ app has not been released. Production provider settings are unchanged.
 
 ## Implemented
 
+- October 23 offline policy access: account and Settings buttons open the exact
+  currently approved versioned Terms/Privacy documents without leaving the app.
+  Source focus/drafts return, full text, offline reopen and no acceptance/data
+  mutation pass in browser; signed iOS write/read policy markers pass. Native
+  build commands now refresh assets before compilation. See
+  [policy reader](mobile-policies.md). Native release acceptance remains separate.
+
 - October 23 account reports: five shared report types and period filters, guarded
   PDF/CSV/clipboard actions, Files save and native sharing. Long Unicode reports
   and all-data CSV are exercised with synthetic native probes. See

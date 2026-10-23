@@ -14,6 +14,7 @@ import {mountBackup} from './backup-runtime.js';
 import {runBackupProbe} from './backup-probe.js';
 import {mountReports} from './reports-runtime.js';
 import {runReportsProbe} from './reports-probe.js';
+import {mountPolicies} from './policies-runtime.js';
 import {accountDeletion} from './delete-account.js';
 import {mountProduct} from './product-runtime.js';
 import {PROBE_PROJECT,probeProfile,createProbeAuth,runAccountProductProbe} from './account-probe.js';
@@ -36,7 +37,7 @@ function refreshProduct(){
 }
 function view(name){
   document.body.dataset.accountView=name;
-  for(const id of ['welcome','profile','panel','restore','deletion','file-restore'])$('account-'+id).hidden=id!==name;
+  for(const id of ['welcome','profile','panel','restore','deletion','file-restore','policies'])$('account-'+id).hidden=id!==name;
   if(name!=='product')document.body.dataset.checkinState=name==='loading'?'loading':'locked';
   $('checkin-loading').hidden=name!=='loading';
 }
@@ -83,6 +84,7 @@ async function stateChanged(state){
     $('account-identity').textContent=state.account.email;
     const openAccount=()=>{view('panel');$('account-back').focus()};
     settings=mountSettings({accounts,openAccount,signOut,deletion,syncEnabled:!!syncView});
+    policies.addSettings();
     mountBackup({accounts,vault,native});
     mountReports({accounts,vault,native,applyProfile:settings.apply});
     if(syncView){
@@ -193,4 +195,5 @@ async function start(){
     }
   }catch{fail();}
 }
+const policies=mountPolicies({setView:view,owner:()=>accounts?.state.account?.scope||'',status:()=>accounts?.state.status||''});
 start();

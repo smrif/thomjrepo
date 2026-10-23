@@ -12,11 +12,11 @@
     "test:accounts": "node test/account-ui.mjs",
     "ios": "cap open ios",
     "android": "cap open android",
-    "build:ios": "node scripts/build-ios.mjs",
+    "build:ios": "node scripts/build.mjs && cap sync ios && node scripts/build-ios.mjs",
     "probe:ios": "node scripts/probe-ios.mjs",
     "probe:checkin:ios": "node scripts/probe-checkin-ios.mjs",
     "probe:account:ios": "node scripts/probe-account-ios.mjs",
-    "build:android": "node scripts/build-android.mjs",
+    "build:android": "node scripts/build.mjs && cap sync android && node scripts/build-android.mjs",
     "probe:android": "node scripts/probe-android.mjs",
     "test:sync": "node test/sync-ui.mjs",
     "test:settings": "node test/settings-ui.mjs",
@@ -27,7 +27,8 @@
     "probe:reports:ios": "node scripts/probe-reports-ios.mjs",
     "probe:reports:android": "node scripts/probe-reports-android.mjs",
     "release:inventory": "node scripts/release-inventory.mjs",
-    "test:accessibility": "node test/accessibility-ui.mjs"
+    "test:accessibility": "node test/accessibility-ui.mjs",
+    "test:policies": "node test/policies-ui.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",

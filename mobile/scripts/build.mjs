@@ -5,6 +5,17 @@ import {build} from 'esbuild';
 import {testProject} from '../src/auth.js';
 import {deletionEndpoint} from '../src/delete-account.js';
 const root=fileURLToPath(new URL('..',import.meta.url)),repo=resolve(root,'..'),out=join(root,'www');
+const sharedSource=await readFile(join(repo,'app.js'),'utf8'),policies={};
+for(const [kind,constant] of [['terms','CURRENT_TERMS_VERSION'],['privacy','CURRENT_PRIVACY_VERSION']]){
+  const version=sharedSource.match(new RegExp("const "+constant+"='([0-9]{4}-[0-9]{2}-[0-9]{2}-v[0-9]+)'"))?.[1];
+  if(!version)throw new Error('Missing current policy version.');
+  const html=await readFile(join(repo,'assets/legal',version,kind+'.html'),'utf8');
+  if(!html.includes('name="policy-version" content="'+version+'"'))throw new Error('Policy version metadata differs.');
+  const main=html.match(/<main>([\s\S]*?)<\/main>/)?.[1];
+  if(!main||/<(?:script|iframe|img|svg)\b|\son\w+\s*=/i.test(main))throw new Error('Unsupported policy document content.');
+  for(const link of main.matchAll(/href="([^"]+)"/g))if(!['privacy.html','terms.html','../../../index.html'].includes(link[1]))throw new Error('Review the new policy link before bundling it.');
+  policies[kind]={version,html:main,title:kind==='terms'?'Terms of Use':'Privacy Policy'};
+}
 await rm(out,{recursive:true,force:true});await mkdir(out,{recursive:true});
 let config={auth:{enabled:false}};
 try{config=JSON.parse(await readFile(join(root,'config.local.json'),'utf8'))}catch(e){if(e.code!=='ENOENT')throw e}
@@ -52,5 +63,5 @@ await writeFile(join(account,'index.html'),accountHtml);
 await cp(join(root,'src/account.css'),join(account,'account.css'));
 await rm(join(account,'checkin-runtime.js'));
 await writeFile(join(root,'config.generated.json'),JSON.stringify(config));
-try{await build({entryPoints:[join(root,'src/account-runtime.js')],bundle:true,outfile:join(account,'account-runtime.js'),format:'iife',target:'es2022',minify:false})}finally{await rm(join(root,'config.generated.json'))}
+try{await build({entryPoints:[join(root,'src/account-runtime.js')],bundle:true,outfile:join(account,'account-runtime.js'),format:'iife',target:'es2022',minify:false,define:{__WHOSE_DAY_POLICIES__:JSON.stringify(policies)}})}finally{await rm(join(root,'config.generated.json'))}
 console.log('Bundled lab, shell, sample check-in and account flow (test auth only; no production backend or telemetry).');

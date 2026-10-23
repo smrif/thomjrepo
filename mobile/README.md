@@ -80,6 +80,7 @@ pnpm test:settings
 pnpm test:backup
 pnpm test:reports
 pnpm test:accessibility
+pnpm test:policies
 pnpm ios
 ```
 
@@ -297,3 +298,14 @@ Physical/provider/release checks remain in the
 targets, keyboard report selection and an enlarged-text layout. It is a focused
 browser first pass; physical VoiceOver, native keyboard and actual Dynamic Type
 remain in owner QA. Screenshots/checkpoint results are in `.build/accessibility/`.
+
+Account and Settings screens also provide an offline
+[policy reader](../docs/product/mobile-policies.md), using the exact current
+versioned repository documents. `test:policies` checks full-text parity, internal
+navigation and unchanged drafts/data/acceptance. Reading is separate from the
+release registration/consent work; native test profiles still force acceptance false.
+
+`build:ios` and `build:android` now bundle the current shared/mobile source and
+run platform sync before compilation, so the native app cannot accidentally use
+the previous copied UI. The account iOS probe requires the current policy-reader
+markers and rejects an older installed/built app.

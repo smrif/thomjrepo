@@ -64,7 +64,12 @@ export async function runAccountProductProbe({vault,accounts,mode}){
   const checkpoint=accounts.state.records.syncItems()[todayStr()],{value:fixturePrefix}=await vault.read({key:'probe:account-sync-fixture'});
   const base=await probeCloud(vault,fixturePrefix).get(todayStr());
   if(checkpoint.value.diary!==note||base?.value.diary!==baseNote||base.value.attachment?.dataUrl!==image||checkpoint.sync.baseHash!==await fingerprint(base.value)||!checkpoint.sync.version)throw new Error('Pending sync checkpoint or attachment did not recover.');
-  const result={passed:true,settingsRecovered:true,appearanceRecovered:true,syncPendingRecovered:true,attachmentCheckpointRecovered:true,mode,profileRecovered:true,secureIdentityRecovered:true,noteRecovered:true,attachmentRecovered:true,at:new Date().toISOString()};
+  showSetup();const beforePolicy=JSON.stringify({config:APP_CONFIG,records:getEntries()});
+  document.querySelector('#s-setup [data-mobile-policy="privacy"]').click();
+  if(document.body.dataset.accountView!=='policies'||document.getElementById('mobile-policy-heading').textContent!=='Privacy Policy'||document.getElementById('mobile-policy-content').textContent.length<3000)throw new Error('Bundled policy did not open.');
+  document.getElementById('mobile-policy-back').click();
+  if(document.body.dataset.accountView!=='product'||document.body.dataset.checkinState!=='ready'||JSON.stringify({config:APP_CONFIG,records:getEntries()})!==beforePolicy)throw new Error('Policy reader did not preserve the account.');
+  const result={passed:true,policyReadable:true,policyReadPreservesData:true,settingsRecovered:true,appearanceRecovered:true,syncPendingRecovered:true,attachmentCheckpointRecovered:true,mode,profileRecovered:true,secureIdentityRecovered:true,noteRecovered:true,attachmentRecovered:true,at:new Date().toISOString()};
   if(mode==='account-read'){
     const {value:prefix}=await vault.read({key:'probe:account-sync-fixture'});if(!prefix?.startsWith('probe-sync:'))throw new Error('Missing probe sync fixture.');
     const sync=createSync({store:accounts.state.records,transport:probeCloud(vault,prefix)});await sync.run();

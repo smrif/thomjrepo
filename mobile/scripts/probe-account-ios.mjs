@@ -20,6 +20,7 @@ for(const mode of ['account-write','account-read']){
     await new Promise(resolve=>setTimeout(resolve,500));
   }
   if(!result?.passed)throw new Error('Product '+mode+' failed: '+JSON.stringify(result||'No fresh evidence.'));
+  if(result.policyReadable!==true||result.policyReadPreservesData!==true)throw new Error('Native policy checks are missing. Rebuild the current web/native app before running this probe.');
   results.push({mode,...result});
 }
 await mkdir(join(root,'.build'),{recursive:true});await writeFile(join(root,'.build/ios-account-probe.json'),JSON.stringify({device,results},null,2));

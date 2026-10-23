@@ -107,6 +107,10 @@
   iOS simulator process termination; browser failure/retry and reopen tests also
   passed. Synthetic scopes only; real authenticated sync QA,
   report sharing and physical-device QA remain in the full iOS app task.
+- [x] Add offline access to the approved Terms and Privacy Policy from account
+  and Settings screens, with source-screen/draft return. See
+  [native policy reader](docs/product/mobile-policies.md). Reading does not record
+  acceptance; release policy/registration wiring remains part of the final gate.
 - [x] Run a first local accessibility/layout pass for account/Settings/Reports.
   October 23: 87 checkpoints at small-phone, standard-phone and landscape widths;
   fixed field labeling, enlarged-text clipping and tab overlap. See

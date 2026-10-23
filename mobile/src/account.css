@@ -35,3 +35,16 @@ body[data-account-view="product"] #checkin-loading { display:none!important; }
 #s-setup .settings-link>span:first-child { min-width:0; flex-shrink:1; overflow-wrap:anywhere; }
 #s-setup .appearance-card { display:flex; flex-wrap:wrap; }
 #s-setup .theme-mode-btn { flex:1 1 auto; max-width:100%; padding:8px 12px; overflow-wrap:anywhere; }
+.mobile-policy-actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; }
+.mobile-policy-actions button { flex:1 1 140px; min-height:44px; padding:12px; overflow-wrap:anywhere; }
+.mobile-policy-page { max-width:760px; padding-top:env(safe-area-inset-top,0px); }
+.mobile-policy-toolbar { position:sticky; top:env(safe-area-inset-top,0px); display:flex; align-items:center; gap:16px; padding:12px 0; background:var(--daily-bg); border-bottom:1px solid var(--daily-border); }
+.mobile-policy-toolbar #mobile-policy-back { width:auto; flex-shrink:0; margin:0; padding:8px 16px; }
+.mobile-policy-toolbar p { margin:0; overflow-wrap:anywhere; }
+.mobile-policy-content { overflow-wrap:anywhere; }
+.mobile-policy-content section { margin:20px 0; padding:16px; border:1px solid var(--daily-border); border-radius:14px; background:var(--daily-card); }
+.mobile-policy-content h2 { margin-top:0; }
+.mobile-policy-content .updated { color:var(--daily-ink-soft); }
+.mobile-policy-link { display:inline-flex; align-items:center; min-height:44px; border:0; padding:4px 0; background:none; color:var(--daily-primary-strong); font:inherit; font-weight:700; text-decoration:underline; cursor:pointer; }
+.mobile-policy-link:focus-visible { outline:2px solid var(--daily-primary-strong); outline-offset:3px; }
+.mobile-policy-content> .mobile-policy-link { display:block; min-height:44px; margin:24px 0; }

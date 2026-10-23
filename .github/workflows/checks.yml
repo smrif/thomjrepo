@@ -75,3 +75,4 @@ jobs:
           pnpm --dir mobile test:backup
           pnpm --dir mobile test:reports
           pnpm --dir mobile test:accessibility
+          pnpm --dir mobile test:policies
