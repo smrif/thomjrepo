@@ -5,6 +5,12 @@ Files pickers and share sheets through the debug app's synthetic account scope.
 It does not require desktop Simulator UI automation or a signed-in Apple account.
 The test source is not compiled into the App application target.
 
+Follow-up: the final suite including the photo case passed all three cases with
+zero failures in 237 seconds at 13:50 PDT. All 16 screenshots were visually
+checked. Current combined evidence is in ignored `mobile/.build/ios-files-ui-probe.json`;
+the earlier two-case Files checkpoint below remains historical evidence. See
+[photo implementation and QA](mobile-photo-qa.md).
+
 ## Current first-pass results
 
 | Path | Observed result |
@@ -18,7 +24,7 @@ The test source is not compiled into the App application target.
 | Records after the cancellation sequence | Pass: the complete selected diary report matches its pre-test text. |
 | Local JSON save and re-selection | Pass: a uniquely named JSON backup is saved to On My iPhone, selected back through Files, and accepted by checksum/account validation. Preview shows eight records and one screenshot; cancelling preview preserves the original complete diary report. |
 
-The final combined run passed both cases with zero failures in 151 seconds on
+The Files-only checkpoint passed both cases with zero failures in 151 seconds on
 the iPhone 15 Pro / iOS 17.5 simulator, October 23 at 12:27 PDT. All ten screenshots
 were exported and visually reviewed. The local backup case took 72 seconds and
 the cancellation case 79 seconds. The system picker exposes Cancel at the Browse
@@ -47,8 +53,9 @@ dependencies and Xcode installed:
 pnpm --dir mobile probe:files:ios SIMULATOR_UUID
 ```
 
-Optional final arguments `cancellation` and `local-backup` select one case. The
-default runs both. The runner rejects physical devices, bundles/syncs current
+Optional final arguments `cancellation` and `local-backup` select one Files case.
+The later `photo` case and its permission changes are described in
+[photo QA](mobile-photo-qa.md); the default now runs all three. The runner rejects physical devices, bundles/syncs current
 assets, builds the separate test scheme, and seeds only synthetic report records.
 It uses bounded process timeouts and never counts an observed failed XCTest as
 a successful run. A failed run is marked failed even if Xcode stalls during

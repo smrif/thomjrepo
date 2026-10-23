@@ -1,4 +1,4 @@
-import {Capacitor} from '@capacitor/core';
+import {Capacitor,registerPlugin} from '@capacitor/core';
 import {Camera,CameraResultType,CameraSource} from '@capacitor/camera';
 import {validateEntry} from './record-store.js';
 const native=Capacitor.isNativePlatform(),$=id=>document.getElementById(id);
@@ -51,12 +51,20 @@ function accessibleChoices(){
 async function pickAttachment(_input,origin){
   saving(true,'Opening your photos…');
   try{
-    const photo=await Camera.getPhoto({source:CameraSource.Photos,resultType:CameraResultType.DataUrl,quality:75,width:1600,height:1600,correctOrientation:true});
-    const attachment={name:'check-in-image.'+(photo.format==='png'?'png':'jpg'),type:'image/'+photo.format,dataUrl:photo.dataUrl};
+    let attachment;
+    if(Capacitor.getPlatform()==='ios'){
+      const result=await registerPlugin('WhoseDayVault').pickImage();
+      if(result.cancelled)return;
+      attachment={name:result.name,type:result.type,dataUrl:result.dataUrl};
+    }else{
+      const photo=await Camera.getPhoto({source:CameraSource.Photos,resultType:CameraResultType.DataUrl,quality:75,width:1600,height:1600,correctOrientation:true});
+      attachment={name:'check-in-image.'+(photo.format==='png'?'png':'jpg'),type:'image/'+photo.format,dataUrl:photo.dataUrl};
+    }
     // Reuse the record validator before assigning any untrusted image payload.
     const entry={week:'dad',dadMode:'normal',momMode:null,kidsWithDad:[],absentData:{},momOpts:[],helpedKids:[],helpedData:{},dadHadKids:[],momHadKidsOnDadWeek:[],momHelpedOnDadWeek:{},diary:'',attachment,changeAgreed:null,changePressured:null,loggedAt:new Date().toISOString()};
     validateEntry('2000-01-01',entry);S.attachment=attachment;renderAttachment(origin);
   }catch(error){
+    window.WhoseDayPlatform?.attachmentError?.(error);
     if(!/cancel/i.test(error?.message||'')){
       const message=$('checkin-attachment-error');message.textContent='Could not add that image. Choose a JPEG or PNG under 3 MB.';message.hidden=false;
     }
@@ -74,8 +82,12 @@ export async function mountProduct({config,store,accountMode=false}){
   }
   new MutationObserver(accessibleChoices).observe($('app'),{subtree:true,childList:true});
   initHome();
+  const remove=$('diary-attach-preview').querySelector('.attach-remove-btn');
+  remove.setAttribute('aria-label','Remove screenshot');
   if(native){
-    $('diary-attach-btn').addEventListener('click',event=>{event.preventDefault();$('checkin-attachment-error').hidden=true;pickAttachment(null,'diary')});
+    const button=document.createElement('button');button.type='button';button.id='diary-attach-btn';button.className='attach-btn';button.textContent='Add screenshot';
+    $('diary-attach-btn').replaceWith(button);
+    button.addEventListener('click',()=>{$('checkin-attachment-error').hidden=true;pickAttachment(null,'diary')});
   }
   document.body.dataset.checkinState='ready';$('checkin-loading').hidden=true;
 }

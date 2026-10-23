@@ -80,8 +80,20 @@ app has not been released. Production provider settings are unchanged.
   dismissal and a simulator-local JSON save/re-selection/checksum preview preserve
   the complete diary report. Ten screenshots were visually checked. All 73 mobile
   unit checks and application-only release inventory pass. See
-  [native file QA](mobile-native-file-qa.md). The owner requested a review after
-  this round; automatic continuation is paused before photo-picker QA.
+  [native file QA](mobile-native-file-qa.md). The owner reviewed this checkpoint
+  and asked to continue; the photo follow-up is recorded below.
+
+- October 23 photo follow-up: the account entry uses the iOS system picker and
+  works with photo-library access denied. The synthetic photo case passes
+  cancellation/swipe, actual selection, device save/cold reopen, complete record/
+  image hash and checkpoint recovery, JSON/CSV retention, and abandoning an
+  unsaved image-removal draft. Accessible add/remove controls have 44px targets.
+  The final three-case native suite passes in 237 seconds, with 16 screenshots
+  visually checked; 73 unit checks, phone check-in/account regressions and the
+  87-check accessibility pass also pass. QA found/fixed late cancellation callbacks
+  clearing a reopened picker. The owner reconfirmed they are still waiting on
+  Apple, and read-only discovery found no connected physical iPhone.
+  See [photo QA](mobile-photo-qa.md); physical/provider/accessibility gates remain.
 
 - October 23 reports/release increment: 73 mobile unit checks, all mobile UI
   suites and 49 repository release checks passed. Signed iOS and Android each

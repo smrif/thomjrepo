@@ -34,6 +34,11 @@ try{for(const viewport of [{width:390,height:844},{width:320,height:568}]){
   await normal();await page.locator('#diary-input').fill('Synthetic evening: dinner and reading.');
   await page.locator('#diary-attach-input').setInputFiles({name:'sample.png',mimeType:'image/png',buffer:Buffer.from(image,'base64')});
   await page.locator('#diary-attach-preview').waitFor({state:'visible'});
+  const remove=page.getByRole('button',{name:'Remove screenshot',exact:true}),removeBounds=await remove.boundingBox();
+  assert(removeBounds.width>=44&&removeBounds.height>=44,'Attachment removal has a named 44px target');
+  await remove.click();assert(!(await page.locator('#diary-attach-preview').isVisible()));assert.equal(await page.evaluate(()=>S.attachment),null);
+  await page.locator('#diary-attach-input').setInputFiles({name:'sample.png',mimeType:'image/png',buffer:Buffer.from(image,'base64')});
+  await page.locator('#diary-attach-preview').waitFor({state:'visible'});
   await page.evaluate(()=>{
     const original=WhoseDayPlatform.records.commit.bind(WhoseDayPlatform.records);window.commitCount=0;
     WhoseDayPlatform.records.commit=async value=>{commitCount++;await new Promise(r=>setTimeout(r,600));return original(value)};

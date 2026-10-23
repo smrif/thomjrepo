@@ -10,7 +10,9 @@ final class NativeExportQATests: XCTestCase {
     }
     private func tap(_ app: XCUIApplication, _ name: String) {
         let button = app.buttons[name].firstMatch
-        XCTAssertTrue(button.waitForExistence(timeout: 20), name)
+        let found = button.waitForExistence(timeout: 20)
+        if !found { picture(app, "Missing control: " + name); print(String(app.debugDescription.prefix(24000))) }
+        XCTAssertTrue(found, name)
         for _ in 0..<5 { if button.isHittable { break }; app.webViews.firstMatch.swipeUp() }
         XCTAssertTrue(button.isHittable, "Unreachable control: " + name)
         button.tap()
@@ -69,6 +71,70 @@ final class NativeExportQATests: XCTestCase {
         app.launch()
         text(app, "Synthetic reports ready for QA.")
         return app
+    }
+    private func tapPrefix(_ app: XCUIApplication, _ prefix: String) {
+        let button = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", prefix)).firstMatch
+        let found = button.waitForExistence(timeout: 20)
+        if !found { picture(app, "Missing choice: " + prefix); print(String(app.debugDescription.prefix(24000))) }
+        XCTAssertTrue(found, prefix)
+        button.tap()
+    }
+    func testPhotoAttachmentColdReopen() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.whoseday.feasibility")
+        app.launchArguments = ["--lab-photo-write"]; app.launch()
+        text(app, "Synthetic photo fixture ready.")
+        let edit = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Edit today")).firstMatch
+        XCTAssertTrue(edit.waitForExistence(timeout: 20)); edit.tap()
+        tapPrefix(app, "My day"); tapPrefix(app, "With me")
+        tapPrefix(app, "Yes,"); tap(app, "No")
+        tap(app, "Add screenshot")
+        let cancel = app.buttons["Cancel"].firstMatch
+        XCTAssertTrue(cancel.waitForExistence(timeout: 20))
+        picture(app, "Native Photos picker before cancellation")
+        cancel.tap()
+        XCTAssertTrue(app.buttons["Add screenshot"].firstMatch.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["Add screenshot"].firstMatch.isHittable, "Cancelling photos must unlock the draft")
+        tap(app, "Add screenshot")
+        XCTAssertTrue(cancel.waitForExistence(timeout: 20))
+        picture(app, "Photos picker swipe dismissal")
+        let bar = app.navigationBars.firstMatch
+        XCTAssertTrue(bar.exists)
+        let grabber = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: bar.frame.midX, dy: bar.frame.minY - 6))
+        grabber.press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95)))
+        let unlocked = app.buttons["Add screenshot"].firstMatch.waitForExistence(timeout: 15)
+        if !unlocked { picture(app, "Photos swipe result"); print("PHOTO_SWIPE_RESULT\n" + String(app.debugDescription.prefix(24000))) }
+        XCTAssertTrue(unlocked, "Swiping photos closed must unlock the draft")
+        tap(app, "Add screenshot")
+        XCTAssertTrue(cancel.waitForExistence(timeout: 20))
+        print("PHOTO_PICKER_UI_BEGIN\n" + String(app.debugDescription.prefix(24000)) + "\nPHOTO_PICKER_UI_END")
+        picture(app, "Native Photos picker with seeded image")
+        let photo = app.images.matching(NSPredicate(format: "label BEGINSWITH %@", "Photo")).firstMatch
+        XCTAssertTrue(photo.waitForExistence(timeout: 15), "Seeded photo must be available")
+        photo.tap()
+        let preview = app.images["Attached screenshot"].firstMatch
+        let selected = preview.waitForExistence(timeout: 20)
+        if !selected { picture(app, "Photo selection result"); print("PHOTO_SELECTION_RESULT\n" + String(app.debugDescription.prefix(24000))) }
+        XCTAssertTrue(selected)
+        picture(app, "Selected image in diary draft")
+        tap(app, "Log it →"); text(app, "Synthetic photo save checkpoint ready.")
+        app.terminate(); app.launchArguments = ["--lab-photo-read"]; app.launch()
+        text(app, "Synthetic photo cold-reopen verified.")
+        XCTAssertTrue(preview.waitForExistence(timeout: 15))
+        picture(app, "Selected image after cold reopen")
+        let remove = app.buttons["Remove screenshot"].firstMatch
+        XCTAssertTrue(remove.waitForExistence(timeout: 15)); XCTAssertTrue(remove.isHittable)
+        // The WebKit button is already visible. Tap its center without asking
+        // XCTest to rediscover nested WebView interruptions a second time.
+        let frame = remove.frame
+        app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: frame.midY)).tap()
+        XCTAssertTrue(app.buttons["Add screenshot"].firstMatch.waitForExistence(timeout: 15))
+        XCTAssertFalse(preview.exists, "Remove must clear the draft preview")
+        // Abandon the removal draft: it must not erase the already saved image.
+        app.terminate(); app.launch()
+        text(app, "Synthetic photo cold-reopen verified.")
+        XCTAssertTrue(preview.waitForExistence(timeout: 15))
+        picture(app, "Saved image survives abandoned removal draft")
     }
     func testLocalBackupRoundTrip() throws {
         let app = preparedApp()

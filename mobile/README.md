@@ -314,7 +314,16 @@ For actual native system-sheet QA, boot a dedicated iOS 17.5+ simulator and run
 `pnpm probe:files:ios SIMULATOR_UUID`. The separate simulator-only `NativeExportQA`
 bundle seeds its own synthetic records and checks real PDF/CSV/JSON picker and
 share cancellation, swipe dismissal, and a local JSON save/read-back preview.
-Optional final arguments `cancellation` or `local-backup` run one case. The runner
-refreshes assets, records source hashes and exports XCTest screenshots under
+Optional final arguments `cancellation`, `local-backup` or `photo` run one case.
+The default includes all three. Photo QA seeds the non-sensitive app icon into
+the dedicated simulator and revokes this prototype's photo-library permission;
+the system picker must still save/reopen the explicitly selected image. The runner
+refreshes assets, records web/native/test source hashes and exports XCTest screenshots under
 `.build/ios-files-ui/`. It never chooses a share recipient or a cloud destination.
 See [native file QA](../docs/product/mobile-native-file-qa.md).
+
+The iOS account attachment control uses the app-owned system photo-picker bridge,
+with decode-time downsampling, a 1600px boundary and a 3 MiB processed JPEG limit.
+The saved processed image is retained in complete JSON/CSV exports. See
+[photo implementation and QA](../docs/product/mobile-photo-qa.md) for the source
+file limit, permission boundary and remaining device/provider checks.

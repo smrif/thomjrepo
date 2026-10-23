@@ -36,9 +36,13 @@
   a first QA pass. Keep owner/device/provider checks in
   [iOS owner QA](docs/product/mobile-owner-qa.md); record evidence without
   replacing the existing live-account or release approvals.
-- Review checkpoint October 23: finish the native Files/share QA round, then
-  review progress and next steps with the owner before starting another item.
-  Automatic continuation is paused for that review; photo-picker QA is next.
+- Review checkpoint October 23: Files/share QA finished and the owner asked to
+  continue with next steps. Photo-picker implementation/QA is the current round;
+  scheduled continuation stays paused while this foreground run owns the work.
+- Next milestone after photo QA: physical iPhone/signing and real account/provider
+  checks. The owner reconfirmed October 23 that they are still waiting on Apple;
+  no physical iPhone is currently connected. Keep the scheduled continuation
+  paused while these owner/device gates remain.
 
 - Owner clarification October 20, 2026: iOS support means a downloadable App
   Store app, beyond Safari/Home Screen support. A separate feasibility app is
@@ -122,9 +126,11 @@
   cancellation, swipe dismissal and unchanged records pass; simulator-local JSON
   save/re-selection and validated preview also pass. See
   [native file QA](docs/product/mobile-native-file-qa.md).
-- [ ] Run a first simulator photo-picker → save → cold-reopen walkthrough using
-  a seeded non-sensitive image, then retain physical photo/keyboard/VoiceOver
-  checks in owner QA. Use the new native UI-test runner and synthetic scopes.
+- [x] Run a first simulator photo-picker → save → cold-reopen walkthrough using
+  a seeded non-sensitive image. The iOS system picker works with library access
+  denied; cancel/swipe, persisted image/hash, exports and abandoned removal draft
+  pass. See [photo QA](docs/product/mobile-photo-qa.md). Physical photo/keyboard/
+  VoiceOver and cloud-provider checks remain in owner QA.
 - [ ] Verify layout, keyboard behavior, accessibility, attachments, and sharing
   on physical iPhones, alongside the existing account/offline/conflict QA.
 - [ ] Set up app identity, signing, and a TestFlight build. Confirm Apple

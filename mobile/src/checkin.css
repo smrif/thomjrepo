@@ -12,6 +12,8 @@ body[data-checkin-state] :is(#activity-prompt,#sunday-prompt,#weekly-report-row)
 .checkin-save-error .btn { margin-top:14px; width:100%; }
 body[data-checkin-state] button:disabled { opacity:.4; cursor:default; }
 body[data-checkin-state] :is(.scene-card,.kid-btn,.btn,.opt,.cal-nav-btn) { min-height:44px; }
+body[data-checkin-state] .attach-btn { min-height:44px; }
+body[data-checkin-state] .attach-remove-btn { width:44px; height:44px; }
 body[data-checkin-state] :is(.cal-cell,.scene-card,.opt):focus-visible { outline:2px solid var(--daily-primary-strong); outline-offset:2px; }
 body[data-checkin-state] :is(.checkin-loading,.checkin-save-status,.checkin-attachment-error)[hidden] { display:none!important; }
 @media(prefers-reduced-motion:reduce) { body[data-checkin-state] .success-pop { animation:none!important; } }

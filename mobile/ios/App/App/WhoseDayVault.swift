@@ -4,12 +4,14 @@ import Security
 import UIKit
 import CoreText
 import UniformTypeIdentifiers
+import PhotosUI
+import ImageIO
 
 @objc(WhoseDayVaultPlugin)
-public class WhoseDayVaultPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDelegate, UIAdaptivePresentationControllerDelegate {
+public class WhoseDayVaultPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDelegate, UIAdaptivePresentationControllerDelegate, PHPickerViewControllerDelegate {
     public let identifier = "WhoseDayVaultPlugin"
     public let jsName = "WhoseDayVault"
-    public let pluginMethods: [CAPPluginMethod] = ["testMode", "write", "read", "keys", "writeSecret", "readSecret", "removeSecret", "makeReport", "compareBatch", "exportBackup", "importBackup", "probeBackupFile", "makeTextFile", "saveExport", "copyText"].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
+    public let pluginMethods: [CAPPluginMethod] = ["testMode", "write", "read", "keys", "writeSecret", "readSecret", "removeSecret", "makeReport", "compareBatch", "exportBackup", "importBackup", "probeBackupFile", "makeTextFile", "saveExport", "copyText", "pickImage"].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
     private let queue = DispatchQueue(label: "com.whoseday.feasibility.vault")
     private let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
     private enum VaultError: Error { case invalid, storage }
@@ -18,11 +20,59 @@ public class WhoseDayVaultPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerD
     private var readingDocument = false
     private var exporting = false
     private var backupURL: URL?
+    private var photoCall: CAPPluginCall?
+    private weak var activePhotoPicker: PHPickerViewController?
+    private var loadingPhoto = false
+    private var photoRequestID = UUID()
+
+    @objc func pickImage(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            guard self.photoCall == nil, self.documentCall == nil, let host = self.bridge?.viewController, host.presentedViewController == nil else { call.reject("Close the current picker first."); return }
+            // No PHPhotoLibrary instance or authorization request: the system
+            // returns only the item the person explicitly chooses.
+            var configuration = PHPickerConfiguration()
+            configuration.filter = .images; configuration.selectionLimit = 1
+            let picker = PHPickerViewController(configuration: configuration)
+            picker.delegate = self; picker.modalPresentationStyle = .pageSheet
+            self.photoRequestID = UUID(); self.photoCall = call; self.activePhotoPicker = picker
+            picker.presentationController?.delegate = self
+            host.present(picker, animated: true) { picker.presentationController?.delegate = self }
+        }
+    }
+    private func finishPhoto(_ result: JSObject? = nil, error: String? = nil, requestID: UUID) {
+        // Interactive dismissal and PHPicker completion can both arrive. A late
+        // completion must never settle a newly opened picker request.
+        guard requestID == photoRequestID, photoCall != nil else { return }
+        photoRequestID = UUID()
+        let call = photoCall; photoCall = nil; activePhotoPicker = nil; loadingPhoto = false
+        if let error { call?.reject(error) } else { call?.resolve(result ?? ["cancelled": true]) }
+    }
+    public func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        guard picker === activePhotoPicker, photoCall != nil else { return }
+        let requestID = photoRequestID
+        guard results.count == 1, let provider = results.first?.itemProvider else {
+            picker.dismiss(animated: true) { self.finishPhoto(requestID: requestID) }; return
+        }
+        loadingPhoto = true; picker.dismiss(animated: true)
+        provider.loadFileRepresentation(forTypeIdentifier: UTType.image.identifier) { url, _ in
+            // The provider's temporary URL is valid only inside this callback.
+            // Downsample during decode so a full camera image is not expanded
+            // into a large bitmap before the app applies its 1600px boundary.
+            guard let url, let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize, size <= 30 * 1024 * 1024,
+                  let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+                  let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceThumbnailMaxPixelSize: 1600, kCGImageSourceCreateThumbnailWithTransform: true, kCGImageSourceShouldCacheImmediately: true] as CFDictionary),
+                  let data = UIImage(cgImage: image).jpegData(compressionQuality: 0.75), !data.isEmpty, data.count <= 3 * 1024 * 1024 else {
+                DispatchQueue.main.async { self.finishPhoto(error: "Could not read this image within the attachment limits.", requestID: requestID) }; return
+            }
+            let result: JSObject = ["cancelled": false, "name": "check-in-image.jpg", "type": "image/jpeg", "dataUrl": "data:image/jpeg;base64," + data.base64EncodedString()]
+            DispatchQueue.main.async { self.finishPhoto(result, requestID: requestID) }
+        }
+    }
 
     @objc func testMode(_ call: CAPPluginCall) {
         #if DEBUG && targetEnvironment(simulator)
         let args = ProcessInfo.processInfo.arguments
-        let mode = args.contains("--lab-reports-write") ? "reports-write" : args.contains("--lab-reports-read") ? "reports-read" : args.contains("--lab-backup-write") ? "backup-write" : args.contains("--lab-backup-read") ? "backup-read" : args.contains("--lab-account-write") ? "account-write" : args.contains("--lab-account-read") ? "account-read" : args.contains("--lab-checkin-write") ? "checkin-write" : args.contains("--lab-checkin-read") ? "checkin-read" : args.contains("--lab-probe-write") ? "write" : args.contains("--lab-probe-read") ? "read" : args.contains("--lab-auth") ? "auth" : ""
+        let mode = args.contains("--lab-photo-write") ? "photo-write" : args.contains("--lab-photo-read") ? "photo-read" : args.contains("--lab-reports-write") ? "reports-write" : args.contains("--lab-reports-read") ? "reports-read" : args.contains("--lab-backup-write") ? "backup-write" : args.contains("--lab-backup-read") ? "backup-read" : args.contains("--lab-account-write") ? "account-write" : args.contains("--lab-account-read") ? "account-read" : args.contains("--lab-checkin-write") ? "checkin-write" : args.contains("--lab-checkin-read") ? "checkin-read" : args.contains("--lab-probe-write") ? "write" : args.contains("--lab-probe-read") ? "read" : args.contains("--lab-auth") ? "auth" : ""
         call.resolve(["mode": mode])
         #else
         call.resolve(["mode": ""])
@@ -179,6 +229,7 @@ public class WhoseDayVaultPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerD
     }
     public func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) { if controller === activeDocumentPicker { finishDocument() } }
     public func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        if presentationController.presentedViewController === activePhotoPicker && !loadingPhoto { finishPhoto(requestID: photoRequestID) }
         if presentationController.presentedViewController === activeDocumentPicker && !readingDocument { finishDocument() }
     }
     public func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
