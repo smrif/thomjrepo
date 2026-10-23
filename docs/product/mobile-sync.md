@@ -126,5 +126,5 @@ Run `pnpm --dir mobile test`, `test:ui`, `test:checkin`, `test:accounts`, and
 `mobile/.build/sync/` and `mobile/.build/ios-account-probe.json`.
 
 Real authenticated sync, uninterrupted email handoff, physical-device QA and
-Apple provisioning remain separate gates. Native Settings/deletion, backup/import
-and report sharing are the following implementation work.
+Apple provisioning remain separate gates. The [Settings follow-up](mobile-settings.md) connects family/preferences and
+prepares deletion. Native backup/import and report sharing follow next.

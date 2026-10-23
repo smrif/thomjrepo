@@ -9,7 +9,7 @@ export function syncUI({accounts,previewDevice='',online,toggleOnline,canDownloa
     if(!online()||all.some(s=>s.status==='offline'))return `Offline. Device saves are kept${pending?' and waiting to sync':''}.`;
     if(pending)return `${pending} ${pending===1?'change saved':'changes saved'} on this device, waiting to sync.`;
     if(all.some(s=>s.status==='syncing'))return 'Syncing with the test account…';
-    if(all.some(s=>s.status==='waiting'))return 'Cloud changes will load after you finish this check-in and return to Today.';
+    if(all.some(s=>s.status==='waiting'))return 'Cloud changes will load when you return to Today.';
     return all.length?'Up to date with this test account.':'Waiting to sync.';
   }
   function copy(label,value){
@@ -37,6 +37,9 @@ export function syncUI({accounts,previewDevice='',online,toggleOnline,canDownloa
   }
   function render(){
     const label=text();$('account-sync-status').textContent=label;
+    if(previewDevice){const toggle=$('account-preview-network');toggle.textContent=online()?'Go offline on this device':'Reconnect this device';toggle.disabled=navigator.onLine===false;}
+    for(const el of document.querySelectorAll('[data-mobile-sync-status]'))el.textContent=label;
+    const summary=$('settings-sync-summary');if(summary)summary.textContent=label;
     const home=$('account-sync-home');if(home)home.textContent=label+' Open sync.';
     const current=accounts().state;
     $('account-profile-apply').disabled=!canDownload();

@@ -26,5 +26,5 @@ export function createProfileStore(vault,owner){
       await vault.write({key,value});if((await vault.read({key})).value!==value)throw new Error('The saved profile could not be verified.');
     }
   });
-  return {...store,config:()=>store.values().profile,save:input=>store.local('profile',validateProfile(input,owner.email),store.values().profile)};
+  return {...store,config:()=>store.values().profile,save:(input,expected=store.values().profile)=>store.local('profile',validateProfile(input,owner.email),expected)};
 }

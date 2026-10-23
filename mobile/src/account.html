@@ -51,7 +51,17 @@
     <div id="account-conflicts"></div>
   </div>
   <p id="account-no-sync">Cloud sync is not connected in this build.</p>
-  <p>Account deletion and backup/import are not connected. Use sample data only.</p>
+  <p>Use Settings to edit your family and appearance or review account deletion. Backup/import are not connected. Use sample data only.</p>
   <button class="btn primary" id="account-back">Back to check-ins</button>
   <button class="btn account-signout">Sign out</button>
+</section>
+<section id="account-deletion" class="account-page" hidden>
+  <p class="account-eyebrow">TEST ACCOUNT</p><h1 id="account-deletion-title">Check account deletion</h1>
+  <p id="account-deletion-message" role="status"></p>
+  <div id="mobile-delete-pending" hidden>
+    <label for="mobile-delete-retry-confirm">Type DELETE to retry</label><input id="mobile-delete-retry-confirm" autocomplete="off" maxlength="6">
+    <button class="btn mobile-delete-button" id="mobile-delete-retry" disabled>Retry test account deletion</button>
+  </div>
+  <button class="btn primary" id="mobile-delete-reopen" hidden>Reopen account</button>
+  <button class="btn" id="mobile-delete-signout">Sign out</button>
 </section>

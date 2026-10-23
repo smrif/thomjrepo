@@ -17,6 +17,12 @@ website and its dependencies are unchanged.
   Checked-in defaults stay disabled; real authenticated sync QA is still pending.
   See [account integration](../docs/product/mobile-account-integration.md) and
   [sync implementation and smoke test](../docs/product/mobile-sync.md).
+- Connected account Settings reuses the shared screens: labels, children,
+  activities, appearance, sign-out and sync review now use verified account
+  persistence and test sync. Native deletion has a prepared client/service with
+  durable pending/deleted gates; its live action stays disabled until a separate
+  test worker and server secret are configured. Browser preview deletion affects
+  only the fictional account/mock cloud. See [mobile Settings](../docs/product/mobile-settings.md).
 - Pinned Capacitor 8.5.3 iOS and Android projects, using bundled assets rather than
   a hosted-site URL. Provisional debug app ID: `com.whoseday.feasibility`.
 - Small synthetic check-in with SQLite commit/readback before success, a bounded
@@ -65,6 +71,7 @@ pnpm test:ui
 pnpm test:checkin
 pnpm test:accounts
 pnpm test:sync
+pnpm test:settings
 pnpm ios
 ```
 
@@ -91,13 +98,16 @@ before publishing the new in-memory state or the saved confirmation. The
 browser review uses committed IndexedDB transactions; browser results alone do
 not establish native persistence. Neither mode imports old localStorage records.
 
-The 46 mobile unit/integration checks cover verified saves, invalid stored data,
+The 59 mobile unit/integration checks cover verified saves, invalid stored data,
 scope separation, stale edits, duplicate saves and preserving answers/backfill
 dates on failure, account switching, offline auth, sign-out/callback races and
-profile ownership/recovery, offline cloud reconciliation, profile restore and
+profile ownership/recovery, Settings edits and stale writes, deletion checkpoint
+recovery/service guards, offline cloud reconciliation, profile restore and
 conflict/CAS races. `test:sync` walks through two browser preview devices at
 390px/320px; its shared mock cloud stays in IndexedDB, without real auth or
-server requests. See the sync document for URLs and native opt-in setup.
+server requests. `test:settings` covers failed-save retry, child-history preservation,
+appearance, offline reopening, profile conflicts and simulated deletion. The iOS
+account probe also verifies Settings/appearance after termination. See the sync document for URLs and native opt-in setup.
 `test:accounts` exercises profile setup/failure retry,
 separate accounts, note/image recovery, offline reopen and sign-out/reload at
 390px and 320px. `test:checkin` additionally exercises the shared UI at 390px

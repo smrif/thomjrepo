@@ -8,13 +8,16 @@ import {browserVault} from './browser-vault.js';
 import {testBackend} from './test-backend.js';
 import {deviceVault,previewBackend} from './sync-preview.js';
 import {syncUI} from './sync-ui.js';
+import {mountSettings} from './settings-runtime.js';
+import {deletionUI} from './deletion-ui.js';
+import {accountDeletion} from './delete-account.js';
 import {mountProduct} from './product-runtime.js';
 import {PROBE_PROJECT,probeProfile,createProbeAuth,runAccountProductProbe} from './account-probe.js';
 import config from '../config.generated.json';
 
 const native=Capacitor.isNativePlatform(),$=id=>document.getElementById(id),previewKey='account-preview:v1:identity';
 const params=new URLSearchParams(location.search),syncPreview=!native&&params.get('sync')==='preview',device=params.get('device')==='two'?'two':'one';
-let vault,accounts,auth,loadedOwner=null,signingOut=false,mounting=false,probeMode='',syncView=null,previewOnline=true;
+let vault,accounts,auth,loadedOwner=null,signingOut=false,mounting=false,probeMode='',syncView=null,settings=null,deletion=null,previewOnline=true;
 const online=()=>navigator.onLine!==false&&(!syncPreview||previewOnline);
 const canDownload=()=>!loadedOwner||['s-home','s-cal','s-trends'].includes(document.body.dataset.activeScreen);
 function refreshProduct(){
@@ -29,7 +32,7 @@ function refreshProduct(){
 }
 function view(name){
   document.body.dataset.accountView=name;
-  for(const id of ['welcome','profile','panel','restore'])$('account-'+id).hidden=id!==name;
+  for(const id of ['welcome','profile','panel','restore','deletion'])$('account-'+id).hidden=id!==name;
   if(name!=='product')document.body.dataset.checkinState=name==='loading'?'loading':'locked';
   $('checkin-loading').hidden=name!=='loading';
 }
@@ -47,6 +50,9 @@ async function receive(session){
 }
 async function stateChanged(state){
   if(state.status==='signed-out'){syncView?.reset();view('welcome');return;}
+  if(state.status==='deletion-pending'){deletion?.pending();return;}
+  if(state.status==='deleted'){view('deletion');$('account-deletion-title').textContent='Test account deleted';$('account-deletion-message').textContent='The test account was deleted. Its saved device copies remain hidden here and will not sync to another account.';$('mobile-delete-pending').hidden=true;$('mobile-delete-reopen').hidden=true;return;}
+  if(state.status==='deletion-failed')return;
   if(state.status==='loading'){view('loading');return;}
   if(state.status==='restore-unavailable'){view('restore');$('account-restore-retry').disabled=false;return;}
   if(state.status==='needs-profile'){
@@ -66,6 +72,8 @@ async function stateChanged(state){
     document.querySelector('.shell-sample').replaceWith(button);
     button.onclick=()=>{view('panel');$('account-back').focus()};
     $('account-identity').textContent=state.account.email;
+    const openAccount=()=>{view('panel');$('account-back').focus()};
+    settings=mountSettings({accounts,openAccount,signOut,deletion,syncEnabled:!!syncView});
     if(syncView){
       const note=document.querySelector('.checkin-local-note');note.textContent='Test build · Saves stay on this device first. Sync status is separate from a device save.';
       const status=document.createElement('button');status.id='account-sync-home';status.className='account-sync-home';status.onclick=()=>{view('panel');$('account-back').focus()};note.after(status);
@@ -86,7 +94,9 @@ async function signOut(){
       await vault.write({key:previewKey,value:'null'});
       if((await vault.read({key:previewKey})).value!=='null')throw new Error('Sign-out not saved.');
     }
-    location.reload();
+    // The next account starts on Today rather than inheriting this account's
+    // Settings route from the URL fragment.
+    history.replaceState(null,'',location.pathname+location.search);location.reload();
   }catch{
     message('Could not finish saving sign-out. Your account is locked here. Try again before closing the app.');
     $('account-retry-signout').hidden=false;
@@ -122,6 +132,14 @@ async function start(){
     const backend=syncEnabled?(owner=>syncPreview?previewBackend(sharedVault,owner,online):testBackend(auth,config.auth,owner)):null;
     accounts=createAccountStore(vault,{project,backend,canDownload,online,onSync:(kind,state)=>syncView?.update(kind,state),onState:state=>{stateChanged(state).catch(fail)}});
     if(syncEnabled)syncView=syncUI({accounts:()=>accounts,canDownload,previewDevice:syncPreview?device:'',online,toggleOnline:async()=>{previewOnline=!previewOnline;await vault.write({key:'sync-preview:online',value:String(previewOnline)})}});
+    const remove=syncPreview?(owner=>previewBackend(sharedVault,owner,online).remove()):native&&config.deletion?.enabled?(owner=>accountDeletion(auth,config)(owner)):null;
+    deletion=deletionUI({accounts,remove,online,view,signOut,preview:syncPreview,restore:()=>location.reload(),complete:async()=>{
+      signingOut=true;
+      try{
+        if(native)await auth.signOut();else{await vault.write({key:previewKey,value:'null'});if((await vault.read({key:previewKey})).value!=='null')throw Error();}
+      }catch{$('account-deletion-message').textContent='Deletion was confirmed. Your account remains locked here, but sign-out cleanup needs a retry. Use Sign out before closing.';}
+      finally{signingOut=false;}
+    }});
     window.addEventListener('online',()=>accounts.sync());
     window.addEventListener('offline',()=>accounts.sync());
     document.addEventListener('visibilitychange',()=>{if(!document.hidden)accounts.sync()});
@@ -146,6 +164,7 @@ async function start(){
         await App.addListener('appStateChange',({isActive})=>auth.foreground(isActive).then(()=>{if(isActive)accounts.sync()}).catch(()=>{accounts.lock();fail()}));
       }else view('welcome');
     }else{
+      for(const id of ['account-preview-a','account-preview-b'])$(id).disabled=true;
       $('account-preview').hidden=false;$('account-intro').textContent=syncPreview?'Sync preview · Device '+device+'. Try the same sample account on both preview devices.':'Try the app with two separate sample accounts.';
       for(const [i,id] of ['account-preview-a','account-preview-b'].entries())$(id).onclick=async()=>{
         try{
@@ -156,6 +175,7 @@ async function start(){
       };
       const {value}=await vault.read({key:previewKey}),choice=value?JSON.parse(value):null;
       await receive(previewAccounts.find(s=>s.user.id===choice?.id)||null);
+      for(const id of ['account-preview-a','account-preview-b'])$(id).disabled=false;
     }
   }catch{fail();}
 }

@@ -65,8 +65,10 @@ async function pickAttachment(_input,origin){
 
 export async function mountProduct({config,store,accountMode=false}){
   account=accountMode;
+  const templates=[];if(accountMode){const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);while(walker.nextNode())if(/\b(Dad|Mom)\b/.test(walker.currentNode.nodeValue))templates.push([walker.currentNode,walker.currentNode.nodeValue]);}
   window.WhoseDayPlatform={synthetic:true,config,records:store,saving,saveError,saveStatusLabel:native?'Saved on this device':'Saved in this browser',...(native?{pickAttachment}:{})};
   await script('app.js');await script('shell.js');limitFeatures();accessibleChoices();
+  if(accountMode)window.personalizeStaticCopy=()=>{for(const [node,template] of templates)if(node.isConnected)node.nodeValue=labelize(template)};
   for(const name of ['startCheckin','startTodayEdit']){
     const original=window[name];window[name]=function(...args){const result=original(...args);store.beginEdit?.(BACKFILL_DATE||todayStr());return result};
   }

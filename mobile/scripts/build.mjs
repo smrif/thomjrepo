@@ -3,11 +3,14 @@ import {fileURLToPath} from 'node:url';
 import {resolve,join} from 'node:path';
 import {build} from 'esbuild';
 import {testProject} from '../src/auth.js';
+import {deletionEndpoint} from '../src/delete-account.js';
 const root=fileURLToPath(new URL('..',import.meta.url)),repo=resolve(root,'..'),out=join(root,'www');
 await rm(out,{recursive:true,force:true});await mkdir(out,{recursive:true});
 let config={auth:{enabled:false}};
 try{config=JSON.parse(await readFile(join(root,'config.local.json'),'utf8'))}catch(e){if(e.code!=='ENOENT')throw e}
 const project=config.auth?.enabled?testProject(config.auth):null;
+const deletionURL=deletionEndpoint(config);
+if(config.deletion?.enabled&&!project)throw new Error('Deletion requires test auth.');
 if(config.sync?.enabled&&!project)throw new Error('Sync requires an explicitly configured test auth project.');
 await writeFile(join(root,'config.generated.json'),JSON.stringify(config));
 try{await build({entryPoints:[join(root,'src/main.js')],bundle:true,outfile:join(out,'lab.js'),format:'iife',target:'es2022',minify:false})}finally{await rm(join(root,'config.generated.json'))}
@@ -44,7 +47,7 @@ let accountHtml=productHtml.replace('data-checkin-state="loading"','data-checkin
 accountHtml=accountHtml.replace('</head>','<link rel="stylesheet" href="account.css"></head>');
 accountHtml=accountHtml.replace('</body>',await readFile(join(root,'src/account.html'),'utf8')+'</body>');
 accountHtml=accountHtml.replace('src="checkin-runtime.js"','src="account-runtime.js"');
-if(project)accountHtml=accountHtml.replace("connect-src 'none'","connect-src https://"+project+'.supabase.co');
+if(project)accountHtml=accountHtml.replace("connect-src 'none'","connect-src https://"+project+'.supabase.co'+(deletionURL?' '+new URL(deletionURL).origin:''));
 await writeFile(join(account,'index.html'),accountHtml);
 await cp(join(root,'src/account.css'),join(account,'account.css'));
 await rm(join(account,'checkin-runtime.js'));

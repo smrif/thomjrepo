@@ -71,6 +71,21 @@
 - [x] Apply/verify the schema in the separate mobile test project and enable
   the ignored local native sync flag. Live RLS/grant metadata passed for all
   three tables, with anonymous API access denied. Production is unchanged.
+- [x] Connect native Settings to verified account saves and profile sync: parent/
+  co-parent names, children, activities, appearance, read-only sign-in email,
+  sign-out and sync review. October 23: failed saves keep drafts, offline reopen
+  restores preferences, and conflicting profiles require review. See
+  [mobile Settings](docs/product/mobile-settings.md).
+- [x] Prepare/test the separate native deletion client/service and durable
+  deletion gates. Browser-only synthetic deletion covers both devices and account
+  isolation; the worker reuses verified-token self-deletion. No real account was
+  deleted and no production configuration changed.
+- [ ] Configure/deploy the separate test deletion service with the owner's test
+  server key entered directly as an encrypted worker secret, then perform approved
+  disposable-account QA. Live native deletion remains disabled until configured.
+- [ ] Connect native backup/import through Files with account ownership checks
+  and crash-safe restore/recovery.
+- [ ] Connect actual custody reports, PDF/CSV export and native sharing.
 - [ ] Complete real authenticated sync QA through the account entry using the
   approved test identity. No new emails were sent by the sync increment.
 - [x] Build the first mobile app shell preview: shared header, safe-area spacing,
@@ -80,7 +95,7 @@
 - [x] Build the first persistent Today → check-in → save → reopen/edit slice.
   October 22: shared product save/edit plus note/image recovery passed across
   iOS simulator process termination; browser failure/retry and reopen tests also
-  passed. Synthetic scopes only; live account binding/sync, native Settings,
+  passed. Synthetic scopes only; real authenticated sync QA,
   report sharing and physical-device QA remain in the full iOS app task.
 - [ ] Verify layout, keyboard behavior, accessibility, attachments, and sharing
   on physical iPhones, alongside the existing account/offline/conflict QA.

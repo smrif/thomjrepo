@@ -1,4 +1,4 @@
-# Mobile feasibility status — October 22, 2026
+# Mobile feasibility status — October 23, 2026
 
 The owner approved Capacitor and the small feasibility build. Implementation is
 isolated in `mobile/`, with small platform hooks and verified-save handling in
@@ -8,6 +8,12 @@ app has not been released. Production provider settings are unchanged.
 
 ## Implemented
 
+- October 23 account Settings: shared UI with verified account-specific saves for
+  labels, children, activities and appearance, read-only email, sign-out and sync
+  review. Historical records are retained unchanged. A separate test deletion
+  client/worker and durable result gates are prepared; live native deletion stays
+  disabled until the test service/secret is configured. Browser simulated deletion
+  covers stale devices and account separation. See [Settings](mobile-settings.md).
 - Account integration at `account/index.html`: test-project native sign-in,
   verified local family profile, per-project/account record scopes, offline
   session recovery, store revocation on account changes and durable local
@@ -49,6 +55,17 @@ app has not been released. Production provider settings are unchanged.
 
 ## Evidence so far
 
+- October 23 Settings unit/service contracts and phone UI walkthroughs passed:
+  failed-save retry, child changes with preserved records, activity validation,
+  appearance, offline reopen, profile conflicts, account isolation and synthetic
+  two-device deletion. The prepared test worker bundles successfully; the original
+  website deletion tests also pass. Live deletion is not deployed/activated.
+- October 23 signed iOS 17.5 account probe passed: the shared Settings UI saved
+  the parent label and dark appearance, and both recovered from SQLite after
+  process termination. Pending check-in/image sync, separate-account isolation,
+  Keychain recovery and offline sign-out also passed. This used isolated synthetic
+  identities and transport, with no network requests. Evidence: ignored
+  `mobile/.build/ios-account-probe.json`.
 - October 22 sync increment: two-device profile/check-in restoration, offline
   edits, restart recovery and both conflict choices pass at 390px/320px. Exact
   test bootstrap passes in-memory PostgreSQL RLS/privilege/CAS checks. Signed iOS
@@ -59,7 +76,7 @@ app has not been released. Production provider settings are unchanged.
 - Owner confirmed the browser account preview October 22: sample account A,
   sign-out/switch to account B, and return to account A behaved as expected.
   This is browser smoke-test evidence, not real-auth or physical-iPhone sign-off.
-- Mobile domain/auth/storage/product-save/account/sync suite: 46 passed. Covers account
+- Mobile domain/auth/storage/product-save/account/sync suite: 59 passed. Covers account
   scope/ownership, stale responses and saves during account changes, offline
   auth and durable sign-out, profile failures, and commit/readback failure behavior,
   attachment/date validation, strict callback routes, secure-storage adapter,

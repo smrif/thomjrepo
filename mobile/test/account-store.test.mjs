@@ -29,9 +29,9 @@ test('sign-out during a pending write revokes old snapshots and prevents publish
 });
 test('a delayed previous-account profile cannot reopen or replace the active account',async()=>{
  const vault=memory(),first=createAccountStore(vault,{project:'test-project'});await setup(first);await setup(first,B);
- let release;const read=vault.read;vault.read=async row=>{if(row.key==='profile:v1:'+accountScope('test-project',A.user.id))await new Promise(r=>release=r);return read(row)};
+ let release,started;const waiting=new Promise(r=>started=r),read=vault.read;vault.read=async row=>{if(row.key==='profile:v1:'+accountScope('test-project',A.user.id)){started();await new Promise(r=>release=r)}return read(row)};
  const states=[],accounts=createAccountStore(vault,{project:'test-project',onState:s=>states.push(s)});
- const slow=accounts.activate(A);await accounts.activate(B);release();await slow;
+ const slow=accounts.activate(A);await waiting;await accounts.activate(B);release();await slow;
  assert.equal(accounts.state.account.id,B.user.id);assert(!states.some(s=>s.status==='ready'&&s.account.id===A.user.id));
 });
 test('corrupt/misowned profiles block entry without replacing data; failed profile saves remain retryable',async()=>{
@@ -55,7 +55,7 @@ test('same-account refresh does not reset a profile draft or reopen the record s
 });
 test('a previous account read failing late does not hide the new account',async()=>{
  const vault=memory(),seed=createAccountStore(vault,{project:'test-project'});await setup(seed,B);
- const read=vault.read;let reject;vault.read=async row=>{if(row.key==='profile:v1:'+accountScope('test-project',A.user.id))return await new Promise((_,r)=>reject=r);return read(row)};
- const accounts=createAccountStore(vault,{project:'test-project'}),old=accounts.activate(A);await accounts.activate(B);reject(new Error('old read failed'));await old;
+ const read=vault.read;let reject,started;const waiting=new Promise(r=>started=r);vault.read=async row=>{if(row.key==='profile:v1:'+accountScope('test-project',A.user.id)){started();return await new Promise((_,r)=>reject=r)}return read(row)};
+ const accounts=createAccountStore(vault,{project:'test-project'}),old=accounts.activate(A);await waiting;await accounts.activate(B);reject(new Error('old read failed'));await old;
  assert.equal(accounts.state.status,'ready');assert.equal(accounts.state.account.id,B.user.id);
 });

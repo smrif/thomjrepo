@@ -6,5 +6,10 @@
   },
   "sync": {
     "enabled": false
+  },
+  "deletion": {
+    "enabled": false,
+    "project": "ijewfmltnlqpydwuiedb",
+    "url": "https://whose-day-mobile-test.YOUR-SUBDOMAIN.workers.dev/api/account"
   }
 }

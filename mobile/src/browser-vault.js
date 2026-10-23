@@ -16,9 +16,14 @@ export async function browserVault(){
     async keys({prefix}){return {keys:await transaction('readonly',store=>store.getAllKeys(IDBKeyRange.bound(prefix,prefix+'\uffff')))}},
     async read({key}){return {value:await transaction('readonly',store=>store.get(key))??null}},
     async write({key,value}){await transaction('readwrite',store=>store.put(value,key))},
-    compareAndSwap({key,expected,value}){return new Promise((resolve,reject)=>{
+    deletePreviewAccount({prefix,marker}){return new Promise((resolve,reject)=>{
+      const tx=database.transaction('records','readwrite'),store=tx.objectStore('records'),read=store.getAllKeys(IDBKeyRange.bound(prefix,prefix+'\uffff'));
+      read.onsuccess=()=>{for(const key of read.result)store.delete(key);store.put('deleted',marker)};
+      tx.oncomplete=()=>resolve({deleted:true});tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error('Deletion interrupted.'));
+    })},
+    compareAndSwap({key,expected,value,guard}){return new Promise((resolve,reject)=>{
       const tx=database.transaction('records','readwrite'),store=tx.objectStore('records'),read=store.get(key);let matched=false;
-      read.onsuccess=()=>{if((read.result??null)===expected){matched=true;store.put(value,key)}};
+      read.onsuccess=()=>{if((read.result??null)!==expected)return;if(guard){const check=store.get(guard.key);check.onsuccess=()=>{if((check.result??null)===guard.expected){matched=true;store.put(value,key)}}}else{matched=true;store.put(value,key)}};
       tx.oncomplete=()=>resolve(matched);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error('Write interrupted.'));
     })}
   };

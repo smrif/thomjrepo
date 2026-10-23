@@ -1,0 +1,11 @@
+{
+  "name": "whose-day-mobile-test",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-22",
+  "vars": {
+    "MOBILE_TEST_PROJECT": "ijewfmltnlqpydwuiedb",
+    "SUPABASE_URL": "https://ijewfmltnlqpydwuiedb.supabase.co",
+    "MOBILE_TEST_API_ENABLED": "false",
+    "ACCOUNT_DELETION_ENABLED": "false"
+  }
+}

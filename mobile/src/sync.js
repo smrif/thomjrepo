@@ -49,7 +49,7 @@ export function createSync({store,transport,onState=()=>{},online=()=>globalThis
   return {
     get state(){return status},
     run(){if(closed)return Promise.resolve();if(running)return running;running=execute().finally(()=>{running=null});return running;},
-    close(){closed=true;conflicts={};},
+    close(){closed=true;conflicts={};return running??Promise.resolve();},
     async resolve(id,choice,review=conflicts[id]){
       if(running)await running;check();
       const conflict=conflicts[id];if(!conflict||!['local','cloud'].includes(choice))throw new Error('Reopen conflict review.');
