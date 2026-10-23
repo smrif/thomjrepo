@@ -48,3 +48,17 @@ body[data-account-view="product"] #checkin-loading { display:none!important; }
 .mobile-policy-link { display:inline-flex; align-items:center; min-height:44px; border:0; padding:4px 0; background:none; color:var(--daily-primary-strong); font:inherit; font-weight:700; text-decoration:underline; cursor:pointer; }
 .mobile-policy-link:focus-visible { outline:2px solid var(--daily-primary-strong); outline-offset:3px; }
 .mobile-policy-content> .mobile-policy-link { display:block; min-height:44px; margin:24px 0; }
+.onboarding-activities { display:grid; gap:8px; }
+.account-page .onboarding-activities label,.account-page .onboarding-agreement { display:flex; align-items:flex-start; gap:12px; padding:12px; min-height:44px; margin:0; box-sizing:border-box; border:1px solid var(--daily-border); border-radius:12px; background:var(--daily-card); }
+.account-page input[type="checkbox"] { width:24px; height:24px; flex:0 0 24px; margin:2px 0; accent-color:var(--daily-primary-strong); }
+.account-page fieldset { min-width:0; border:0; padding:0; margin:0; }
+.account-page legend { font-weight:600; margin-bottom:16px; }
+.account-page select { width:100%; min-height:48px; font:inherit; background:var(--daily-card); color:var(--daily-ink); border:1px solid var(--daily-border); border-radius:12px; padding:10px; }
+#onboarding-progress,#onboarding-save-status { font-size:14px; color:var(--daily-ink-soft); }
+#onboarding-message,#onboarding-policy-versions { overflow-wrap:anywhere; }
+#onboarding-policy-versions { font-size:14px; }
+#account-onboarding { padding-top:calc(env(safe-area-inset-top,0px) + 24px); }
+#account-onboarding h1 { overflow-wrap:anywhere; }
+#account-onboarding :is(input:not([type="checkbox"]),textarea) { min-height:48px; padding:12px 14px; color:var(--daily-ink); background:var(--daily-card); border:1px solid var(--daily-border); border-radius:12px; }
+#account-onboarding textarea { min-height:144px; resize:vertical; }
+body[data-account-view="onboarding"]::before { content:""; position:fixed; top:0; left:0; right:0; height:env(safe-area-inset-top,0px); background:var(--daily-bg); z-index:50; pointer-events:none; }

@@ -8,6 +8,13 @@ app has not been released. Production provider settings are unchanged.
 
 ## Implemented
 
+- October 23 guided onboarding: separate signup/sign-in, five validated steps,
+  verified resumable drafts, matching-email completion and an atomic local
+  profile/explicit policy receipt. Returning profiles are preserved. Browser and
+  unit QA pass; actual native form, pending-verification restart, receipt and
+  completed-account cold reopen also pass with synthetic verification. See [onboarding](mobile-onboarding.md).
+  Production/server acceptance integration and real email/device QA remain.
+
 - October 23 offline policy access: account and Settings buttons open the exact
   currently approved versioned Terms/Privacy documents without leaving the app.
   Source focus/drafts return, full text, offline reopen and no acceptance/data

@@ -70,6 +70,7 @@ jobs:
           pnpm --dir mobile test:ui
           pnpm --dir mobile test:checkin
           pnpm --dir mobile test:accounts
+          pnpm --dir mobile test:onboarding
           pnpm --dir mobile test:sync
           pnpm --dir mobile test:settings
           pnpm --dir mobile test:backup

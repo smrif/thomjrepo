@@ -79,6 +79,62 @@ final class NativeExportQATests: XCTestCase {
         XCTAssertTrue(found, prefix)
         button.tap()
     }
+    private func finishTyping(_ app: XCUIApplication) {
+        let done = app.toolbars.buttons["Done"].firstMatch
+        if done.exists && done.isHittable { done.tap() }
+        text(app, "Setup progress saved on this device.")
+    }
+    func testOnboardingColdReopen() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.whoseday.feasibility")
+        app.launchArguments = ["--lab-onboarding-write"]; app.launch()
+        tap(app, "Create an account")
+        text(app, "What should we call you?")
+        picture(app, "Native onboarding name field")
+        let parent = app.textFields["Your name or label"].firstMatch
+        XCTAssertTrue(parent.waitForExistence(timeout: 15)); parent.tap(); parent.typeText("Native Onboarding Parent")
+        finishTyping(app)
+        picture(app, "Name before continuing")
+        tap(app, "Continue"); text(app, "Who is your co-parent?")
+        let coparent = app.textFields["Co-parent name or label"].firstMatch
+        XCTAssertTrue(coparent.waitForExistence(timeout: 15)); coparent.tap(); coparent.typeText("Other Parent")
+        finishTyping(app)
+        tap(app, "Continue"); text(app, "Who are your children?")
+        let children = app.textViews["Children, one name per line"].firstMatch
+        XCTAssertTrue(children.waitForExistence(timeout: 15)); children.tap(); children.typeText("Avery\nSam")
+        finishTyping(app)
+        picture(app, "Unfinished native onboarding draft")
+        app.terminate(); app.launchArguments = ["--lab-onboarding-read"]; app.launch()
+        tap(app, "Create an account")
+        text(app, "Who are your children?")
+        XCTAssertTrue(children.waitForExistence(timeout: 15)); XCTAssertEqual(children.value as? String, "Avery\nSam")
+        tap(app, "Continue"); text(app, "What does everyday life include?")
+        picture(app, "Native onboarding activities")
+        tap(app, "Continue")
+        let email = app.textFields["Email address"].firstMatch
+        XCTAssertTrue(email.waitForExistence(timeout: 15)); email.tap(); email.typeText("parent-a@example.invalid")
+        finishTyping(app)
+        tap(app, "Terms of Use"); text(app, "Terms of Use"); tap(app, "Back")
+        let agreement = app.staticTexts["I agree to the Terms of Use and acknowledge the Privacy Policy."].firstMatch
+        XCTAssertTrue(agreement.waitForExistence(timeout: 15))
+        for _ in 0..<5 { if agreement.isHittable { break }; app.webViews.firstMatch.swipeUp() }
+        agreement.tap()
+        picture(app, "Native onboarding explicit agreement")
+        tap(app, "Send sign-up link")
+        text(app, "Check your email on this device. Open the newest link to verify your account and finish setup. Your answers are saved.")
+        let resend = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Send a new sign-up link")).firstMatch
+        XCTAssertTrue(resend.exists); XCTAssertFalse(resend.isEnabled)
+        picture(app, "Native onboarding awaiting synthetic verification")
+        // The DEBUG fixture delivers the synthetic identity on the next launch,
+        // proving that pending submission survives termination before verification.
+        app.terminate(); app.launch()
+        text(app, "Ready to log today")
+        picture(app, "Native onboarding complete")
+        app.terminate(); app.launch()
+        text(app, "Ready to log today")
+        XCTAssertFalse(app.buttons["Create an account"].firstMatch.exists)
+        picture(app, "Native completed account cold reopen")
+    }
     func testPhotoAttachmentColdReopen() throws {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.whoseday.feasibility")

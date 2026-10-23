@@ -1,0 +1,25 @@
+<section id="account-onboarding" class="account-page" hidden>
+  <p class="account-eyebrow">GETTING STARTED</p>
+  <p id="onboarding-progress" role="status">Step 1 of 5</p>
+  <h1 id="onboarding-heading" tabindex="-1">What should we call you?</h1>
+  <p id="onboarding-intro">Use sample family details in this test build.</p>
+  <form id="onboarding-form" novalidate>
+    <div data-onboarding-step="0"><label for="onboarding-parent">Your name or label</label><input id="onboarding-parent" maxlength="100" autocomplete="given-name" required></div>
+    <div data-onboarding-step="1" hidden><label for="onboarding-coparent">Co-parent name or label</label><input id="onboarding-coparent" maxlength="100" autocomplete="off" required></div>
+    <div data-onboarding-step="2" hidden><label for="onboarding-children">Children, one name per line</label><textarea id="onboarding-children" rows="4" maxlength="2020" required></textarea><p>Use a different name or label for each child. You can add up to 20.</p></div>
+    <div data-onboarding-step="3" hidden><fieldset><legend>Which activities should appear in your check-ins?</legend><div id="onboarding-activities" class="onboarding-activities"></div></fieldset><p>You can change these in Settings later.</p></div>
+    <div data-onboarding-step="4" hidden>
+      <label for="onboarding-email">Email address</label><input id="onboarding-email" type="email" maxlength="254" autocomplete="email" required>
+      <div id="onboarding-preview-choice" hidden><label for="onboarding-preview-account">Sample account for this preview</label><select id="onboarding-preview-account"><option value="0">Sample account A</option><option value="1">Sample account B</option></select><p>Preview only. No email is sent and no real account is created.</p></div>
+      <p id="onboarding-policy-versions"></p>
+      <label class="onboarding-agreement" for="onboarding-agree"><input id="onboarding-agree" type="checkbox"> <span>I agree to the Terms of Use and acknowledge the Privacy Policy.</span></label>
+      <div id="onboarding-policy-links"></div>
+    </div>
+    <p id="onboarding-message" role="status" aria-live="polite"></p>
+    <p id="onboarding-save-status" role="status" aria-live="polite"></p>
+    <button class="btn primary" id="onboarding-next" type="submit">Continue</button>
+    <button class="btn" id="onboarding-back" type="button">Back</button>
+    <button class="btn" id="onboarding-leave" type="button">Save and leave setup</button>
+    <button class="btn" id="onboarding-restart" type="button" hidden>Start a new setup</button>
+  </form>
+</section>

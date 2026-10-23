@@ -29,7 +29,8 @@
     "release:inventory": "node scripts/release-inventory.mjs",
     "test:accessibility": "node test/accessibility-ui.mjs",
     "test:policies": "node test/policies-ui.mjs",
-    "probe:files:ios": "node scripts/probe-files-ios.mjs"
+    "probe:files:ios": "node scripts/probe-files-ios.mjs",
+    "test:onboarding": "node test/onboarding-ui.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",

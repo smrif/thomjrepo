@@ -12,11 +12,12 @@ checks version metadata and rejects unexpected active content or links. Reading
 does not require a network request or a new native plugin. The complete approved
 policy text is preserved; the app frame supplies the heading and navigation.
 
-This is read-only access. It does not change policy wording, create acceptance
-history, infer consent or alter native test-profile validation. The current
-native test profile still forces `termsAccepted:false`; release registration and
-acceptance storage require the final policy/environment review. The existing
-website's acceptance behavior is unchanged.
+The reader is read-only. It does not change policy wording, create acceptance
+history or infer consent. The separate [guided onboarding](mobile-onboarding.md)
+now records an explicit versioned local receipt only after submission and matching
+verified identity. Legacy profile validation still forces `termsAccepted:false`;
+production/server acceptance wiring and final policy/environment review remain
+release work. The website's acceptance behavior is unchanged.
 
 ## First QA pass
 

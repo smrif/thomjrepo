@@ -19,7 +19,7 @@ Owner checks are tracked by ID in [mobile owner QA](mobile-owner-qa.md).
 | Icon | Existing 1024px prototype asset | Owner reviews final artwork/brand and rendered icon. |
 | Photo purpose text | Explicitly says non-sensitive feasibility test | Replace with an accurate final attachment purpose after release scope is approved. |
 | Native account deletion | Client/service prepared, live test endpoint disabled | Configure separate test service and complete approved disposable QA (IOS-QA-07). |
-| Policy access and agreement | Approved versioned documents are available offline; native test profiles force `termsAccepted:false` | Review the release registration/acceptance contract and implement its durable version/account metadata before release. Reading alone does not record consent. |
+| Policy access and agreement | Approved documents are available offline; guided signup atomically records a separate account/version-bound local receipt | Integrate the production/server acceptance contract and complete final policy/release review. Legacy test profile acceptance remains false; reading alone does not record consent. |
 | Privacy manifest | Tracking false, collected-data array empty; timestamp/disk-space reasons present | Review shipped app and dependencies; empty lab declarations do not describe the signed-in cloud product. |
 | Test routes | Lab, shell preview and standalone synthetic check-in routes remain bundled | Remove or deliberately gate prototype tools and banners for the final release. |
 | Native analytics | Website analytics scripts removed; native build has no telemetry adapter | Decide native collection before writing final disclosures; website Mixpanel is a separate implemented data path. |

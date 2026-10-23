@@ -57,6 +57,7 @@ const account=join(out,'account');await cp(checkin,account,{recursive:true});
 let accountHtml=productHtml.replace('data-checkin-state="loading"','data-checkin-state="loading" data-account-view="loading"');
 accountHtml=accountHtml.replace('</head>','<link rel="stylesheet" href="account.css"></head>');
 accountHtml=accountHtml.replace('</body>',await readFile(join(root,'src/account.html'),'utf8')+'</body>');
+accountHtml=accountHtml.replace('</body>',await readFile(join(root,'src/onboarding.html'),'utf8')+'</body>');
 accountHtml=accountHtml.replace('src="checkin-runtime.js"','src="account-runtime.js"');
 if(project)accountHtml=accountHtml.replace("connect-src 'none'","connect-src https://"+project+'.supabase.co'+(deletionURL?' '+new URL(deletionURL).origin:''));
 await writeFile(join(account,'index.html'),accountHtml);

@@ -25,6 +25,7 @@ test('test sign-in uses secure storage, PKCE, existing users and duplicate-safe 
   assert.equal(options.auth.flowType,'pkce');assert.equal(options.auth.detectSessionInUrl,false);
   await options.auth.storage.setItem('verifier','secret');assert.equal(await options.auth.storage.getItem('verifier'),'secret');await options.auth.storage.removeItem('verifier');assert.equal(await options.auth.storage.getItem('verifier'),null);
   await auth.send('approved@example.com');assert.equal(calls[0].options.shouldCreateUser,false);
+  await assert.rejects(auth.send('approved@example.com',{signup:true}),/not enabled/);assert.equal(calls.length,1);
   await Promise.all([auth.callback('whoseday-feasibility://auth/callback?code=abcdefgh'),auth.callback('whoseday-feasibility://auth/callback?code=abcdefgh')]);
   await auth.callback('whoseday-feasibility://auth/callback?code=abcdefgh');assert.equal(calls.filter(v=>v==='abcdefgh').length,1);assert.equal(sessions.length,1);
 });
@@ -35,5 +36,6 @@ test('production project cannot be enabled in the lab',()=>{
 test('new test identity is limited to the explicitly approved inbox',async()=>{
   const calls=[];
   const auth=createAuth({config:{enabled:true,url:'https://test-project.supabase.co',publishableKey:'sb_publishable_TEST',approvedTestEmail:'approved@example.com',createApprovedTestUser:true},vault:{},createClient:()=>({auth:{onAuthStateChange(){},async signInWithOtp(args){calls.push(args);return{}}}}),onSession(){},onError(){}});
-  await assert.rejects(auth.send('other@example.com'),/approved/);await auth.send('approved@example.com');assert.equal(calls.length,1);assert.equal(calls[0].options.shouldCreateUser,true);
+  await assert.rejects(auth.send('other@example.com',{signup:true}),/approved/);await auth.send('approved@example.com',{signup:true});assert.equal(calls.length,1);assert.equal(calls[0].options.shouldCreateUser,true);
+  await auth.send('approved@example.com');assert.equal(calls[1].options.shouldCreateUser,false,'Sign in must not create an account, even with signup configured.');
 });

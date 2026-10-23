@@ -8,6 +8,12 @@ accepts optional project ownership for isolated mobile backups.
 
 ## What is implemented
 
+- Guided native onboarding: separate signup/sign-in, family/activity steps,
+  verified resumable drafts and an explicit account/version-bound local receipt
+  committed atomically with the profile. Browser Create an account uses labeled
+  synthetic verification with no email. Production/server acceptance integration
+  remains separate. See [onboarding](../docs/product/mobile-onboarding.md).
+
 - Account entry at `account/index.html`: separate-test-project native email
   sign-in, first-run local family profile, verified per-account saves, offline
   session recovery and durable local sign-out. Profiles/records and secure auth
@@ -303,7 +309,8 @@ Account and Settings screens also provide an offline
 [policy reader](../docs/product/mobile-policies.md), using the exact current
 versioned repository documents. `test:policies` checks full-text parity, internal
 navigation and unchanged drafts/data/acceptance. Reading is separate from the
-release registration/consent work; native test profiles still force acceptance false.
+production/server acceptance work; guided onboarding now records explicit local
+receipts separately from the legacy test-profile acceptance field.
 
 `build:ios` and `build:android` now bundle the current shared/mobile source and
 run platform sync before compilation, so the native app cannot accidentally use

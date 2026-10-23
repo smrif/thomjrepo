@@ -11,6 +11,7 @@ import {createSync} from './sync.js';
 import {equal,canonical} from './sync-store.js';
 import {localDay} from './domain.js';
 import {mergeBackup} from './backup-domain.js';
+import {validateIntent,policyReceipt} from './onboarding-store.js';
 
 // Auth supplies identity; stored profile rows cannot select an account. Every
 // switch closes the previous store immediately, including snapshots held by UI.
@@ -159,6 +160,26 @@ export function createAccountStore(vault,{project,onState=()=>{},backend=null,on
         await profile.save(config);
         if(version!==epoch)throw new Error('The account changed during saving.');
         const ready=await openRecords(owner,config,version);queueMicrotask(()=>this.sync());return ready;
+      }finally{profileBusy=false;}
+    },
+    async completeOnboarding({pendingKey,pendingRaw,versions,environment}){
+      if(state.status!=='needs-profile'||profileBusy||deletionBusy||restoring)throw Error('Reopen setup before completing this account.');
+      if(!['mobile-test','browser-preview'].includes(environment)||!pendingKey.startsWith('onboarding:v1:'+project+':')||!pendingKey.endsWith(':intent'))throw Error('Invalid setup checkpoint.');
+      const owner=state.account,version=epoch,intent=validateIntent(JSON.parse(pendingRaw),versions);
+      if(pendingKey!=='onboarding:v1:'+project+':'+(intent.scope||'guest')+':intent')throw Error('Invalid setup checkpoint ownership.');
+      const receipt=policyReceipt(intent,owner,project,environment),config=validateProfile(intent.profile,owner.email);
+      const profileKey='profile:v1:'+owner.scope,receiptKey='policy-receipt:v1:'+owner.scope+':'+intent.attempt;
+      profileBusy=true;
+      try{
+        const deletion=(await vault.read({key:deletionKey(owner)})).value;
+        if(version!==epoch||deletion!==null&&deletion!=='null')throw Error('This account is no longer available for setup.');
+        const profileValue=JSON.stringify({schema:2,scope:owner.scope,userId:owner.id,config,sync:{baseHash:null,version:null}}),receiptValue=JSON.stringify(receipt);
+        const rows=[{key:profileKey,expected:null,value:profileValue},{key:receiptKey,expected:null,value:receiptValue},{key:pendingKey,expected:pendingRaw,value:'null'},{key:pendingKey.replace(/:intent$/,':draft'),expected:intent.draftRaw,value:'null'},{key:deletionKey(owner),expected:deletion}];
+        if((await vault.compareBatch({rows})).matched!==true)throw Error('Setup changed. Reopen the app to check its saved copy.');
+        for(const [key,value] of [[profileKey,profileValue],[receiptKey,receiptValue]])if((await vault.read({key})).value!==value)throw Error('Setup readback failed. Reopen the app to check its saved copy.');
+        if(version!==epoch)throw Error('The account changed during saving.');
+        // Reopen the verified committed rows through the usual profile validator.
+        lock();return await this.activate({user:{id:owner.id,email:owner.email}});
       }finally{profileBusy=false;}
     }
   };

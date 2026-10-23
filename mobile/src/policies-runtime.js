@@ -33,5 +33,5 @@ export function mountPolicies({setView,owner,status}){
   for(const id of ['account-welcome','account-profile','account-panel'])controls($(id));
   $('mobile-policy-back').onclick=close;
   page.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();close()}});
-  return{addSettings(){controls(document.querySelector('[data-settings-page="overview"]'))}};
+  return{controls,addSettings(){controls(document.querySelector('[data-settings-page="overview"]'))}};
 }

@@ -60,7 +60,7 @@ export function createAuth({config,vault,createClient,onSession,onError,online=(
       }
       await publish(data.session,version);
     },
-    async send(email){if(config.approvedTestEmail && email.toLowerCase()!==config.approvedTestEmail.toLowerCase())throw new Error('Use the approved test inbox.');const {error}=await client.auth.signInWithOtp({email,options:{shouldCreateUser:config.createApprovedTestUser===true && !!config.approvedTestEmail,emailRedirectTo:CALLBACK}});if(error)throw error},
+    async send(email,{signup=false}={}){email=email.trim().toLowerCase();if(config.approvedTestEmail && email!==config.approvedTestEmail.toLowerCase())throw new Error('Use the approved test inbox.');if(signup&&!(config.createApprovedTestUser===true&&config.approvedTestEmail))throw Error('New test accounts are not enabled. Use Sign in for an existing account.');const {error}=await client.auth.signInWithOtp({email,options:{shouldCreateUser:signup,emailRedirectTo:CALLBACK}});if(error)throw error},
     async callback(url){
       try {
         const code=callbackCode(url);

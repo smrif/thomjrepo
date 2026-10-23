@@ -3,6 +3,7 @@ import {createSync} from './sync.js';
 import {createAccountStore} from './account-store.js';
 import {createAuth,AUTH_STORAGE_KEY} from './auth.js';
 import {previewAccounts} from './account-preview.js';
+import {onboardingStore} from './onboarding-store.js';
 export const PROBE_PROJECT='sim-account-probe';
 export const probeProfile={currentParentLabel:'Probe Parent A',coParentLabel:'Probe Parent B',children:['Alex','Sam']};
 const image='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII=';
@@ -83,5 +84,28 @@ export async function runAccountProductProbe({vault,accounts,mode}){
     await auth.signOut();const reopened=authFor(vault,s=>{signedIn=s});await reopened.start();if(signedIn!==null)throw new Error('Signed-out session reopened.');
     accounts.lock();Object.assign(result,{separateAccountEmpty:true,oldStoreRevoked:true,offlineSignoutPersisted:true});
   }
+  await probeOnboarding(vault,mode);result.onboardingDraftRecovered=true;result.onboardingReceiptVerified=mode==='account-read';
   await vault.write({key:'probe:'+mode,value:JSON.stringify(result)});
+}
+
+async function probeOnboarding(vault,mode){
+  const marker='probe:onboarding-project',versions={terms:__WHOSE_DAY_POLICIES__.terms.version,privacy:__WHOSE_DAY_POLICIES__.privacy.version};
+  if(mode==='account-write'){
+    const project='sim-onboard-'+crypto.randomUUID().slice(0,8);await vault.write({key:marker,value:project});
+    await onboardingStore(vault,project).save({...probeProfile,children:'Alex\nSam',activityIds:['school'],email:session.user.email},2);return;
+  }
+  const project=(await vault.read({key:marker})).value;if(!project?.startsWith('sim-onboard-'))throw Error('Missing native onboarding fixture.');
+  const draft=onboardingStore(vault,project),saved=await draft.load();
+  if(saved?.step!==2||saved.answers.children!=='Alex\nSam'||await draft.pending())throw Error('Unfinished native setup did not recover separately from agreement.');
+  await draft.save(saved.answers,4);
+  const intent={schema:1,draftRaw:await draft.snapshot(),attempt:crypto.randomUUID(),scope:'',email:session.user.email,profile:{...probeProfile,activityIds:['school']},termsVersion:versions.terms,privacyVersion:versions.privacy,acceptedAt:new Date().toISOString()};
+  await draft.intent(intent);const pending=await draft.pending(),audit=createAccountStore(vault,{project});await audit.activate(session);
+  await audit.completeOnboarding({pendingKey:draft.intentKey,pendingRaw:pending.raw,versions,environment:'mobile-test'});
+  if(audit.state.status!=='ready'||audit.state.config.currentParentLabel!==probeProfile.currentParentLabel||await draft.pending())throw Error('Native onboarding transaction failed.');
+  const keys=(await vault.keys({prefix:'policy-receipt:v1:'+audit.state.account.scope+':'})).keys;
+  if(keys.length!==1)throw Error('Native policy receipt is missing or duplicated.');
+  const receipt=JSON.parse((await vault.read({key:keys[0]})).value);
+  if(receipt.userId!==session.user.id||receipt.termsVersion!==versions.terms||receipt.privacyVersion!==versions.privacy||receipt.acceptedAt!==intent.acceptedAt||receipt.source!=='mobile-test')throw Error('Native policy receipt does not match the submitted setup.');
+  await draft.discardMatching(session.user.email);audit.lock();const reopened=createAccountStore(vault,{project});await reopened.activate(session);
+  if(reopened.state.status!=='ready'||Object.keys(reopened.state.records.snapshot()).length||(await draft.load())!==null)throw Error('Native completed setup did not reopen or clean up.');reopened.lock();
 }

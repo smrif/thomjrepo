@@ -100,3 +100,9 @@ prepares native test deletion. [Native JSON backup/import](mobile-backups.md) is
 now implemented; [report sharing](mobile-reports.md) is also connected. Real email
 handoff through this account entry, physical-device behavior, and store release
 remain separate checks. Apple's last-recorded provisioning block is unchanged.
+
+October 23 follow-up: [guided onboarding](mobile-onboarding.md) now replaces the
+normal native first-run form with five steps, saved drafts and explicit local
+policy receipts. Signup precedes verification; existing profiles restore without
+overwrite. The original basic form remains only in explicit browser sample-account
+shortcuts. This does not enable production accounts or server acceptance writes.

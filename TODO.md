@@ -36,13 +36,15 @@
   a first QA pass. Keep owner/device/provider checks in
   [iOS owner QA](docs/product/mobile-owner-qa.md); record evidence without
   replacing the existing live-account or release approvals.
-- Review checkpoint October 23: Files/share QA finished and the owner asked to
-  continue with next steps. Photo-picker implementation/QA is the current round;
-  scheduled continuation stays paused while this foreground run owns the work.
-- Next milestone after photo QA: physical iPhone/signing and real account/provider
-  checks. The owner reconfirmed October 23 that they are still waiting on Apple;
-  no physical iPhone is currently connected. Keep the scheduled continuation
-  paused while these owner/device gates remain.
+- Review checkpoint October 23: Files/share/photo QA passed. Owner then asked
+  specifically about unfinished onboarding and authorized guided implementation.
+  Guided onboarding and its first QA pass are complete; Apple access was not
+  required for the local UI, draft and receipt work. Scheduled continuation remains paused
+  while this foreground run owns the work.
+- Physical signing remains pending Apple Support. The owner reconfirmed October
+  23 that they are still waiting on Apple; no connected physical iPhone was found
+  in the last inventory. Keep owner/device/provider gates separate from unfinished
+  implementation and release configuration.
 
 - Owner clarification October 20, 2026: iOS support means a downloadable App
   Store app, beyond Safari/Home Screen support. A separate feasibility app is
@@ -70,6 +72,17 @@
 - [ ] Build the iOS app, including email-link return into the app, persistent
   sign-in/sign-out, offline storage/reopening and reconnect sync, Settings and
   account deletion, screenshot attachments, and export/report sharing.
+- [x] Complete guided native onboarding: separate signup/sign-in, parent/co-parent/
+  children/activity steps, resumable verified drafts, explicit policy agreement
+  and an account-bound receipt committed with the new profile. Unit/browser QA
+  and actual simulator form/pending-verification/cold-reopen checks pass. See
+  [mobile onboarding](docs/product/mobile-onboarding.md). Production/server
+  acceptance integration and real email/device QA remain release gates.
+- [ ] Implement the release registration contract: production profile mapping,
+  server-side policy acceptance history, environment/callback configuration and
+  existing-user migration. This is implementation beyond device QA; keep the
+  production block and deployment approval until the release integration is
+  reviewed and verified. Local onboarding receipts do not replace server history.
 - [x] Connect the test-project sign-in client to a verified local family profile
   and account-specific shared check-ins. October 22: 28 unit/integration checks
   and two-account UI walkthroughs at 390px/320px passed, including offline reopen,
@@ -117,7 +130,8 @@
 - [x] Add offline access to the approved Terms and Privacy Policy from account
   and Settings screens, with source-screen/draft return. See
   [native policy reader](docs/product/mobile-policies.md). Reading does not record
-  acceptance; release policy/registration wiring remains part of the final gate.
+  acceptance; guided onboarding now supplies a separate explicit local receipt.
+  Production/server acceptance wiring remains part of the final gate.
 - [x] Run a first local accessibility/layout pass for account/Settings/Reports.
   October 23: 87 checkpoints at small-phone, standard-phone and landscape widths;
   fixed field labeling, enlarged-text clipping and tab overlap. See

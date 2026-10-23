@@ -33,8 +33,8 @@ if(/lab|feasibility/i.test(observed.appName+' '+observed.displayName+' '+observe
 if(observed.deviceFamilies.some(value=>value.includes('2')))findings.push('iPad is enabled in Xcode; final device scope and iPad QA need confirmation.');
 if(/test|feasibility/i.test(observed.photoPurpose||''))findings.push('Photo permission text still describes a feasibility test.');
 if(observed.privacy.collectedTypes===0)findings.push('Lab manifest has no collected-data declarations; reconcile with the cloud account product and dependencies.');
-if(observed.authSourceContainsProductionRefusal)findings.push('Native auth still explicitly rejects the production project.');
+if(observed.authSourceContainsProductionRefusal)findings.push('Native auth still explicitly rejects the production project. Guided onboarding receipts are local test records; production/server acceptance integration remains.');
 console.log(JSON.stringify({kind:'source-inventory-only',observedAt:new Date().toISOString(),observed,findings,
   releaseReadiness:'Not assessed or approved by this script.',
-  requiredOwnerGates:['IOS-QA-01 signing/device install','IOS-QA-02/03 real auth and sync','IOS-QA-04/05/06 physical Files/photo/accessibility/sharing','IOS-QA-07 live deletion','IOS-QA-08 final identity/listing/privacy/support'],
+  requiredOwnerGates:['IOS-QA-01 signing/device install','IOS-QA-02/03 real auth and sync','IOS-QA-04/05/06 physical Files/photo/accessibility/sharing','IOS-QA-07 live deletion','IOS-QA-08 final identity/listing/privacy/support','IOS-QA-09 real onboarding/email return'],
   reviewPacket:'docs/product/mobile-release-preparation.md'},null,2));

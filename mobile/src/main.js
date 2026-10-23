@@ -57,7 +57,7 @@ $('sign-out').onclick=()=>action(async()=>{await auth.signOut();message('Signed 
   lock(true);
   try {
     const {mode}=await vault.testMode();
-    if(mode.startsWith('account-')||mode.startsWith('backup-')||mode.startsWith('reports-')||mode.startsWith('photo-')){location.replace('account/index.html');return}
+    if(mode.startsWith('onboarding-')||mode.startsWith('account-')||mode.startsWith('backup-')||mode.startsWith('reports-')||mode.startsWith('photo-')){location.replace('account/index.html');return}
     if(mode.startsWith('checkin-')){location.replace('checkin/index.html');return}
     if(!mode&&!new URLSearchParams(location.search).has('lab')){location.replace('account/index.html');return}
     if(mode)await runProbe(vault,mode);

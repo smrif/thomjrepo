@@ -2,13 +2,15 @@
   <p class="account-eyebrow">WHOSE DAY · ACCOUNT TEST</p>
   <h1>Your check-ins, together</h1>
   <p id="account-intro">Sign in to the test app. Use made-up family details and notes.</p>
+  <button class="btn primary" id="account-signup">Create an account</button>
+  <button class="btn" id="account-signin">Sign in</button>
   <form id="account-login" hidden>
     <label for="account-email">Test account email</label>
     <input id="account-email" type="email" autocomplete="email" required maxlength="254">
     <button class="btn primary" id="account-send" type="submit">Send sign-in link</button>
   </form>
   <div id="account-preview" hidden>
-    <p>Choose a sample account to try separate profiles and saved check-ins. This browser preview does not sign in to a real account.</p>
+    <p>Sample account shortcuts: open or prepare a test profile directly. Use Create an account above to review guided onboarding. This browser preview sends no email.</p>
     <button class="btn primary" id="account-preview-a">Use sample account A</button>
     <button class="btn" id="account-preview-b">Use sample account B</button>
   </div>
