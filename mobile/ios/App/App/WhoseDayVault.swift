@@ -3,20 +3,26 @@ import SQLite3
 import Security
 import UIKit
 import CoreText
+import UniformTypeIdentifiers
 
 @objc(WhoseDayVaultPlugin)
-public class WhoseDayVaultPlugin: CAPPlugin, CAPBridgedPlugin {
+public class WhoseDayVaultPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDelegate, UIAdaptivePresentationControllerDelegate {
     public let identifier = "WhoseDayVaultPlugin"
     public let jsName = "WhoseDayVault"
-    public let pluginMethods: [CAPPluginMethod] = ["testMode", "write", "read", "keys", "writeSecret", "readSecret", "removeSecret", "makeReport"].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
+    public let pluginMethods: [CAPPluginMethod] = ["testMode", "write", "read", "keys", "writeSecret", "readSecret", "removeSecret", "makeReport", "compareBatch", "exportBackup", "importBackup", "probeBackupFile"].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
     private let queue = DispatchQueue(label: "com.whoseday.feasibility.vault")
     private let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
     private enum VaultError: Error { case invalid, storage }
+    private var documentCall: CAPPluginCall?
+    private weak var activeDocumentPicker: UIDocumentPickerViewController?
+    private var readingDocument = false
+    private var exporting = false
+    private var backupURL: URL?
 
     @objc func testMode(_ call: CAPPluginCall) {
         #if DEBUG && targetEnvironment(simulator)
         let args = ProcessInfo.processInfo.arguments
-        let mode = args.contains("--lab-account-write") ? "account-write" : args.contains("--lab-account-read") ? "account-read" : args.contains("--lab-checkin-write") ? "checkin-write" : args.contains("--lab-checkin-read") ? "checkin-read" : args.contains("--lab-probe-write") ? "write" : args.contains("--lab-probe-read") ? "read" : args.contains("--lab-auth") ? "auth" : ""
+        let mode = args.contains("--lab-backup-write") ? "backup-write" : args.contains("--lab-backup-read") ? "backup-read" : args.contains("--lab-account-write") ? "account-write" : args.contains("--lab-account-read") ? "account-read" : args.contains("--lab-checkin-write") ? "checkin-write" : args.contains("--lab-checkin-read") ? "checkin-read" : args.contains("--lab-probe-write") ? "write" : args.contains("--lab-probe-read") ? "read" : args.contains("--lab-auth") ? "auth" : ""
         call.resolve(["mode": mode])
         #else
         call.resolve(["mode": ""])
@@ -69,6 +75,140 @@ public class WhoseDayVaultPlugin: CAPPlugin, CAPBridgedPlugin {
             }
             call.resolve(["value": value.map { $0 as Any } ?? NSNull()])
         } catch { call.reject("Native record read failed.") } }
+    }
+    @objc func compareBatch(_ call: CAPPluginCall) {
+        queue.async { do {
+            guard let rows = call.getArray("rows", JSObject.self), !rows.isEmpty, rows.count <= 20002 else { throw VaultError.invalid }
+            var seen = Set<String>(), total = 0
+            for row in rows {
+                guard let key = row["key"] as? String, key.range(of: "^[A-Za-z0-9:._-]{1,200}$", options: .regularExpression) != nil,
+                      seen.insert(key).inserted, row["expected"] is String || row["expected"] is NSNull else { throw VaultError.invalid }
+                if let value = row["value"] { guard let text = value as? String, text.utf8.count <= 6 * 1024 * 1024 else { throw VaultError.invalid }; total += text.utf8.count }
+                total += (row["expected"] as? String)?.utf8.count ?? 0
+            }
+            guard total <= 64 * 1024 * 1024 else { throw VaultError.invalid }
+            let rollbackProbe = call.getBool("probeRollback") == true
+            if rollbackProbe {
+                #if DEBUG && targetEnvironment(simulator)
+                guard ProcessInfo.processInfo.arguments.contains("--lab-backup-write") else { throw VaultError.invalid }
+                #else
+                throw VaultError.invalid
+                #endif
+            }
+            let matched = try self.database { db -> Bool in
+                guard sqlite3_exec(db, "BEGIN IMMEDIATE", nil, nil, nil) == SQLITE_OK else { throw VaultError.storage }
+                var committed = false
+                defer { if !committed { sqlite3_exec(db, "ROLLBACK", nil, nil, nil) } }
+                for row in rows {
+                    var statement: OpaquePointer?
+                    guard sqlite3_prepare_v2(db, "SELECT value FROM records WHERE key=?", -1, &statement, nil) == SQLITE_OK else { throw VaultError.storage }
+                    defer { sqlite3_finalize(statement) }
+                    guard sqlite3_bind_text(statement, 1, row["key"] as! String, -1, self.transient) == SQLITE_OK else { throw VaultError.storage }
+                    let step = sqlite3_step(statement)
+                    let actual: String?
+                    if step == SQLITE_DONE { actual = nil }
+                    else if step == SQLITE_ROW, let text = sqlite3_column_text(statement, 0) { actual = String(cString: text) }
+                    else { throw VaultError.storage }
+                    if actual != row["expected"] as? String { return false }
+                }
+                for row in rows {
+                    guard let value = row["value"] as? String else { continue }
+                    var statement: OpaquePointer?
+                    guard sqlite3_prepare_v2(db, "INSERT INTO records(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", -1, &statement, nil) == SQLITE_OK else { throw VaultError.storage }
+                    defer { sqlite3_finalize(statement) }
+                    guard sqlite3_bind_text(statement, 1, row["key"] as! String, -1, self.transient) == SQLITE_OK,
+                          sqlite3_bind_text(statement, 2, value, -1, self.transient) == SQLITE_OK,
+                          sqlite3_step(statement) == SQLITE_DONE else { throw VaultError.storage }
+                    if rollbackProbe { throw VaultError.storage }
+                }
+                guard sqlite3_exec(db, "COMMIT", nil, nil, nil) == SQLITE_OK else { throw VaultError.storage }
+                committed = true; return true
+            }
+            call.resolve(["matched": matched])
+        } catch { call.reject("Native restore transaction failed. Reopen to check saved records.") } }
+    }
+    private func backupFile(_ text: String, name: String) throws -> URL {
+        guard text.utf8.count <= 25 * 1024 * 1024, name.range(of: "^whose-day-backup-[0-9-]+\\.json$", options: .regularExpression) != nil else { throw VaultError.invalid }
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("whose-day-backups")
+        if FileManager.default.fileExists(atPath: directory.path) { try FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.protectionKey: FileProtectionType.complete])
+        let url = directory.appendingPathComponent(name)
+        try Data(text.utf8).write(to: url, options: [.atomic, .completeFileProtection]); return url
+    }
+    private func readBackup(_ url: URL) throws -> String {
+        let access = url.startAccessingSecurityScopedResource(); defer { if access { url.stopAccessingSecurityScopedResource() } }
+        var coordinationError: NSError?, result: Result<String, Error>?
+        NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &coordinationError) { target in
+            result = Result { () throws -> String in
+                let file = try FileHandle(forReadingFrom: target); defer { try? file.close() }
+                var data = Data()
+                while let chunk = try file.read(upToCount: 65536), !chunk.isEmpty {
+                    guard data.count + chunk.count <= 25 * 1024 * 1024 else { throw VaultError.invalid }; data.append(chunk)
+                }
+                guard let text = String(data: data, encoding: .utf8) else { throw VaultError.invalid }; return text
+            }
+        }
+        if let error = coordinationError { throw error }
+        guard let result else { throw VaultError.storage }; return try result.get()
+    }
+    private func finishDocument(_ result: JSObject? = nil, error: String? = nil) {
+        let call = documentCall; documentCall = nil; activeDocumentPicker = nil; readingDocument = false
+        if let url = backupURL { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }; backupURL = nil
+        if let error { call?.reject(error) } else { call?.resolve(result ?? ["cancelled": true]) }
+    }
+    @objc func exportBackup(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            guard self.documentCall == nil, let host = self.bridge?.viewController, host.presentedViewController == nil else { call.reject("Close the current file picker first."); return }
+            do {
+                guard let text = call.getString("text"), let name = call.getString("name") else { throw VaultError.invalid }
+                let url = try self.backupFile(text, name: name); self.backupURL = url; self.documentCall = call; self.exporting = true
+                let picker = UIDocumentPickerViewController(forExporting: [url], asCopy: true); picker.delegate = self
+                self.activeDocumentPicker = picker
+                host.present(picker, animated: true); picker.presentationController?.delegate = self
+            } catch { self.documentCall = call; self.finishDocument(error: "Could not prepare the backup file.") }
+        }
+    }
+    @objc func importBackup(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            guard self.documentCall == nil, let host = self.bridge?.viewController, host.presentedViewController == nil else { call.reject("Close the current file picker first."); return }
+            self.documentCall = call; self.exporting = false
+            let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.json], asCopy: true); picker.allowsMultipleSelection = false; picker.delegate = self
+            self.activeDocumentPicker = picker
+            host.present(picker, animated: true); picker.presentationController?.delegate = self
+        }
+    }
+    public func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) { if controller === activeDocumentPicker { finishDocument() } }
+    public func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        if presentationController.presentedViewController === activeDocumentPicker && !readingDocument { finishDocument() }
+    }
+    public func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        guard controller === activeDocumentPicker, documentCall != nil else { return }
+        if exporting { finishDocument(["saved": true]); return }
+        guard urls.count == 1, let url = urls.first else { finishDocument(error: "Choose one JSON backup."); return }
+        readingDocument = true
+        queue.async {
+            // asCopy imports into the app container. Remove only that temporary
+            // copy on success or failure; never remove the provider original.
+            defer {
+                let path = url.standardizedFileURL.path
+                if path.hasPrefix(NSHomeDirectory() + "/tmp/") || path.hasPrefix(NSHomeDirectory() + "/Documents/Inbox/") { try? FileManager.default.removeItem(at: url) }
+            }
+            do {
+                let text = try self.readBackup(url)
+                DispatchQueue.main.async { self.finishDocument(["text": text, "name": url.lastPathComponent]) }
+            } catch { DispatchQueue.main.async { self.finishDocument(error: "Could not read this backup. Choose a UTF-8 JSON file up to 25 MB.") } }
+        }
+    }
+    @objc func probeBackupFile(_ call: CAPPluginCall) {
+        #if DEBUG && targetEnvironment(simulator)
+        guard ProcessInfo.processInfo.arguments.contains("--lab-backup-write"), let text = call.getString("text") else { call.reject("Probe unavailable."); return }
+        queue.async { do {
+            let url = try self.backupFile(text, name: "whose-day-backup-2000-01-01.json"); defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+            call.resolve(["text": try self.readBackup(url)])
+        } catch { call.reject("Backup file probe failed.") } }
+        #else
+        call.reject("Probe unavailable.")
+        #endif
     }
     private func secretQuery(_ call: CAPPluginCall) throws -> [String: Any] {
         return [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: "com.whoseday.feasibility.auth", kSecAttrAccount as String: try key(call)]

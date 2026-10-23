@@ -71,7 +71,8 @@
     if(backup.version!==VERSION)fail('This backup version is not supported. Update the app before restoring.');
     if(Object.keys(backup).some(key=>!['format','version','exportedAt','account','settings','entries','checksum'].includes(key)))fail('Backup contains unsupported fields.');
     if(typeof backup.exportedAt!=='string'||!Number.isFinite(Date.parse(backup.exportedAt)))fail('Backup date is invalid.');
-    if(!object(backup.account)||Object.keys(backup.account).some(key=>!['id','email'].includes(key)))fail('Backup account is invalid.');
+    if(!object(backup.account)||Object.keys(backup.account).some(key=>!['id','email','project'].includes(key)))fail('Backup account is invalid.');
+    if(backup.account.project!==undefined&&(typeof backup.account.project!=='string'||!/^[a-z0-9-]{1,30}$/.test(backup.account.project)))fail('Backup project is invalid.');
     string(backup.account.id,'backup account',200);if(!backup.account.id)fail('Backup account is missing.');
     string(backup.account.email,'backup email',10000);
     settings(backup.settings);entries(backup.entries);return backup;
@@ -86,6 +87,7 @@
   function payload(backup){const {checksum,...data}=backup;return data}
   async function create({account,config,records,exportedAt=new Date().toISOString()}){
     const data={format:FORMAT,version:VERSION,exportedAt,account:{id:account?.id,email:account?.email||''},settings:{},entries:clone(records)};
+    if(account?.project!==undefined)data.account.project=account.project;
     for(const field of SETTINGS_FIELDS)if(config[field]!==undefined)data.settings[field]=clone(config[field]);
     validate(data);
     const backup={...data,checksum:{algorithm:'SHA-256',value:await digest(data)}};
@@ -104,6 +106,7 @@
   function plan(backup,{account,config,records,yesterday}){
     validate(backup);
     if(!account?.id||account.id!==backup.account.id)fail('This backup belongs to a different account. Sign in to the account that created it.');
+    if((account.project??null)!==(backup.account.project??null))fail('This backup belongs to a different project. Use a backup from this app environment.');
     const added=[],same=[],conflicts=[];
     for(const [date,incoming] of Object.entries(backup.entries).sort(([a],[b])=>a.localeCompare(b))){
       if(!Object.hasOwn(records,date)){added.push(date);continue;}

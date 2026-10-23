@@ -8,16 +8,24 @@ export function accountScope(project,userId){
 export {validateProfile} from './profile-store.js';
 import {validateProfile,createProfileStore} from './profile-store.js';
 import {createSync} from './sync.js';
-import {equal} from './sync-store.js';
+import {equal,canonical} from './sync-store.js';
+import {localDay} from './domain.js';
+import {mergeBackup} from './backup-domain.js';
 
 // Auth supplies identity; stored profile rows cannot select an account. Every
 // switch closes the previous store immediately, including snapshots held by UI.
 export function createAccountStore(vault,{project,onState=()=>{},backend=null,onSync=()=>{},canDownload=()=>true,online=()=>globalThis.navigator?.onLine!==false}){
   const deletionKey=owner=>'deletion:v1:'+owner.scope;
   async function journal(owner,status){const key=deletionKey(owner),value=status===null?'null':JSON.stringify({schema:1,scope:owner.scope,userId:owner.id,status});await vault.write({key,value});if((await vault.read({key})).value!==value)throw new Error('Could not verify the account deletion checkpoint.');}
-  let epoch=0,state={status:'signed-out'},records=null,profileBusy=false,deletionBusy=false,profile=null,syncs=[];
+  let epoch=0,state={status:'signed-out'},records=null,profileBusy=false,deletionBusy=false,restoring=false,profile=null,syncs=[];
   const publish=next=>{state=next;onState(next);return next};
-  function lock(){epoch++;for(const sync of syncs)sync.close();syncs=[];profile?.close();profile=null;records?.close();records=null;publish({status:'signed-out'});}
+  function lock(){epoch++;const pending=syncs.map(sync=>sync.close());syncs=[];pending.push(profile?.close(),records?.close());profile=null;records=null;publish({status:'signed-out'});return Promise.all(pending);}
+  function backupSnapshot(){
+    if(state.status!=='ready'||profileBusy||deletionBusy||restoring)throw Error('Wait for the current save to finish, then reopen backup.');
+    profile.syncItems();records.syncItems();
+    const account={id:state.account.id,email:state.account.email,project},config=profile.config(),saved=records.snapshot(),yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+    return {account,config,records:saved,yesterday:localDay(yesterday),snapshot:canonical([epoch,state.account.scope,config,saved])};
+  }
   async function openRecords(owner,config,version){
     const next=createRecordStore(vault,{scope:owner.scope});
     await next.open();
@@ -31,7 +39,38 @@ export function createAccountStore(vault,{project,onState=()=>{},backend=null,on
   }
   return {
     lock,
+    backupSnapshot,
+    async restoreBackup(backup,snapshot,selection){
+      const current=backupSnapshot();if(current.snapshot!==snapshot)throw Error('Your saved data changed. Choose the backup again and review the current copies.');
+      const result=mergeBackup(backup,current,selection);
+      if(!result.changed.length&&!result.profileChanged)throw Error('Select records or profile settings to restore.');
+      const owner=state.account,entryItems=records.syncItems(),profileItem=profile.syncItems().profile;
+      restoring=true;const drained=lock(),version=epoch;publish({status:'restoring',account:owner});
+      try{
+        await drained;if(version!==epoch)return null;
+        const rows=[],checkpoint={baseHash:null,version:null};
+        async function row(key,item,value,kind){
+          const raw=(await vault.read({key})).value;if(version!==epoch)throw Error('The account changed during restore.');
+          const old=raw===null?null:JSON.parse(raw),stored=old?.[kind];
+          if(old&&(Object.keys(old).sort().join(',')!==(kind==='entry'?(old.schema===1?'day,entry,schema,scope':'day,entry,schema,scope,sync'):(old.schema===1?'config,schema,scope,userId':'config,schema,scope,sync,userId'))||kind==='entry'&&key!=='checkin:v1:'+owner.scope+':'+old.day||kind==='config'&&old.userId!==owner.id))throw Error('Stored record ownership could not be verified.');
+          if(!equal(stored,item?.value)||old&&(old.scope!==owner.scope||![1,2].includes(old.schema)||!equal(old.schema===1?checkpoint:old.sync,item.sync)))throw Error('Saved data changed while preparing restore. Reopen and review the backup again.');
+          rows.push({key,expected:raw,...(value===undefined?{}:{value:JSON.stringify(value)})});
+        }
+        for(const day of result.changed)await row('checkin:v1:'+owner.scope+':'+day,entryItems[day],{schema:2,scope:owner.scope,day,entry:result.records[day],sync:checkpoint},'entry');
+        await row('profile:v1:'+owner.scope,profileItem,result.profileChanged?{schema:2,scope:owner.scope,userId:owner.id,config:result.config,sync:checkpoint}:undefined,'config');
+        const deletion=(await vault.read({key:deletionKey(owner)})).value;
+        if(deletion!==null&&deletion!=='null')throw Error('This account is locked for deletion.');
+        rows.push({key:deletionKey(owner),expected:deletion});
+        if(version!==epoch)return null;
+        if((await vault.compareBatch({rows})).matched!==true)throw Error('Saved data changed before restore committed.');
+        for(const row of rows)if(row.value!==undefined&&((await vault.read({key:row.key})).value!==row.value))throw Error('Restore readback could not be verified.');
+        if(version!==epoch)return null;
+        publish({status:'restore-complete',account:owner,count:result.changed.length,profileChanged:result.profileChanged});return result;
+      }catch(error){if(version===epoch)publish({status:'restore-check',account:owner});throw error;}
+      finally{restoring=false;}
+    },
     async sync(){
+      if(restoring)return;
       if(state.status==='ready'&&online()&&backend?.(state.account).isDeleted){
         const owner=state.account,version=epoch,deleted=await backend(owner).isDeleted();if(version!==epoch)return;
         if(deleted){await journal(owner,'deleted');if(version!==epoch)return;lock();publish({status:'deleted',account:owner});return;}
@@ -39,7 +78,7 @@ export function createAccountStore(vault,{project,onState=()=>{},backend=null,on
       await Promise.all(syncs.map(sync=>sync.run()));
     },
     async deleteAccount(confirmation,remove){
-      if(!['ready','deletion-pending'].includes(state.status)||profileBusy||deletionBusy||confirmation!=='DELETE'||typeof remove!=='function'||!online())throw new Error('Connect and type DELETE before deleting this account.');
+      if(!['ready','deletion-pending'].includes(state.status)||profileBusy||deletionBusy||restoring||confirmation!=='DELETE'||typeof remove!=='function'||!online())throw new Error('Connect and type DELETE before deleting this account.');
       deletionBusy=true;try{
       const owner=state.account,oldVersion=epoch;
       await journal(owner,'pending');if(epoch!==oldVersion)throw new Error('The account changed during deletion.');
@@ -69,6 +108,7 @@ export function createAccountStore(vault,{project,onState=()=>{},backend=null,on
         if(typeof email!=='string'||email.length>254)throw new Error('Invalid account identity.');
         scope=accountScope(project,id);
       }catch(error){lock();throw error;}
+      if(['restoring','restore-complete','restore-check'].includes(state.status)&&state.account.scope===scope&&state.account.email===email)return state;
       if(['ready','needs-profile'].includes(state.status)&&state.account.scope===scope&&state.account.email===email)return state;
       lock();const version=epoch,owner={id,email,scope};publish({status:'loading',account:owner});
       try{

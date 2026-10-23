@@ -10,6 +10,8 @@ import {deviceVault,previewBackend} from './sync-preview.js';
 import {syncUI} from './sync-ui.js';
 import {mountSettings} from './settings-runtime.js';
 import {deletionUI} from './deletion-ui.js';
+import {mountBackup} from './backup-runtime.js';
+import {runBackupProbe} from './backup-probe.js';
 import {accountDeletion} from './delete-account.js';
 import {mountProduct} from './product-runtime.js';
 import {PROBE_PROJECT,probeProfile,createProbeAuth,runAccountProductProbe} from './account-probe.js';
@@ -32,7 +34,7 @@ function refreshProduct(){
 }
 function view(name){
   document.body.dataset.accountView=name;
-  for(const id of ['welcome','profile','panel','restore','deletion'])$('account-'+id).hidden=id!==name;
+  for(const id of ['welcome','profile','panel','restore','deletion','file-restore'])$('account-'+id).hidden=id!==name;
   if(name!=='product')document.body.dataset.checkinState=name==='loading'?'loading':'locked';
   $('checkin-loading').hidden=name!=='loading';
 }
@@ -49,6 +51,11 @@ async function receive(session){
   try{await accounts.activate(session);}catch{fail();}
 }
 async function stateChanged(state){
+  if(['restoring','restore-complete','restore-check'].includes(state.status)){
+    view('file-restore');$('file-restore-reopen').hidden=state.status==='restoring';
+    $('file-restore-title').textContent=state.status==='restoring'?'Restoring your backup':state.status==='restore-complete'?'Backup restored':'Check the saved restore';
+    $('file-restore-message').textContent=state.status==='restoring'?'Saving selected data on this device. Sync is paused.':state.status==='restore-complete'?state.count+' records restored'+(state.profileChanged?' with profile and preferences':'')+'. Reopen to review your records and resume account sync.':'The restore could not be confirmed. The transaction keeps either the complete restore or the previous records. Reopen to check the saved copy before making more changes. Keep your backup file.';return;
+  }
   if(state.status==='signed-out'){syncView?.reset();view('welcome');return;}
   if(state.status==='deletion-pending'){deletion?.pending();return;}
   if(state.status==='deleted'){view('deletion');$('account-deletion-title').textContent='Test account deleted';$('account-deletion-message').textContent='The test account was deleted. Its saved device copies remain hidden here and will not sync to another account.';$('mobile-delete-pending').hidden=true;$('mobile-delete-reopen').hidden=true;return;}
@@ -56,7 +63,7 @@ async function stateChanged(state){
   if(state.status==='loading'){view('loading');return;}
   if(state.status==='restore-unavailable'){view('restore');$('account-restore-retry').disabled=false;return;}
   if(state.status==='needs-profile'){
-    if(probeMode){if(probeMode!=='account-write')throw new Error('Missing probe profile.');await accounts.saveProfile(probeProfile);return;}
+    if(probeMode){if(!['account-write','backup-write'].includes(probeMode))throw new Error('Missing probe profile.');await accounts.saveProfile(probeProfile);return;}
     $('account-profile-email').textContent=state.account.email;
     // Never carry a different account's partially authored profile into this form.
     $('account-profile-form').reset();$('account-profile-save').disabled=false;$('account-profile-message').textContent='';view('profile');return;
@@ -74,6 +81,7 @@ async function stateChanged(state){
     $('account-identity').textContent=state.account.email;
     const openAccount=()=>{view('panel');$('account-back').focus()};
     settings=mountSettings({accounts,openAccount,signOut,deletion,syncEnabled:!!syncView});
+    mountBackup({accounts,vault,native});
     if(syncView){
       const note=document.querySelector('.checkin-local-note');note.textContent='Test build · Saves stay on this device first. Sync status is separate from a device save.';
       const status=document.createElement('button');status.id='account-sync-home';status.className='account-sync-home';status.onclick=()=>{view('panel');$('account-back').focus()};note.after(status);
@@ -82,7 +90,8 @@ async function stateChanged(state){
     }
     view('product');
     if(syncView)queueMicrotask(()=>accounts.sync());
-    if(probeMode)await runAccountProductProbe({vault,accounts,mode:probeMode});
+    if(probeMode.startsWith('backup-'))await runBackupProbe({vault,accounts,mode:probeMode});
+    else if(probeMode)await runAccountProductProbe({vault,accounts,mode:probeMode});
   }catch{fail();}finally{mounting=false;}
 }
 async function signOut(){
@@ -104,6 +113,7 @@ async function signOut(){
 }
 for(const button of document.querySelectorAll('.account-signout'))button.onclick=signOut;
 $('account-retry-signout').onclick=signOut;
+$('file-restore-reopen').onclick=()=>{history.replaceState(null,'',location.pathname+location.search);location.reload()};
 $('account-restore-retry').onclick=()=>{const session={user:{id:accounts.state.account.id,email:accounts.state.account.email}};$('account-restore-retry').disabled=true;receive(session)};
 $('account-back').onclick=()=>{view('product');document.body.dataset.checkinState='ready';refreshProduct();$('account-open').focus();accounts.sync()};
 $('account-login').onsubmit=async event=>{
@@ -124,10 +134,10 @@ async function start(){
   try{
     if(new URLSearchParams(location.search).has('demo'))throw new Error('No demo seeding in account records.');
     vault=native?registerPlugin('WhoseDayVault'):await browserVault();
-    if(native){const {mode}=await vault.testMode();if(['account-write','account-read'].includes(mode))probeMode=mode;}
+    if(native){const {mode}=await vault.testMode();if(['account-write','account-read','backup-write','backup-read'].includes(mode))probeMode=mode;}
     const sharedVault=vault;
     if(syncPreview){vault=deviceVault(vault,device);previewOnline=(await vault.read({key:'sync-preview:online'})).value!=='false';}
-    const project=probeMode?PROBE_PROJECT:native&&config.auth?.enabled?testProject(config.auth):syncPreview?'browser-sync-preview':'browser-preview';
+    const project=probeMode.startsWith('backup-')?'sim-backup-probe':probeMode?PROBE_PROJECT:native&&config.auth?.enabled?testProject(config.auth):syncPreview?'browser-sync-preview':'browser-preview';
     const syncEnabled=syncPreview||native&&!probeMode&&config.sync?.enabled===true&&config.auth?.enabled;
     const backend=syncEnabled?(owner=>syncPreview?previewBackend(sharedVault,owner,online):testBackend(auth,config.auth,owner)):null;
     accounts=createAccountStore(vault,{project,backend,canDownload,online,onSync:(kind,state)=>syncView?.update(kind,state),onState:state=>{stateChanged(state).catch(fail)}});

@@ -72,3 +72,4 @@ jobs:
           pnpm --dir mobile test:accounts
           pnpm --dir mobile test:sync
           pnpm --dir mobile test:settings
+          pnpm --dir mobile test:backup

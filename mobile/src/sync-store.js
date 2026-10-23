@@ -40,7 +40,7 @@ export function createSyncStore({load,persist,validate}){
         if(closed)throw new Error('Storage is closed.');items=loaded;ready=true;uncertain=false;
       }finally{opening=false;}
     },
-    close(){closed=true;ready=false;items={};listeners.clear();},
+    close(){closed=true;ready=false;items={};listeners.clear();return queue;},
     values(){assertOpen();return Object.fromEntries(Object.entries(items).map(([id,item])=>[id,clone(item.value)]));},
     syncItems(){assertOpen();if(uncertain)throw new Error('Retry the unverified save or reopen before syncing.');return clone(items);},
     subscribe(listener){listeners.add(listener);return ()=>listeners.delete(listener);},

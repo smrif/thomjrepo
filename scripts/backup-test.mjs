@@ -92,3 +92,9 @@ test('interrupted restores recover previous values on restart; failed rollback r
  assert(storage.getItem(B.JOURNAL_KEY));storage.failKey=null;B.recover(storage);
  assert.equal(storage.getItem(B.JOURNAL_KEY),null);
 });
+
+test('project-qualified mobile backups round-trip and cannot cross into an unqualified website or another project',async()=>{
+ const legacy=await backup(),mobile={...account,project:'mobile-test'},file=await B.create({account:mobile,config,records});assert.deepEqual((await B.parse(JSON.stringify(file))).account,mobile);
+ assert.throws(()=>B.plan(file,state()),/different project/);assert.throws(()=>B.plan(file,state({account:{...mobile,project:'other'}})),/different project/);
+ assert.throws(()=>B.plan(legacy,state({account:mobile})),/different project/);
+});

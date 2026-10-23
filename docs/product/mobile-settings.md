@@ -25,8 +25,8 @@ production deployment are unchanged.
   changes. No historical record rewrite/name migration is performed.
 - Email is read-only and identifies the signed-in account. Sign out uses the
   existing verified native sign-out path. Sync status links to account/conflict
-  review. Backup/import/CSV/report actions remain disabled for their next native
-  implementation. The inactive browser analytics checkbox and policy agreement
+  review. JSON backup/import now connects through native Files and atomic restore; see
+  [mobile backups](mobile-backups.md). CSV/report actions remain disabled. The inactive browser analytics checkbox and policy agreement
   are excluded; this increment does not create acceptance history.
 
 The standalone `checkin/` sample keeps Settings disabled. The `account/` entry

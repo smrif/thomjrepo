@@ -8,6 +8,12 @@ app has not been released. Production provider settings are unchanged.
 
 ## Implemented
 
+- October 23 account backup/restore: shared JSON format plus optional project
+  ownership, native Files/document pickers, preview/conflict choices, profile
+  opt-in and guarded atomic SQLite restore. Interrupted commits reopen to the
+  prior or complete state; restored changes retain cloud conflict review. Phone
+  browser tests pass at 390px/320px. See [mobile backups](mobile-backups.md).
+
 - October 23 account Settings: shared UI with verified account-specific saves for
   labels, children, activities and appearance, read-only email, sign-out and sync
   review. Historical records are retained unchanged. A separate test deletion
@@ -55,6 +61,14 @@ app has not been released. Production provider settings are unchanged.
 
 ## Evidence so far
 
+- October 23 signed iOS 17.5 backup probe passed: UTF-8 file round-trip, actual
+  rollback after an injected first SQLite write, selected records/profile restore
+  and note/image/settings/pending-checkpoint recovery after termination. Isolated
+  synthetic scope; no network used. Evidence: ignored
+  `mobile/.build/ios-backup-probe.json`. Android debug compilation/lint also passed
+  with build output/source copied outside the cloud-managed checkout. Native
+  provider/device QA remains separate.
+
 - October 23 Settings unit/service contracts and phone UI walkthroughs passed:
   failed-save retry, child changes with preserved records, activity validation,
   appearance, offline reopen, profile conflicts, account isolation and synthetic
@@ -76,7 +90,7 @@ app has not been released. Production provider settings are unchanged.
 - Owner confirmed the browser account preview October 22: sample account A,
   sign-out/switch to account B, and return to account A behaved as expected.
   This is browser smoke-test evidence, not real-auth or physical-iPhone sign-off.
-- Mobile domain/auth/storage/product-save/account/sync suite: 59 passed. Covers account
+- Mobile domain/auth/storage/product-save/account/sync suite: 68 passed. Covers account
   scope/ownership, stale responses and saves during account changes, offline
   auth and durable sign-out, profile failures, and commit/readback failure behavior,
   attachment/date validation, strict callback routes, secure-storage adapter,

@@ -42,6 +42,14 @@ external/executable screenshot URLs, excessive depth/record counts, and files
 over 25 MB. Supported embedded image types are PNG, JPEG/JPG, GIF, WebP, AVIF,
 BMP, HEIC, and HEIF; no external image fetching occurs. CSV cannot be imported.
 
+October 23 mobile integration adds optional `account.project` to v1. It is
+checksum-protected and must match the active environment exactly, including
+whether it is absent. Existing unqualified website files remain supported by
+the website; the separate mobile test app refuses them and other projects.
+See [mobile backups](../product/mobile-backups.md) for native storage/Files limits.
+This shared format extension is local branch work; the production deployment
+listed above predates it.
+
 ## Merge and account rules
 
 - The backup's account ID must match the currently authenticated/cached returning

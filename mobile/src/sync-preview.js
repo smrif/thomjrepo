@@ -5,6 +5,7 @@ export function deviceVault(vault,device){
   const prefix='device-'+device+':';
   return {
     read:({key})=>vault.read({key:prefix+key}),write:({key,value})=>vault.write({key:prefix+key,value}),
+    compareBatch:({rows})=>vault.compareBatch({rows:rows.map(row=>({...row,key:prefix+row.key}))}),
     keys:async({prefix:part})=>({keys:(await vault.keys({prefix:prefix+part})).keys.map(key=>key.slice(prefix.length))})
   };
 }

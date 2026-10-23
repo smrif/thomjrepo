@@ -20,7 +20,9 @@
     "probe:android": "node scripts/probe-android.mjs",
     "test:sync": "node test/sync-ui.mjs",
     "test:settings": "node test/settings-ui.mjs",
-    "build:test-api": "node scripts/build-test-api.mjs"
+    "build:test-api": "node scripts/build-test-api.mjs",
+    "test:backup": "node test/backup-ui.mjs",
+    "probe:backup:ios": "node scripts/probe-backup-ios.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",

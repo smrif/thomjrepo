@@ -2,6 +2,18 @@ package com.whoseday.feasibility;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
+import android.app.Activity;
+import androidx.activity.result.ActivityResult;
+import com.getcapacitor.annotation.ActivityCallback;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.CodingErrorAction;
+import java.util.HashSet;
+import org.json.JSONObject;
+import org.json.JSONArray;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -65,6 +77,67 @@ public class WhoseDayVaultPlugin extends Plugin {
             JSObject result=new JSObject();result.put("keys",keys);call.resolve(result);
         }catch(Exception error){call.reject("Native record listing failed.");}
     }}
+    @PluginMethod public void compareBatch(PluginCall call){synchronized(mutex){
+        try(Database helper=new Database(getContext())){
+            JSArray rows=call.getArray("rows");if(rows==null||rows.length()==0||rows.length()>20002)throw new Exception("Invalid transaction");
+            HashSet<String> seen=new HashSet<>();long total=0;
+            for(int i=0;i<rows.length();i++){
+                JSONObject row=rows.getJSONObject(i);String key=row.getString("key");Object expected=row.get("expected");
+                if(!key.matches("[A-Za-z0-9:._-]{1,200}")||!seen.add(key)||!(expected==JSONObject.NULL||expected instanceof String))throw new Exception("Invalid row");
+                if(expected instanceof String)total+=((String)expected).getBytes(StandardCharsets.UTF_8).length;
+                if(row.has("value")){Object value=row.get("value");if(!(value instanceof String))throw new Exception("Invalid value");int size=((String)value).getBytes(StandardCharsets.UTF_8).length;if(size>6*1024*1024)throw new Exception("Invalid value");total+=size;}
+            }
+            if(total>64*1024*1024)throw new Exception("Invalid size");
+            SQLiteDatabase db=helper.getWritableDatabase();db.beginTransaction();boolean matched=true;
+            try{
+                for(int i=0;i<rows.length();i++){JSONObject row=rows.getJSONObject(i);String expected=row.isNull("expected")?null:row.getString("expected");
+                    try(Cursor cursor=db.rawQuery("SELECT value FROM records WHERE key=?",new String[]{row.getString("key")})){
+                        String actual=cursor.moveToFirst()?cursor.getString(0):null;if(!java.util.Objects.equals(expected,actual)){matched=false;break;}
+                    }
+                }
+                if(matched){for(int i=0;i<rows.length();i++){JSONObject row=rows.getJSONObject(i);if(!row.has("value"))continue;ContentValues values=new ContentValues();values.put("key",row.getString("key"));values.put("value",row.getString("value"));if(db.insertWithOnConflict("records",null,values,SQLiteDatabase.CONFLICT_REPLACE)==-1)throw new Exception("Insert failed");}db.setTransactionSuccessful();}
+            }finally{db.endTransaction();}
+            JSObject result=new JSObject();result.put("matched",matched);call.resolve(result);
+        }catch(Exception error){call.reject("Native restore transaction failed. Reopen to check saved records.");}
+    }}
+    private boolean filePickerBusy=false;
+    @PluginMethod public void exportBackup(PluginCall call){
+        if(filePickerBusy){call.reject("Close the current file picker first.");return;}
+        String text=call.getString("text"),name=call.getString("name");
+        if(text==null||text.getBytes(StandardCharsets.UTF_8).length>25*1024*1024||name==null||!name.matches("whose-day-backup-[0-9-]+\\.json")){call.reject("Invalid backup file.");return;}
+        filePickerBusy=true;
+        try{Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT);intent.addCategory(Intent.CATEGORY_OPENABLE);intent.setType("application/json");intent.putExtra(Intent.EXTRA_TITLE,name);startActivityForResult(call,intent,"backupExported");}
+        catch(Exception error){filePickerBusy=false;call.reject("Could not open the file picker.");}
+    }
+    @ActivityCallback private void backupExported(PluginCall call,ActivityResult activity){
+        filePickerBusy=false;if(call==null)return;
+        if(activity.getResultCode()!=Activity.RESULT_OK){JSObject result=new JSObject();result.put("cancelled",true);call.resolve(result);return;}
+        try{
+            if(activity.getData()==null||activity.getData().getData()==null||!"content".equals(activity.getData().getData().getScheme()))throw new Exception("Missing document provider");
+            byte[] bytes=call.getString("text").getBytes(StandardCharsets.UTF_8);
+            try(OutputStream stream=getContext().getContentResolver().openOutputStream(activity.getData().getData(),"wt")){if(stream==null)throw new Exception("No stream");stream.write(bytes);stream.flush();}
+            JSObject result=new JSObject();result.put("saved",true);call.resolve(result);
+        }catch(Exception error){call.reject("Could not save the backup. A partial file may remain; choose a new destination and retry.");}
+    }
+    @PluginMethod public void importBackup(PluginCall call){
+        if(filePickerBusy){call.reject("Close the current file picker first.");return;}filePickerBusy=true;
+        try{Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);intent.addCategory(Intent.CATEGORY_OPENABLE);intent.setType("application/json");startActivityForResult(call,intent,"backupImported");}
+        catch(Exception error){filePickerBusy=false;call.reject("Could not open the file picker.");}
+    }
+    @ActivityCallback private void backupImported(PluginCall call,ActivityResult activity){
+        filePickerBusy=false;if(call==null)return;
+        if(activity.getResultCode()!=Activity.RESULT_OK){JSObject result=new JSObject();result.put("cancelled",true);call.resolve(result);return;}
+        try{
+            if(activity.getData()==null||activity.getData().getData()==null||!"content".equals(activity.getData().getData().getScheme()))throw new Exception("Missing document provider");
+            ByteArrayOutputStream bytes=new ByteArrayOutputStream();
+            try(InputStream stream=getContext().getContentResolver().openInputStream(activity.getData().getData())){
+                if(stream==null)throw new Exception("No stream");byte[] chunk=new byte[65536];int size;
+                while((size=stream.read(chunk))!=-1){if(bytes.size()+size>25*1024*1024)throw new Exception("Too large");bytes.write(chunk,0,size);}
+            }
+            String text=StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes.toByteArray())).toString();
+            JSObject result=new JSObject();result.put("text",text);result.put("name","Selected backup.json");call.resolve(result);
+        }catch(Exception error){call.reject("Could not read this backup. Choose a UTF-8 JSON file up to 25 MB.");}
+    }
     private SecretKey secretKey() throws Exception {
         KeyStore store=KeyStore.getInstance("AndroidKeyStore");store.load(null);
         if(store.containsAlias(ALIAS))return (SecretKey)store.getKey(ALIAS,null);

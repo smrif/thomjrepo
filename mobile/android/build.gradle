@@ -18,6 +18,11 @@ buildscript {
 apply from: "variables.gradle"
 
 allprojects {
+    // Keep CLI-generated output outside cloud-managed source checkouts.
+    def outputRoot = System.getenv('WHOSE_DAY_ANDROID_BUILD_ROOT')
+    if (outputRoot) {
+        layout.buildDirectory.set(new File(outputRoot, project.path == ':' ? 'root' : project.path.substring(1).replace(':', '_')))
+    }
     repositories {
         google()
         mavenCentral()

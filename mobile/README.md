@@ -2,7 +2,8 @@
 
 Owner approved the Capacitor approach and small feasibility build October 21,
 2026. This directory is an isolated native integration experiment; the production
-website and its dependencies are unchanged.
+website deployment and dependencies are unchanged. The shared backup format now
+accepts optional project ownership for isolated mobile backups.
 
 ## What is implemented
 
@@ -23,6 +24,9 @@ website and its dependencies are unchanged.
   durable pending/deleted gates; its live action stays disabled until a separate
   test worker and server secret are configured. Browser preview deletion affects
   only the fictional account/mock cloud. See [mobile Settings](../docs/product/mobile-settings.md).
+- Account JSON backup/restore through native Files/document pickers, with shared
+  format/checksum rules, project/account checks, review and atomic SQLite restore.
+  Browser review uses file download/input. See [mobile backups](../docs/product/mobile-backups.md).
 - Pinned Capacitor 8.5.3 iOS and Android projects, using bundled assets rather than
   a hosted-site URL. Provisional debug app ID: `com.whoseday.feasibility`.
 - Small synthetic check-in with SQLite commit/readback before success, a bounded
@@ -72,6 +76,7 @@ pnpm test:checkin
 pnpm test:accounts
 pnpm test:sync
 pnpm test:settings
+pnpm test:backup
 pnpm ios
 ```
 
@@ -98,12 +103,12 @@ before publishing the new in-memory state or the saved confirmation. The
 browser review uses committed IndexedDB transactions; browser results alone do
 not establish native persistence. Neither mode imports old localStorage records.
 
-The 59 mobile unit/integration checks cover verified saves, invalid stored data,
+The 68 mobile unit/integration checks cover verified saves, invalid stored data,
 scope separation, stale edits, duplicate saves and preserving answers/backfill
 dates on failure, account switching, offline auth, sign-out/callback races and
 profile ownership/recovery, Settings edits and stale writes, deletion checkpoint
 recovery/service guards, offline cloud reconciliation, profile restore and
-conflict/CAS races. `test:sync` walks through two browser preview devices at
+conflict/CAS races and atomic backup restore/recovery. `test:sync` walks through two browser preview devices at
 390px/320px; its shared mock cloud stays in IndexedDB, without real auth or
 server requests. `test:settings` covers failed-save retry, child-history preservation,
 appearance, offline reopening, profile conflicts and simulated deletion. The iOS
@@ -259,3 +264,14 @@ Android debug build and lint also passed October 22. The final APK passed both
 native write/read probes: SQLite record/image recovery, Keystore-backed secret
 recovery/removal, and three-page PDF output (29,911 bytes). Actual Android email
 return, photo selection, share destinations and device transfer remain unverified.
+
+For native JSON/SQLite backup verification after a simulator build, run
+`pnpm probe:backup:ios SIMULATOR_UUID`. Evidence goes to ignored
+`.build/ios-backup-probe.json`; real Files-provider interactions remain separate QA.
+
+The Android CLI build copies current native source/assets to a temporary workspace
+and puts generated output/cache outside the cloud-managed checkout. It includes
+uncommitted source changes, omits existing build folders, and skips generated
+`config N.xml` duplicates only after verifying byte equality with `config.xml`.
+Differing copies fail explicitly. Source files are preserved; APK/probe paths
+continue to come from `.build/android-build.json`.

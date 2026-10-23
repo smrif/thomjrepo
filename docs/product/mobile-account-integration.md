@@ -96,6 +96,7 @@ Follow-up: [test-only profile restoration and custody sync](mobile-sync.md) are
 implemented with explicit conflict review, two-device browser checks and pending
 sync recovery on iOS. The separate test schema is installed/verified and enabled in local native
 configuration; real authenticated sync QA remains pending. The [Settings follow-up](mobile-settings.md) connects family/preferences and
-prepares native test deletion; backup/import and sharing follow next. Real email
+prepares native test deletion. [Native JSON backup/import](mobile-backups.md) is
+now implemented; report sharing follows next. Real email
 handoff through this account entry, physical-device behavior, and store release
 remain separate checks. Apple's last-recorded provisioning block is unchanged.

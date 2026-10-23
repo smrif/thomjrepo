@@ -51,7 +51,7 @@
     <div id="account-conflicts"></div>
   </div>
   <p id="account-no-sync">Cloud sync is not connected in this build.</p>
-  <p>Use Settings to edit your family and appearance or review account deletion. Backup/import are not connected. Use sample data only.</p>
+  <p>Use Settings to edit your family and appearance or review account deletion. Use Settings for JSON backup and restore. Use sample data only.</p>
   <button class="btn primary" id="account-back">Back to check-ins</button>
   <button class="btn account-signout">Sign out</button>
 </section>
@@ -64,4 +64,9 @@
   </div>
   <button class="btn primary" id="mobile-delete-reopen" hidden>Reopen account</button>
   <button class="btn" id="mobile-delete-signout">Sign out</button>
+</section>
+<section id="account-file-restore" class="account-page" hidden>
+  <p class="account-eyebrow">DEVICE BACKUP</p><h1 id="file-restore-title">Restoring your backup</h1>
+  <p id="file-restore-message" role="status" aria-live="polite"></p>
+  <button class="btn primary" id="file-restore-reopen" hidden>Reopen account</button>
 </section>

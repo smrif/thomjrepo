@@ -83,8 +83,10 @@
 - [ ] Configure/deploy the separate test deletion service with the owner's test
   server key entered directly as an encrypted worker secret, then perform approved
   disposable-account QA. Live native deletion remains disabled until configured.
-- [ ] Connect native backup/import through Files with account ownership checks
-  and crash-safe restore/recovery.
+- [x] Connect native backup/import through Files with account ownership checks
+  and atomic restore/recovery. October 23: shared JSON format, preview/choices,
+  profile opt-in, image recovery and project/account refusal are implemented.
+  See [mobile backups](docs/product/mobile-backups.md); provider/device QA remains.
 - [ ] Connect actual custody reports, PDF/CSV export and native sharing.
 - [ ] Complete real authenticated sync QA through the account entry using the
   approved test identity. No new emails were sent by the sync increment.
