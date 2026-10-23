@@ -10,11 +10,11 @@ function saving(busy,label='Saving your check-in…'){
   if(busy)$('checkin-save-status').textContent=label;
   if(busy)document.querySelectorAll('.checkin-save-error').forEach(el=>el.remove());
 }
-function saveError(_error,retry){
+function saveError(error,retry){
   saving(false);
   document.querySelectorAll('.checkin-save-error').forEach(el=>el.remove());
   const box=document.createElement('div');box.className='checkin-save-error';box.setAttribute('role','alert');box.tabIndex=-1;
-  const message=document.createElement('p');message.textContent="Couldn't confirm the save. Your answers are still here. Try again, or reopen to check the saved copy.";
+  const message=document.createElement('p');message.textContent=error?.message?.startsWith('This date changed')?error.message:"Couldn't confirm the save. Your answers are still here. Try again, or reopen to check the saved copy.";
   const button=document.createElement('button');button.type='button';button.className='btn primary';button.textContent='Try saving again';button.onclick=()=>{box.remove();retry()};
   box.append(message,button);document.querySelector('.screen.active:not(.screen-leave)').append(box);box.focus();
 }
@@ -67,7 +67,11 @@ export async function mountProduct({config,store,accountMode=false}){
   account=accountMode;
   window.WhoseDayPlatform={synthetic:true,config,records:store,saving,saveError,saveStatusLabel:native?'Saved on this device':'Saved in this browser',...(native?{pickAttachment}:{})};
   await script('app.js');await script('shell.js');limitFeatures();accessibleChoices();
+  for(const name of ['startCheckin','startTodayEdit']){
+    const original=window[name];window[name]=function(...args){const result=original(...args);store.beginEdit?.(BACKFILL_DATE||todayStr());return result};
+  }
   new MutationObserver(accessibleChoices).observe($('app'),{subtree:true,childList:true});
+  initHome();
   if(native){
     $('diary-attach-btn').addEventListener('click',event=>{event.preventDefault();$('checkin-attachment-error').hidden=true;pickAttachment(null,'diary')});
   }

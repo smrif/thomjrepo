@@ -12,9 +12,10 @@ app has not been released. Production provider settings are unchanged.
   verified local family profile, per-project/account record scopes, offline
   session recovery, store revocation on account changes and durable local
   sign-out. The browser offers two separate fictional accounts. Normal native
-  launch opens this flow; original lab tools remain accessible. Cloud profile
-  restoration and custody sync are not connected. See
-  [account integration](mobile-account-integration.md).
+  launch opens this flow; original lab tools remain accessible. Test-only profile
+  restoration and custody sync are implemented behind an opt-in flag; native
+  sync is enabled in ignored local config after test-schema verification. See
+  [account integration](mobile-account-integration.md) and [sync](mobile-sync.md).
 - Separate pinned native project/dependency lock for iOS and Android.
 - Bundled current website UI preview, with production backend/analytics removed
   and network connections blocked.
@@ -42,16 +43,23 @@ app has not been released. Production provider settings are unchanged.
 - Test-project-only email authentication with PKCE, secure asynchronous session
   storage, validated custom-scheme cold/warm returns and foreground refresh.
   Disabled in the default build; ignored local configuration can permit creation
-  only for the owner-approved test inbox. No custody-table sync.
+  only for the owner-approved test inbox. Sync is confined to the account entry.
 - Repeatable debug-only native probes for record/image persistence and secure
   session recovery across process termination, removal, and multi-page PDF output.
 
 ## Evidence so far
 
+- October 22 sync increment: two-device profile/check-in restoration, offline
+  edits, restart recovery and both conflict choices pass at 390px/320px. Exact
+  test bootstrap passes in-memory PostgreSQL RLS/privilege/CAS checks. Signed iOS
+  simulator probes recover the pending checkpoint/note/image and sync that edit
+  after termination using an isolated synthetic transport. No real backend sync
+  is claimed. The test schema is installed with live RLS/grant checks and
+  anonymous API denial; no new email or production change was made.
 - Owner confirmed the browser account preview October 22: sample account A,
   sign-out/switch to account B, and return to account A behaved as expected.
   This is browser smoke-test evidence, not real-auth or physical-iPhone sign-off.
-- Mobile domain/auth/storage/product-save/account suite: 28 passed. Covers account
+- Mobile domain/auth/storage/product-save/account/sync suite: 46 passed. Covers account
   scope/ownership, stale responses and saves during account changes, offline
   auth and durable sign-out, profile failures, and commit/readback failure behavior,
   attachment/date validation, strict callback routes, secure-storage adapter,

@@ -92,7 +92,9 @@ the follow-up sign-out, account B separation, and return to account A also behav
 as expected. This confirms the browser preview flow; real email handoff and
 physical-device checks remain separate.
 
-Next: connect test-backend profile restoration and custody sync with the existing
-conflict rules; then native Settings, backup/import and report sharing. Real email
+Follow-up: [test-only profile restoration and custody sync](mobile-sync.md) are
+implemented with explicit conflict review, two-device browser checks and pending
+sync recovery on iOS. The separate test schema is installed/verified and enabled in local native
+configuration; real authenticated sync QA remains pending. Next implementation: native Settings, backup/import and sharing. Real email
 handoff through this account entry, physical-device behavior, and store release
 remain separate checks. Apple's last-recorded provisioning block is unchanged.

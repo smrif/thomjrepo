@@ -62,8 +62,17 @@
   and account-specific shared check-ins. October 22: 28 unit/integration checks
   and two-account UI walkthroughs at 390px/320px passed, including offline reopen,
   sign-out and note/image recovery. Normal native launch opens the account flow.
-  Cloud profile restoration/sync and physical-device sign-in remain outstanding;
-  see [account integration](docs/product/mobile-account-integration.md).
+  See [account integration](docs/product/mobile-account-integration.md); cloud
+  sync follows in the test-only increment below. Physical-device sign-in remains.
+- [x] Implement test-only profile restoration, durable pending sync and explicit
+  conflict review. October 22: 46 unit/integration checks, two-device browser
+  walkthroughs at 390px/320px, and signed iOS pending-sync restart probes pass.
+  Production is unchanged. See [mobile sync](docs/product/mobile-sync.md).
+- [x] Apply/verify the schema in the separate mobile test project and enable
+  the ignored local native sync flag. Live RLS/grant metadata passed for all
+  three tables, with anonymous API access denied. Production is unchanged.
+- [ ] Complete real authenticated sync QA through the account entry using the
+  approved test identity. No new emails were sent by the sync increment.
 - [x] Build the first mobile app shell preview: shared header, safe-area spacing,
   Today/Calendar/Reports/Settings tabs, scroll restoration and contextual back
   navigation. October 22 browser layout/navigation checks passed in five

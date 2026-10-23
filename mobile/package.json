@@ -17,7 +17,8 @@
     "probe:checkin:ios": "node scripts/probe-checkin-ios.mjs",
     "probe:account:ios": "node scripts/probe-account-ios.mjs",
     "build:android": "node scripts/build-android.mjs",
-    "probe:android": "node scripts/probe-android.mjs"
+    "probe:android": "node scripts/probe-android.mjs",
+    "test:sync": "node test/sync-ui.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",

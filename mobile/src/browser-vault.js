@@ -15,6 +15,11 @@ export async function browserVault(){
   return {
     async keys({prefix}){return {keys:await transaction('readonly',store=>store.getAllKeys(IDBKeyRange.bound(prefix,prefix+'\uffff')))}},
     async read({key}){return {value:await transaction('readonly',store=>store.get(key))??null}},
-    async write({key,value}){await transaction('readwrite',store=>store.put(value,key))}
+    async write({key,value}){await transaction('readwrite',store=>store.put(value,key))},
+    compareAndSwap({key,expected,value}){return new Promise((resolve,reject)=>{
+      const tx=database.transaction('records','readwrite'),store=tx.objectStore('records'),read=store.get(key);let matched=false;
+      read.onsuccess=()=>{if((read.result??null)===expected){matched=true;store.put(value,key)}};
+      tx.oncomplete=()=>resolve(matched);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error('Write interrupted.'));
+    })}
   };
 }

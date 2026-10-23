@@ -5,15 +5,31 @@ import {createAuth,testProject,projectAuthVault} from './auth.js';
 import {createAccountStore} from './account-store.js';
 import {previewAccounts} from './account-preview.js';
 import {browserVault} from './browser-vault.js';
+import {testBackend} from './test-backend.js';
+import {deviceVault,previewBackend} from './sync-preview.js';
+import {syncUI} from './sync-ui.js';
 import {mountProduct} from './product-runtime.js';
 import {PROBE_PROJECT,probeProfile,createProbeAuth,runAccountProductProbe} from './account-probe.js';
 import config from '../config.generated.json';
 
 const native=Capacitor.isNativePlatform(),$=id=>document.getElementById(id),previewKey='account-preview:v1:identity';
-let vault,accounts,auth,loadedOwner=null,signingOut=false,mounting=false,probeMode='';
+const params=new URLSearchParams(location.search),syncPreview=!native&&params.get('sync')==='preview',device=params.get('device')==='two'?'two':'one';
+let vault,accounts,auth,loadedOwner=null,signingOut=false,mounting=false,probeMode='',syncView=null,previewOnline=true;
+const online=()=>navigator.onLine!==false&&(!syncPreview||previewOnline);
+const canDownload=()=>!loadedOwner||['s-home','s-cal','s-trends'].includes(document.body.dataset.activeScreen);
+function refreshProduct(){
+  if(!loadedOwner||document.body.dataset.checkinState!=='ready')return;
+  if(document.body.dataset.activeScreen==='s-home')initHome();
+  else if(document.body.dataset.activeScreen==='s-cal'){
+    const entry=selectedCalDate&&getEntries()[selectedCalDate];
+    if(entry&&$('cal-detail').style.display!=='none')showDetail(selectedCalDate,entry,{reveal:false});else renderCal();
+    renderStats();
+  }
+  syncView?.render();
+}
 function view(name){
   document.body.dataset.accountView=name;
-  for(const id of ['welcome','profile','panel'])$('account-'+id).hidden=id!==name;
+  for(const id of ['welcome','profile','panel','restore'])$('account-'+id).hidden=id!==name;
   if(name!=='product')document.body.dataset.checkinState=name==='loading'?'loading':'locked';
   $('checkin-loading').hidden=name!=='loading';
 }
@@ -30,8 +46,9 @@ async function receive(session){
   try{await accounts.activate(session);}catch{fail();}
 }
 async function stateChanged(state){
-  if(state.status==='signed-out'){view('welcome');return;}
+  if(state.status==='signed-out'){syncView?.reset();view('welcome');return;}
   if(state.status==='loading'){view('loading');return;}
+  if(state.status==='restore-unavailable'){view('restore');$('account-restore-retry').disabled=false;return;}
   if(state.status==='needs-profile'){
     if(probeMode){if(probeMode!=='account-write')throw new Error('Missing probe profile.');await accounts.saveProfile(probeProfile);return;}
     $('account-profile-email').textContent=state.account.email;
@@ -49,7 +66,14 @@ async function stateChanged(state){
     document.querySelector('.shell-sample').replaceWith(button);
     button.onclick=()=>{view('panel');$('account-back').focus()};
     $('account-identity').textContent=state.account.email;
+    if(syncView){
+      const note=document.querySelector('.checkin-local-note');note.textContent='Test build · Saves stay on this device first. Sync status is separate from a device save.';
+      const status=document.createElement('button');status.id='account-sync-home';status.className='account-sync-home';status.onclick=()=>{view('panel');$('account-back').focus()};note.after(status);
+      state.records.subscribe(kind=>{if(kind==='remote')refreshProduct()});
+      syncView.render();
+    }
     view('product');
+    if(syncView)queueMicrotask(()=>accounts.sync());
     if(probeMode)await runAccountProductProbe({vault,accounts,mode:probeMode});
   }catch{fail();}finally{mounting=false;}
 }
@@ -70,7 +94,8 @@ async function signOut(){
 }
 for(const button of document.querySelectorAll('.account-signout'))button.onclick=signOut;
 $('account-retry-signout').onclick=signOut;
-$('account-back').onclick=()=>{view('product');document.body.dataset.checkinState='ready';$('account-open').focus()};
+$('account-restore-retry').onclick=()=>{const session={user:{id:accounts.state.account.id,email:accounts.state.account.email}};$('account-restore-retry').disabled=true;receive(session)};
+$('account-back').onclick=()=>{view('product');document.body.dataset.checkinState='ready';refreshProduct();$('account-open').focus();accounts.sync()};
 $('account-login').onsubmit=async event=>{
   event.preventDefault();if(!auth)return;
   $('account-send').disabled=true;message('Sending your sign-in link…');
@@ -90,8 +115,27 @@ async function start(){
     if(new URLSearchParams(location.search).has('demo'))throw new Error('No demo seeding in account records.');
     vault=native?registerPlugin('WhoseDayVault'):await browserVault();
     if(native){const {mode}=await vault.testMode();if(['account-write','account-read'].includes(mode))probeMode=mode;}
-    const project=probeMode?PROBE_PROJECT:native&&config.auth?.enabled?testProject(config.auth):'browser-preview';
-    accounts=createAccountStore(vault,{project,onState:state=>{stateChanged(state).catch(fail)}});
+    const sharedVault=vault;
+    if(syncPreview){vault=deviceVault(vault,device);previewOnline=(await vault.read({key:'sync-preview:online'})).value!=='false';}
+    const project=probeMode?PROBE_PROJECT:native&&config.auth?.enabled?testProject(config.auth):syncPreview?'browser-sync-preview':'browser-preview';
+    const syncEnabled=syncPreview||native&&!probeMode&&config.sync?.enabled===true&&config.auth?.enabled;
+    const backend=syncEnabled?(owner=>syncPreview?previewBackend(sharedVault,owner,online):testBackend(auth,config.auth,owner)):null;
+    accounts=createAccountStore(vault,{project,backend,canDownload,online,onSync:(kind,state)=>syncView?.update(kind,state),onState:state=>{stateChanged(state).catch(fail)}});
+    if(syncEnabled)syncView=syncUI({accounts:()=>accounts,canDownload,previewDevice:syncPreview?device:'',online,toggleOnline:async()=>{previewOnline=!previewOnline;await vault.write({key:'sync-preview:online',value:String(previewOnline)})}});
+    window.addEventListener('online',()=>accounts.sync());
+    window.addEventListener('offline',()=>accounts.sync());
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)accounts.sync()});
+    // Foreground retry also discovers changes from another device. Bundled
+    // native code does not promise continuous background synchronization.
+    let retryDelay=5000;
+    async function retry(){
+      if(!document.hidden&&accounts.state.status==='ready'){
+        await accounts.sync();refreshProduct();
+        retryDelay=accounts.syncs.some(s=>s.state.status==='error')?Math.min(retryDelay*2,60000):15000;
+      }
+      setTimeout(retry,retryDelay);
+    }
+    if(syncEnabled)setTimeout(retry,retryDelay);
     if(native){
       if(probeMode){auth=await createProbeAuth(vault,probeMode,receive);await auth.start();return;}
       $('account-login').hidden=!config.auth?.enabled;$('account-unconfigured').hidden=!!config.auth?.enabled;
@@ -99,10 +143,10 @@ async function start(){
       if(auth){
         await App.addListener('appUrlOpen',({url})=>auth.callback(url));
         await auth.start();const launch=await App.getLaunchUrl();if(launch?.url)await auth.callback(launch.url);
-        await App.addListener('appStateChange',({isActive})=>auth.foreground(isActive).catch(()=>{accounts.lock();fail()}));
+        await App.addListener('appStateChange',({isActive})=>auth.foreground(isActive).then(()=>{if(isActive)accounts.sync()}).catch(()=>{accounts.lock();fail()}));
       }else view('welcome');
     }else{
-      $('account-preview').hidden=false;$('account-intro').textContent='Try the app with two separate sample accounts.';
+      $('account-preview').hidden=false;$('account-intro').textContent=syncPreview?'Sync preview · Device '+device+'. Try the same sample account on both preview devices.':'Try the app with two separate sample accounts.';
       for(const [i,id] of ['account-preview-a','account-preview-b'].entries())$(id).onclick=async()=>{
         try{
           const value=JSON.stringify({id:previewAccounts[i].user.id});

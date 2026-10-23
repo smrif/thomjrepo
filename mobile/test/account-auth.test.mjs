@@ -43,3 +43,11 @@ test('a delayed startup session cannot replace a later successful sign-in',async
  const slow=f.auth.start();await waiting;await f.auth.callback('whoseday-feasibility://auth/callback?code=newer-code-123');
  release({data:{session}});await slow;assert.deepEqual(f.sessions,[newer]);
 });
+test('cloud operations share protected auth and reject a different identity or a sign-out in flight',async()=>{
+ const f=fixture();let called=false;
+ await assert.rejects(f.auth.withSession('22222222-2222-4222-8222-222222222222',()=>{called=true}));assert.equal(called,false);
+ let release,started;const waiting=new Promise(r=>started=r);
+ const request=f.auth.withSession(session.user.id,async(client,check)=>{assert.equal(client,f.client);started();await new Promise(r=>release=r);check();return 'old data'});
+ await waiting;await f.auth.signOut();release();await assert.rejects(request,/changed/);
+ await assert.rejects(f.auth.withSession(session.user.id,()=>{called=true}));assert.equal(called,false);
+});

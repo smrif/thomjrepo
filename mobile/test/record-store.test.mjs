@@ -33,7 +33,7 @@ test('untrusted record payloads reject invalid dates, executable images and over
   assert.throws(()=>validateEntry('2026-02-30',entry));
 });
 test('a pending save blocks another commit and exposes only previously verified data',async()=>{
-  const vault=memory(),store=createRecordStore(vault,{scope:'user-A'});await store.open();let unblock;const original=vault.write;
-  vault.write=async args=>{await new Promise(resolve=>{unblock=resolve});await original(args)};
-  const first=write(store);assert.deepEqual(store.snapshot(),{});await assert.rejects(write(store),/another save/);unblock();await first;assert.deepEqual(store.snapshot()[day],entry);
+  const vault=memory(),store=createRecordStore(vault,{scope:'user-A'});await store.open();let unblock,started;const waiting=new Promise(r=>started=r),original=vault.write;
+  vault.write=async args=>{started();await new Promise(resolve=>{unblock=resolve});await original(args)};
+  const first=write(store);await waiting;await assert.rejects(store.open(),/busy/);assert.deepEqual(store.snapshot(),{});await assert.rejects(write(store),/another save/);unblock();await first;assert.deepEqual(store.snapshot()[day],entry);
 });

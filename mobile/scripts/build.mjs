@@ -8,6 +8,7 @@ await rm(out,{recursive:true,force:true});await mkdir(out,{recursive:true});
 let config={auth:{enabled:false}};
 try{config=JSON.parse(await readFile(join(root,'config.local.json'),'utf8'))}catch(e){if(e.code!=='ENOENT')throw e}
 const project=config.auth?.enabled?testProject(config.auth):null;
+if(config.sync?.enabled&&!project)throw new Error('Sync requires an explicitly configured test auth project.');
 await writeFile(join(root,'config.generated.json'),JSON.stringify(config));
 try{await build({entryPoints:[join(root,'src/main.js')],bundle:true,outfile:join(out,'lab.js'),format:'iife',target:'es2022',minify:false})}finally{await rm(join(root,'config.generated.json'))}
 for(const file of ['index.html','lab.css'])await cp(join(root,'src',file),join(out,file));

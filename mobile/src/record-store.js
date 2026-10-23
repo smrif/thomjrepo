@@ -1,4 +1,5 @@
 import {localDay} from './domain.js';
+import {createSyncStore,equal} from './sync-store.js';
 const clone=value=>JSON.parse(JSON.stringify(value));
 const plain=value=>value&&typeof value==='object'&&!Array.isArray(value)&&Object.getPrototypeOf(value)===Object.prototype;
 const text=(value,max=4000)=>typeof value==='string'&&value.length<=max;
@@ -27,50 +28,43 @@ export function validateEntry(day,entry){
   return entry;
 }
 
-// Each date and its attachment commit in one SQLite row. No separate index can
-// become detached from a record after a crash. Scopes never share a write queue.
+// Each date, attachment and cloud checkpoint commit in one verified SQLite row.
 export function createRecordStore(vault,{scope}){
   if(!/^[A-Za-z0-9_-]{1,80}$/.test(scope))throw new Error('Invalid record scope.');
-  const prefix='checkin:v1:'+scope+':',snapshots=new WeakMap();
-  let records={},ready=false,busy=false,closed=false;
-  return {
-    async open(){
-      if(closed||busy)throw new Error('Storage is closed or busy.');
-      ready=false;const loaded={};
-      const {keys}=await vault.keys({prefix});
+  const prefix='checkin:v1:'+scope+':',snapshots=new WeakMap();let busy=false,edit=null;
+  const store=createSyncStore({validate:validateEntry,
+    async load(){
+      const loaded={}, {keys}=await vault.keys({prefix});
       if(!Array.isArray(keys)||keys.length>20000||new Set(keys).size!==keys.length)throw new Error('Invalid record listing.');
       for(const key of keys){
         if(typeof key!=='string'||!key.startsWith(prefix))throw new Error('Record scope mismatch.');
         const {value}=await vault.read({key}),row=JSON.parse(value);
-        if(!plain(row)||Object.keys(row).sort().join(',')!=='day,entry,schema,scope'||row.schema!==1||row.scope!==scope||key!==prefix+row.day)throw new Error('Unrecognized stored record.');
-        loaded[row.day]=validateEntry(row.day,row.entry);
+        if(!plain(row)||![1,2].includes(row.schema)||Object.keys(row).sort().join(',')!==(row.schema===1?'day,entry,schema,scope':'day,entry,schema,scope,sync')||row.scope!==scope||key!==prefix+row.day)throw new Error('Unrecognized stored record.');
+        loaded[row.day]={value:row.entry,sync:row.schema===1?{baseHash:null,version:null}:row.sync};
       }
-      if(closed)throw new Error('Storage is closed.');
-      records=loaded;ready=true;
+      return loaded;
     },
-    close(){closed=true;ready=false;records={};},
-    snapshot(){
-      if(!ready)throw new Error('Records are not ready.');
-      const snapshot=clone(records);snapshots.set(snapshot,clone(records));return snapshot;
-    },
+    async persist(day,item){
+      const key=prefix+day,value=JSON.stringify({schema:2,scope,day,entry:item.value,sync:item.sync});
+      await vault.write({key,value});if((await vault.read({key})).value!==value)throw new Error('Saved record could not be verified.');
+    }
+  });
+  return {
+    open:store.open,close:store.close,syncItems:store.syncItems,accept:store.accept,acknowledge:store.acknowledge,subscribe:store.subscribe,
+    beginEdit(day){edit={day,value:store.values()[day]};},
+    snapshot(){const snapshot=store.values();snapshots.set(snapshot,clone(snapshot));return snapshot;},
     async commit(next){
-      if(!ready||busy)throw new Error('Records are not ready for another save.');
-      const base=snapshots.get(next);
+      if(busy)throw new Error('Records are not ready for another save.');
+      const records=store.values(),base=snapshots.get(next);
       if(!base||!plain(next))throw new Error('Save requires a current record snapshot.');
       if(Object.keys(base).some(day=>!(day in next)))throw new Error('Bulk removal is not enabled in this test build.');
-      const changed=Object.keys(next).filter(day=>JSON.stringify(next[day])!==JSON.stringify(base[day]));
+      const changed=Object.keys(next).filter(day=>!equal(next[day],base[day]));
       if(!changed.length)return;
       if(changed.length!==1)throw new Error('Bulk writes are not enabled in this test build.');
       const day=changed[0],entry=clone(validateEntry(day,next[day]));
-      if(JSON.stringify(records[day])!==JSON.stringify(base[day]))throw new Error('This date changed. Reopen it before saving again.');
-      const key=prefix+day,value=JSON.stringify({schema:1,scope,day,entry});
-      busy=true;
-      try{
-        await vault.write({key,value});
-        if((await vault.read({key})).value!==value)throw new Error('Saved record could not be verified.');
-        if(closed)throw new Error('The account changed during saving.');
-        records={...records,[day]:entry};
-      }finally{busy=false;}
+      if(edit?.day===day&&!equal(records[day],edit.value))throw new Error('This date changed in the cloud. Return to Today and reopen it before saving again.');
+      if(!equal(records[day],base[day]))throw new Error('This date changed. Reopen it before saving again.');
+      busy=true;try{await store.local(day,entry,base[day]);edit=null;}finally{busy=false;}
     }
   };
 }

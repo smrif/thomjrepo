@@ -3,5 +3,8 @@
     "enabled": false,
     "url": "https://YOUR-TEST-PROJECT.supabase.co",
     "publishableKey": "sb_publishable_REPLACE_WITH_TEST_PROJECT_KEY"
+  },
+  "sync": {
+    "enabled": false
   }
 }

@@ -11,8 +11,12 @@ website and its dependencies are unchanged.
   session recovery and durable local sign-out. Profiles/records and secure auth
   are scoped by project/account; the browser review uses two fictional accounts.
   Normal native launch opens this flow; use `index.html?lab=1` for the lab tools.
-  This remains synthetic-data-only, with no cloud profile restoration or sync.
-  See [account integration](../docs/product/mobile-account-integration.md).
+  Test-only profile restoration and sync are implemented behind an opt-in flag,
+  with a two-device browser review and explicit conflict choices. The separate
+  test schema is installed/verified, and ignored local native config enables it.
+  Checked-in defaults stay disabled; real authenticated sync QA is still pending.
+  See [account integration](../docs/product/mobile-account-integration.md) and
+  [sync implementation and smoke test](../docs/product/mobile-sync.md).
 - Pinned Capacitor 8.5.3 iOS and Android projects, using bundled assets rather than
   a hosted-site URL. Provisional debug app ID: `com.whoseday.feasibility`.
 - Small synthetic check-in with SQLite commit/readback before success, a bounded
@@ -27,7 +31,7 @@ website and its dependencies are unchanged.
   strict callback validation, duplicate handling and app lifecycle refresh.
   Disabled by default; explicitly refuses the production Supabase project.
   Existing-account flow by default; an ignored local configuration can allow
-  creation only for the owner-approved test inbox. No custody sync.
+  creation only for the owner-approved test inbox. Lab auth itself has no custody sync.
 - Offline copy of the current website UI at `preview/index.html?demo=july`.
   Its demo browser storage is separate from the native test record. Backend and
   analytics scripts are excluded and network connections blocked by CSP.
@@ -60,6 +64,7 @@ pnpm test
 pnpm test:ui
 pnpm test:checkin
 pnpm test:accounts
+pnpm test:sync
 pnpm ios
 ```
 
@@ -86,10 +91,14 @@ before publishing the new in-memory state or the saved confirmation. The
 browser review uses committed IndexedDB transactions; browser results alone do
 not establish native persistence. Neither mode imports old localStorage records.
 
-The 28 mobile unit/integration checks cover verified saves, invalid stored data,
+The 46 mobile unit/integration checks cover verified saves, invalid stored data,
 scope separation, stale edits, duplicate saves and preserving answers/backfill
 dates on failure, account switching, offline auth, sign-out/callback races and
-profile ownership/recovery. `test:accounts` exercises profile setup/failure retry,
+profile ownership/recovery, offline cloud reconciliation, profile restore and
+conflict/CAS races. `test:sync` walks through two browser preview devices at
+390px/320px; its shared mock cloud stays in IndexedDB, without real auth or
+server requests. See the sync document for URLs and native opt-in setup.
+`test:accounts` exercises profile setup/failure retry,
 separate accounts, note/image recovery, offline reopen and sign-out/reload at
 390px and 320px. `test:checkin` additionally exercises the shared UI at 390px
 and 320px: save, close/offline reopen, attachment/edit recovery, injected failure
