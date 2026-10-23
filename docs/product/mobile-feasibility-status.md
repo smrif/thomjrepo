@@ -8,6 +8,12 @@ app has not been released. Production provider settings are unchanged.
 
 ## Implemented
 
+- October 23 account reports: five shared report types and period filters, guarded
+  PDF/CSV/clipboard actions, Files save and native sharing. Long Unicode reports
+  and all-data CSV are exercised with synthetic native probes. See
+  [reports and first-pass evidence](mobile-reports.md) and
+  [deferred owner QA](mobile-owner-qa.md).
+
 - October 23 account backup/restore: shared JSON format plus optional project
   ownership, native Files/document pickers, preview/conflict choices, profile
   opt-in and guarded atomic SQLite restore. Interrupted commits reopen to the
@@ -47,7 +53,8 @@ app has not been released. Production provider settings are unchanged.
   Record scopes are isolated; this build uses synthetic fixtures, not live
   account binding or sync. The browser review uses a separate IndexedDB store.
   It does not reseed July data or import legacy browser records. Reports and
-  Settings remain in the shell preview pending their native integration.
+  Settings are disabled in this standalone sample; both are integrated in the
+  separate account entry.
 - Native photo selection, local multi-page PDF generation and system file sharing.
 - Small app-owned native bridge for iOS SQLite/Keychain and Android
   SQLite/Keystore-backed encrypted session storage. Record database is not
@@ -60,6 +67,14 @@ app has not been released. Production provider settings are unchanged.
   session recovery across process termination, removal, and multi-page PDF output.
 
 ## Evidence so far
+
+- October 23 reports/release increment: 73 mobile unit checks, all mobile UI
+  suites and 49 repository release checks passed. Signed iOS and Android each
+  generated five complete PDFs (29 pages) and full CSV; final render/content
+  checks pass. Android Downloads save/cancel and share cancellation have actual
+  emulator evidence. Local accessibility fixes/evidence are in
+  [accessibility QA](mobile-accessibility-qa.md); draft store preparation is in
+  [release preparation](mobile-release-preparation.md).
 
 - October 23 signed iOS 17.5 backup probe passed: UTF-8 file round-trip, actual
   rollback after an injected first SQLite write, selected records/profile restore
@@ -90,7 +105,7 @@ app has not been released. Production provider settings are unchanged.
 - Owner confirmed the browser account preview October 22: sample account A,
   sign-out/switch to account B, and return to account A behaved as expected.
   This is browser smoke-test evidence, not real-auth or physical-iPhone sign-off.
-- Mobile domain/auth/storage/product-save/account/sync suite: 68 passed. Covers account
+- Mobile domain/auth/storage/product-save/account/sync suite: 73 passed. Covers account
   scope/ownership, stale responses and saves during account changes, offline
   auth and durable sign-out, profile failures, and commit/readback failure behavior,
   attachment/date validation, strict callback routes, secure-storage adapter,
@@ -209,11 +224,13 @@ app has not been released. Production provider settings are unchanged.
   this 8 GB host produced a healthy boot and passing native probes; no broader
   emulator stability claim is established.
 - Actual native photo-picker/share-sheet destination behavior, physical-device
-  recovery and email handoff remain open. Current PDF is a synthetic report and
-  does not embed attachment images.
-- Full current-product native migration remains stage 2+: account-scoped storage,
-  atomic restore/migrations, report/backup parity, API origin/deletion adaptation,
-  Universal/App Links, release privacy review and physical-device QA.
+  recovery and email handoff remain open. Account reports now generate real selected content from synthetic records;
+  PDFs reference attachments rather than embedding images. Android Downloads
+  save/cancel and share cancellation have first-pass evidence; physical iPhone
+  and recipient delivery remain open.
+- Account storage, atomic restore and report parity now have test implementation
+  and evidence. Production migration/storage policy, live deletion activation,
+  Universal/App Links, release privacy review and physical-device QA remain.
 
 See [mobile README](../../mobile/README.md) for reproducible build/probe commands
 and [approved direction](mobile-app-plan.md) for the broader release plan.

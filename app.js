@@ -313,7 +313,7 @@ function renderActivitySetup(){
     </div>
     <div class="settings-card activity-card-grid" id="setup-activity-chips"></div>
     <div class="activity-add-row">
-      <input type="text" class="activity-custom-input" placeholder="Add custom activity..." id="setup-custom-activity" maxlength="${CUSTOM_ACTIVITY_MAX_LENGTH}" aria-describedby="setup-custom-activity-hint">
+      <input type="text" class="activity-custom-input" placeholder="Add custom activity..." id="setup-custom-activity" maxlength="${CUSTOM_ACTIVITY_MAX_LENGTH}" aria-label="New custom activity" aria-describedby="setup-custom-activity-hint">
       <button type="button" class="activity-add-btn" onclick="addCustomActivity()">Add</button>
     </div>
     <div class="activity-limit-hint" id="setup-custom-activity-hint">${CUSTOM_ACTIVITY_MAX_LENGTH} characters max.</div>
@@ -1602,9 +1602,7 @@ async function restoreBackupSelection(){
 }
 // ── END PORTABLE BACKUP / RESTORE ────────────────────────────
 
-function exportAllData(){
-  trackUsage('Export Started',{format:'csv'});
-  try{
+function allDataCsv(){
   const exportDate=todayStr();
   const entries=getEntries();
   const headers=[
@@ -1651,14 +1649,15 @@ function exportAllData(){
     rows.push([exportedAt,alphaNote,currentParent(),coParent(),APP_CONFIG.email||'',csvJoin(APP_CONFIG.children),'','','','','','','','','','','','','','','','','','','','','']);
   }
   const csv=[headers,...rows].map(row=>row.map(csvCell).join(',')).join('\n')+'\n';
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download=`${safeFilePart(currentParent())}-custody-tracker-backup-${exportDate}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  return {text:csv,name:`${safeFilePart(currentParent())}-custody-tracker-backup-${exportDate}.csv`};
+}
+function exportAllData(){
+  trackUsage('Export Started',{format:'csv'});
+  try{
+  const data=allDataCsv();
+  const blob=new Blob([data.text],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=data.name;document.body.appendChild(a);a.click();a.remove();
   window.setTimeout(()=>URL.revokeObjectURL(url),1000);
   trackUsage('Export Download Requested',{format:'csv'});
   }catch(error){trackFailure('Export Failed',error,{format:'csv'});throw error}
@@ -3479,11 +3478,8 @@ async function copyReport(){
   if(!currentReportText)return;
   try{await navigator.clipboard.writeText(currentReportText);trackUsage('Report Copy Completed',reportAnalytics());const el=document.getElementById('copy-toast');el.style.display='block';setTimeout(()=>el.style.display='none',2500)}catch(e){}
 }
-function printReport(){
-  if(!currentReportText)return;
-  const printAnalytics=reportAnalytics();
-  const w=window.open('','_blank');
-  if(!w)return;
+function reportDocument(){
+  if(!currentReportText)return null;
   const reportTitle=document.getElementById('preview-title')?document.getElementById('preview-title').textContent:'Whose Day Report';
   const now=new Date();
   const printDate=now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
@@ -3520,6 +3516,16 @@ Signature: _________________________ Date: _____________
 Printed name: ______________________
 ${'─'.repeat(60)}`;
 
+  const text=[`Whose Day - ${reportTitle}`,'Personal custody documentation record',
+    'Reporting parent: '+parentName,'Children: '+kids,'Generated: '+printDate+' at '+printTime,
+    'Period: '+reportPeriodLabel(),`Records in period: ${totalEntries} · Included: ${includedEntries} · Locked entries: ${lockedEntries}`,
+    '',currentReportText,'',attestation].join('\n');
+  return {reportTitle,printDate,printTime,parentName,kids,totalEntries,includedEntries,lockedEntries,attestation,text};
+}
+function printReport(){
+  const data=reportDocument();if(!data)return;
+  const printAnalytics=reportAnalytics(),w=window.open('','_blank');if(!w)return;
+  const {reportTitle,printDate,printTime,parentName,kids,totalEntries,includedEntries,lockedEntries,attestation}=data;
   w.document.write(`<!doctype html><html><head><title>${trendsEscape(reportTitle)}</title>
   <style>
     @page{margin:2cm}

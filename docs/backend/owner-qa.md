@@ -1,9 +1,14 @@
 # Owner QA Queue
 
-Updated October 13, 2026. The owner has no time for manual QA right now. Keep these
+Updated October 23, 2026. The owner has no time for manual QA right now. Keep these
 items pending while independent implementation and automated checks continue.
 Do not send test sign-in emails, create live test accounts, delete accounts, or
 claim these checks passed merely because their local/mock tests passed.
+
+The iOS-specific device/provider checks and the agent’s first-pass evidence are
+tracked in [iOS owner QA](../product/mobile-owner-qa.md). The October 23 request
+to keep working while away authorizes independent implementation and first-pass
+QA; the live email/disposable-account/deletion approvals below remain pending.
 
 ## Deferred Tests
 

@@ -19,7 +19,7 @@ function authFor(vault,onSession){
 // Only native DEBUG simulator launch modes can call this path. Probe credentials
 // use their own Keychain namespace and never replace the real test sign-in.
 export async function createProbeAuth(vault,mode,onSession){
-  if(mode==='account-write'||mode==='backup-write'){
+  if(mode==='account-write'||mode==='backup-write'||mode==='reports-write'){
     const scoped=probeVault(vault);await scoped.removeSecret({key:AUTH_STORAGE_KEY+'-signed-out'});
     await scoped.writeSecret({key:AUTH_STORAGE_KEY,value:JSON.stringify(session)});
   }

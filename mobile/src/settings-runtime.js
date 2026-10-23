@@ -55,7 +55,6 @@ export function mountSettings({accounts,openAccount,signOut,deletion,syncEnabled
   };
   window.openSettingsPage=function(page,options){
     if(busy)return;
-    if(page==='export')return;
     const previous=settingsPage;original.openSettingsPage(page,options);decorate();
     if(page==='delete'){if(previous!==page)deletion?.reset();else deletion?.refresh();}
   };

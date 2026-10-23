@@ -32,6 +32,11 @@
 
 ## iOS App Store App
 
+- Away-work instruction October 23: continue independent implementation and run
+  a first QA pass. Keep owner/device/provider checks in
+  [iOS owner QA](docs/product/mobile-owner-qa.md); record evidence without
+  replacing the existing live-account or release approvals.
+
 - Owner clarification October 20, 2026: iOS support means a downloadable App
   Store app, beyond Safari/Home Screen support. A separate feasibility app is
   now in progress; no full-product mobile release, TestFlight release, or App
@@ -87,7 +92,10 @@
   and atomic restore/recovery. October 23: shared JSON format, preview/choices,
   profile opt-in, image recovery and project/account refusal are implemented.
   See [mobile backups](docs/product/mobile-backups.md); provider/device QA remains.
-- [ ] Connect actual custody reports, PDF/CSV export and native sharing.
+- [x] Connect actual custody reports, PDF/CSV export and native sharing. October
+  23: shared report content, account guards, local pagination, Files/share/clipboard
+  adapters and first-pass phone/native PDF QA. See [mobile reports](docs/product/mobile-reports.md).
+  Actual destinations and physical-device checks stay in the owner QA list.
 - [ ] Complete real authenticated sync QA through the account entry using the
   approved test identity. No new emails were sent by the sync increment.
 - [x] Build the first mobile app shell preview: shared header, safe-area spacing,
@@ -99,11 +107,19 @@
   iOS simulator process termination; browser failure/retry and reopen tests also
   passed. Synthetic scopes only; real authenticated sync QA,
   report sharing and physical-device QA remain in the full iOS app task.
+- [x] Run a first local accessibility/layout pass for account/Settings/Reports.
+  October 23: 87 checkpoints at small-phone, standard-phone and landscape widths;
+  fixed field labeling, enlarged-text clipping and tab overlap. See
+  [accessibility evidence](docs/product/mobile-accessibility-qa.md).
 - [ ] Verify layout, keyboard behavior, accessibility, attachments, and sharing
   on physical iPhones, alongside the existing account/offline/conflict QA.
 - [ ] Set up app identity, signing, and a TestFlight build. Confirm Apple
   Developer account access; any enrollment/payment remains a separate approval.
-- [ ] Prepare the App Store listing, icon/screenshots, support and policy links,
+- [x] Prepare a draft release packet with listing copy, source identity inventory,
+  privacy/data mapping, screenshot plan and TestFlight review walkthrough. October
+  23: [release preparation](docs/product/mobile-release-preparation.md) and
+  `pnpm --dir mobile release:inventory`; final owner decisions remain pending.
+- [ ] Finalize the App Store listing, icon/screenshots, support and policy links,
   privacy disclosures, and review access/instructions; test through TestFlight
   before submission. Coordinate policy changes with the refresh above.
 - [ ] Submit the approved build and complete review/release follow-up.

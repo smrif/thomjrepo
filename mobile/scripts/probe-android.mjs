@@ -43,7 +43,7 @@ for(const mode of ['write','read']) {
   if(!result?.passed)throw new Error('Native '+mode+' probe failed: '+(result?.error||'No fresh success marker.'));
   const pdfPath=new URL(result.pdf).pathname;
   if(!pdfPath.startsWith('/data/user/0/'+id+'/cache/lab-reports/')&&!pdfPath.startsWith('/data/data/'+id+'/cache/lab-reports/'))throw new Error('Unexpected native PDF location');
-  if(!/^Whose-Day-test-[A-Za-z0-9-]+\.pdf$/.test(pdfPath.split('/').at(-1)))throw new Error('Unexpected native PDF name');
+  if(!/^(?:Whose-Day-test|whose-day-report)-[A-Za-z0-9-]+\.pdf$/.test(pdfPath.split('/').at(-1)))throw new Error('Unexpected native PDF name');
   const pdf=await run(adb,['-s',device,'exec-out','run-as',id,'cat',pdfPath],{encoding:null});
   if(pdf.subarray(0,5).toString()!=='%PDF-')throw new Error('Native PDF header is invalid');
   const pages=(pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)||[]).length;

@@ -22,7 +22,12 @@
     "test:settings": "node test/settings-ui.mjs",
     "build:test-api": "node scripts/build-test-api.mjs",
     "test:backup": "node test/backup-ui.mjs",
-    "probe:backup:ios": "node scripts/probe-backup-ios.mjs"
+    "probe:backup:ios": "node scripts/probe-backup-ios.mjs",
+    "test:reports": "node test/reports-ui.mjs",
+    "probe:reports:ios": "node scripts/probe-reports-ios.mjs",
+    "probe:reports:android": "node scripts/probe-reports-android.mjs",
+    "release:inventory": "node scripts/release-inventory.mjs",
+    "test:accessibility": "node test/accessibility-ui.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",

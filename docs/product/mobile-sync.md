@@ -128,4 +128,4 @@ Run `pnpm --dir mobile test`, `test:ui`, `test:checkin`, `test:accounts`, and
 Real authenticated sync, uninterrupted email handoff, physical-device QA and
 Apple provisioning remain separate gates. The [Settings follow-up](mobile-settings.md) connects family/preferences and
 prepares deletion. [Native backup/import](mobile-backups.md) now adds atomic
-restore with cloud conflict review. Report sharing follows next.
+restore with cloud conflict review. [Report sharing](mobile-reports.md) is now connected.

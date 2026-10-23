@@ -9,7 +9,7 @@ import UniformTypeIdentifiers
 public class WhoseDayVaultPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDelegate, UIAdaptivePresentationControllerDelegate {
     public let identifier = "WhoseDayVaultPlugin"
     public let jsName = "WhoseDayVault"
-    public let pluginMethods: [CAPPluginMethod] = ["testMode", "write", "read", "keys", "writeSecret", "readSecret", "removeSecret", "makeReport", "compareBatch", "exportBackup", "importBackup", "probeBackupFile"].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
+    public let pluginMethods: [CAPPluginMethod] = ["testMode", "write", "read", "keys", "writeSecret", "readSecret", "removeSecret", "makeReport", "compareBatch", "exportBackup", "importBackup", "probeBackupFile", "makeTextFile", "saveExport", "copyText"].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
     private let queue = DispatchQueue(label: "com.whoseday.feasibility.vault")
     private let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
     private enum VaultError: Error { case invalid, storage }
@@ -22,7 +22,7 @@ public class WhoseDayVaultPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerD
     @objc func testMode(_ call: CAPPluginCall) {
         #if DEBUG && targetEnvironment(simulator)
         let args = ProcessInfo.processInfo.arguments
-        let mode = args.contains("--lab-backup-write") ? "backup-write" : args.contains("--lab-backup-read") ? "backup-read" : args.contains("--lab-account-write") ? "account-write" : args.contains("--lab-account-read") ? "account-read" : args.contains("--lab-checkin-write") ? "checkin-write" : args.contains("--lab-checkin-read") ? "checkin-read" : args.contains("--lab-probe-write") ? "write" : args.contains("--lab-probe-read") ? "read" : args.contains("--lab-auth") ? "auth" : ""
+        let mode = args.contains("--lab-reports-write") ? "reports-write" : args.contains("--lab-reports-read") ? "reports-read" : args.contains("--lab-backup-write") ? "backup-write" : args.contains("--lab-backup-read") ? "backup-read" : args.contains("--lab-account-write") ? "account-write" : args.contains("--lab-account-read") ? "account-read" : args.contains("--lab-checkin-write") ? "checkin-write" : args.contains("--lab-checkin-read") ? "checkin-read" : args.contains("--lab-probe-write") ? "write" : args.contains("--lab-probe-read") ? "read" : args.contains("--lab-auth") ? "auth" : ""
         call.resolve(["mode": mode])
         #else
         call.resolve(["mode": ""])
@@ -153,7 +153,7 @@ public class WhoseDayVaultPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerD
     }
     private func finishDocument(_ result: JSObject? = nil, error: String? = nil) {
         let call = documentCall; documentCall = nil; activeDocumentPicker = nil; readingDocument = false
-        if let url = backupURL { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }; backupURL = nil
+        if let url = backupURL { try? FileManager.default.removeItem(at: url) }; backupURL = nil
         if let error { call?.reject(error) } else { call?.resolve(result ?? ["cancelled": true]) }
     }
     @objc func exportBackup(_ call: CAPPluginCall) {
@@ -260,30 +260,77 @@ public class WhoseDayVaultPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerD
             guard result == errSecSuccess || result == errSecItemNotFound else { throw VaultError.storage }; call.resolve()
         } catch { call.reject("Secure session removal failed.") } }
     }
+    private func exportLocation(_ call: CAPPluginCall, extension ext: String) throws -> URL {
+        let scope = call.getString("scope") ?? "lab"
+        let name = call.getString("name") ?? "whose-day-report-" + UUID().uuidString + "." + ext
+        guard scope.range(of: "^[A-Za-z0-9_-]{1,80}$", options: .regularExpression) != nil,
+              name.range(of: "^whose-day-(report|records)-[A-Za-z0-9-]+\\." + ext + "$", options: .regularExpression) != nil else { throw VaultError.invalid }
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("lab-reports").appendingPathComponent(scope + "-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.protectionKey: FileProtectionType.complete])
+        return directory.appendingPathComponent(name)
+    }
+    private func exportFile(_ call: CAPPluginCall) throws -> URL {
+        guard let raw = call.getString("uri"), let url = URL(string: raw), url.isFileURL, url.host == nil || url.host == "", url.query == nil, url.fragment == nil else { throw VaultError.invalid }
+        let base = FileManager.default.temporaryDirectory.appendingPathComponent("lab-reports").resolvingSymlinksInPath().path + "/"
+        let target = url.standardizedFileURL.resolvingSymlinksInPath()
+        guard target.path.hasPrefix(base), ["pdf", "csv"].contains(target.pathExtension) else { throw VaultError.invalid }
+        let file = try FileHandle(forReadingFrom: target); defer { try? file.close() }
+        guard try file.seekToEnd() <= 25 * 1024 * 1024 else { throw VaultError.invalid }; return target
+    }
+    @objc func saveExport(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            guard self.documentCall == nil, let host = self.bridge?.viewController, host.presentedViewController == nil else { call.reject("Close the current file picker first."); return }
+            do {
+                let url = try self.exportFile(call); self.documentCall = call; self.exporting = true; self.backupURL = url
+                let picker = UIDocumentPickerViewController(forExporting: [url], asCopy: true); picker.delegate = self; self.activeDocumentPicker = picker
+                host.present(picker, animated: true); picker.presentationController?.delegate = self
+            } catch { call.reject("Could not open this prepared export. Generate it again.") }
+        }
+    }
+    @objc func copyText(_ call: CAPPluginCall) {
+        guard let text = call.getString("text"), !text.isEmpty, text.utf8.count <= 1024 * 1024 else { call.reject("Choose a shorter report before copying."); return }
+        DispatchQueue.main.async { UIPasteboard.general.string = text; call.resolve() }
+    }
+    @objc func makeTextFile(_ call: CAPPluginCall) {
+        queue.async { do {
+            guard let text = call.getString("text"), !text.isEmpty, text.utf8.count <= 25 * 1024 * 1024 else { throw VaultError.invalid }
+            let url = try self.exportLocation(call, extension: "csv"), data = Data(text.utf8)
+            try data.write(to: url, options: [.atomic, .completeFileProtection])
+            guard try Data(contentsOf: url) == data else { throw VaultError.storage }; call.resolve(["uri": url.absoluteString])
+        } catch { call.reject("Could not prepare this CSV file. Your records are kept.") } }
+    }
     @objc func makeReport(_ call: CAPPluginCall) {
-        guard let text = call.getString("text"), !text.isEmpty, text.count <= 12000 else { call.reject("Invalid report."); return }
-        DispatchQueue.main.async { do {
-            let directory = FileManager.default.temporaryDirectory.appendingPathComponent("lab-reports")
-            if FileManager.default.fileExists(atPath: directory.path) { try FileManager.default.removeItem(at: directory) }
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            let url = directory.appendingPathComponent("Whose-Day-test-" + UUID().uuidString + ".pdf")
-            let attributed = NSAttributedString(string: text, attributes: [.font: UIFont.systemFont(ofSize: 13)])
+        guard let text = call.getString("text"), !text.isEmpty, text.utf8.count <= 1024 * 1024 else { call.reject("Choose a shorter report period (up to 1 MB of text)."); return }
+        queue.async { do {
+            let url = try self.exportLocation(call, extension: "pdf")
+            let attributed = NSAttributedString(string: text, attributes: [.font: UIFont.monospacedSystemFont(ofSize: 11, weight: .regular)])
+            let attestation = call.getString("attestation")
+            if let attestation { guard text.hasSuffix(attestation) else { throw VaultError.invalid } }
+            let attestationStart = attestation.map { attributed.length - ($0 as NSString).length } ?? attributed.length
             let setter = CTFramesetterCreateWithAttributedString(attributed)
-            let renderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 595, height: 842))
+            let format = UIGraphicsPDFRendererFormat(); format.documentInfo = [kCGPDFContextCreator as String: "Whose Day", kCGPDFContextTitle as String: url.lastPathComponent]
+            let renderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 595, height: 842), format: format)
+            var failed = false
             let data = renderer.pdfData { context in
-                var offset = 0
+                var offset = 0, page = 0
                 while offset < attributed.length {
-                    context.beginPage()
-                    let graphics = context.cgContext; graphics.saveGState(); graphics.translateBy(x: 0, y: 842); graphics.scaleBy(x: 1, y: -1)
-                    let path = CGPath(rect: CGRect(x: 40, y: 40, width: 515, height: 762), transform: nil)
-                    let frame = CTFramesetterCreateFrame(setter, CFRange(location: offset, length: 0), path, nil)
-                    CTFrameDraw(frame, graphics); graphics.restoreGState()
+                    let path = CGPath(rect: CGRect(x: 40, y: 52, width: 515, height: 750), transform: nil)
+                    let sectionEnd = offset < attestationStart ? attestationStart : attributed.length
+                    let frame = CTFramesetterCreateFrame(setter, CFRange(location: offset, length: sectionEnd - offset), path, nil)
                     let length = CTFrameGetVisibleStringRange(frame).length
-                    if length == 0 { break }; offset += length
+                    if length == 0 { failed = true; break }
+                    if (text as NSString).substring(with: NSRange(location: offset, length: length)).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { offset += length; continue }
+                    page += 1; if page > 1000 { failed = true; break }; context.beginPage()
+                    let graphics = context.cgContext; graphics.saveGState(); graphics.textMatrix = .identity; graphics.translateBy(x: 0, y: 842); graphics.scaleBy(x: 1, y: -1)
+                    CTFrameDraw(frame, graphics); graphics.restoreGState()
+                    ("Whose Day - Page " + String(page)).draw(in: CGRect(x: 40, y: 810, width: 515, height: 14), withAttributes: [.font: UIFont.systemFont(ofSize: 9), .foregroundColor: UIColor.darkGray])
+                    offset += length
                 }
             }
-            try data.write(to: url, options: [.atomic, .completeFileProtection]); call.resolve(["uri": url.absoluteString])
-        } catch { call.reject("Could not create the test PDF.") } }
+            guard !failed, data.count <= 25 * 1024 * 1024 else { throw VaultError.storage }
+            try data.write(to: url, options: [.atomic, .completeFileProtection])
+            guard try Data(contentsOf: url) == data else { throw VaultError.storage }; call.resolve(["uri": url.absoluteString])
+        } catch { call.reject("Could not prepare the complete PDF. Choose a shorter period and try again.") } }
     }
 }
 

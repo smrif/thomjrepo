@@ -18,6 +18,12 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.graphics.Paint;
+import android.graphics.Typeface;
+import android.text.TextPaint;
+import android.text.StaticLayout;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import java.io.FileInputStream;
 import android.graphics.pdf.PdfDocument;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
@@ -161,25 +167,72 @@ public class WhoseDayVaultPlugin extends Plugin {
     @PluginMethod public void removeSecret(PluginCall call){synchronized(mutex){try{
         if(!getContext().getSharedPreferences("lab-secrets",Context.MODE_PRIVATE).edit().remove(key(call)).commit())throw new Exception("Commit failed");call.resolve();
     }catch(Exception error){call.reject("Secure session removal failed.");}}}
-    @PluginMethod public void makeReport(PluginCall call){try{
-        String text=call.getString("text");if(text==null || text.isEmpty() || text.length()>12000)throw new Exception("Invalid report");
-        File directory=new File(getContext().getCacheDir(),"lab-reports");if(!directory.exists()&&!directory.mkdirs())throw new Exception("Could not create report folder");
-        File[] oldFiles=directory.listFiles();if(oldFiles!=null)for(File file:oldFiles)if(!file.delete())throw new Exception("Could not clear temporary reports");
-        File file=new File(directory,"Whose-Day-test-"+UUID.randomUUID()+".pdf");
-        PdfDocument document=new PdfDocument();
+    private File exportLocation(PluginCall call,String extension) throws Exception {
+        String scope=call.getString("scope","lab"),name=call.getString("name","whose-day-report-"+UUID.randomUUID()+"."+extension);
+        if(!scope.matches("[A-Za-z0-9_-]{1,80}")||!name.matches("whose-day-(report|records)-[A-Za-z0-9-]+\\."+extension))throw new Exception("Invalid export");
+        File directory=new File(new File(getContext().getCacheDir(),"lab-reports"),scope+"-"+UUID.randomUUID());if(!directory.mkdirs())throw new Exception("Cannot create export folder");return new File(directory,name);
+    }
+    private File exportFile(PluginCall call) throws Exception {
+        String raw=call.getString("uri");if(raw==null)throw new Exception("Missing file");android.net.Uri uri=android.net.Uri.parse(raw);
+        if(!"file".equals(uri.getScheme())||uri.getAuthority()!=null&&!uri.getAuthority().isEmpty()||uri.getQuery()!=null||uri.getFragment()!=null)throw new Exception("Invalid URI");
+        File file=new File(uri.getPath()).getCanonicalFile(),base=new File(getContext().getCacheDir(),"lab-reports").getCanonicalFile();
+        if(!file.getPath().startsWith(base.getPath()+File.separator)||!file.isFile()||file.length()>25*1024*1024||!file.getName().matches("whose-day-(report|records)-[A-Za-z0-9-]+\\.(pdf|csv)"))throw new Exception("Invalid prepared file");return file;
+    }
+    @PluginMethod public void saveExport(PluginCall call){
+        if(filePickerBusy){call.reject("Close the current file picker first.");return;}
+        try{File file=exportFile(call);filePickerBusy=true;Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT);intent.addCategory(Intent.CATEGORY_OPENABLE);intent.setType(file.getName().endsWith(".pdf")?"application/pdf":"text/csv");intent.putExtra(Intent.EXTRA_TITLE,file.getName());startActivityForResult(call,intent,"exportSaved");}
+        catch(Exception error){filePickerBusy=false;call.reject("Could not open this prepared export. Generate it again.");}
+    }
+    @ActivityCallback private void exportSaved(PluginCall call,ActivityResult activity){
+        filePickerBusy=false;if(call==null)return;
+        if(activity.getResultCode()!=Activity.RESULT_OK){JSObject result=new JSObject();result.put("cancelled",true);call.resolve(result);return;}
         try{
-            Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);paint.setTextSize(13);int number=1,y=50;
-            PdfDocument.Page page=document.startPage(new PdfDocument.PageInfo.Builder(595,842,number).create());
-            for(String paragraph:text.split("\n",-1)){
-                String rest=paragraph;
-                do{
-                    if(y>790){document.finishPage(page);page=document.startPage(new PdfDocument.PageInfo.Builder(595,842,++number).create());y=50;}
-                    int count=rest.isEmpty()?0:paint.breakText(rest,true,515,null);if(!rest.isEmpty()&&count==0)throw new Exception("Cannot lay out report");
-                    page.getCanvas().drawText(rest.substring(0,count),40,y,paint);y+=19;rest=rest.substring(count);
-                }while(!rest.isEmpty());
+            if(activity.getData()==null||activity.getData().getData()==null||!"content".equals(activity.getData().getData().getScheme()))throw new Exception("Missing document provider");
+            File file=exportFile(call);
+            try(InputStream input=new FileInputStream(file);OutputStream output=getContext().getContentResolver().openOutputStream(activity.getData().getData(),"wt")){
+                if(output==null)throw new Exception("No stream");byte[] buffer=new byte[65536];int size;while((size=input.read(buffer))!=-1)output.write(buffer,0,size);output.flush();
             }
-            document.finishPage(page);try(FileOutputStream stream=new FileOutputStream(file)){document.writeTo(stream);}
+            JSObject result=new JSObject();result.put("saved",true);call.resolve(result);
+        }catch(Exception error){call.reject("Could not save the export. A partial file may remain; choose a new destination and retry.");}
+    }
+    @PluginMethod public void copyText(PluginCall call){
+        String text=call.getString("text");if(text==null||text.isEmpty()||text.getBytes(StandardCharsets.UTF_8).length>1024*1024){call.reject("Choose a shorter report before copying.");return;}
+        try{ClipboardManager clipboard=(ClipboardManager)getContext().getSystemService(Context.CLIPBOARD_SERVICE);clipboard.setPrimaryClip(ClipData.newPlainText("Whose Day report",text));call.resolve();}catch(Exception error){call.reject("Could not copy the report.");}
+    }
+    @PluginMethod public void makeTextFile(PluginCall call){try{
+        String text=call.getString("text");if(text==null||text.isEmpty()||text.getBytes(StandardCharsets.UTF_8).length>25*1024*1024)throw new Exception("Invalid CSV");
+        File file=exportLocation(call,"csv");try(FileOutputStream stream=new FileOutputStream(file)){stream.write(text.getBytes(StandardCharsets.UTF_8));stream.getFD().sync();}
+        try(FileInputStream input=new FileInputStream(file);ByteArrayOutputStream bytes=new ByteArrayOutputStream()){byte[] chunk=new byte[65536];int count;while((count=input.read(chunk))!=-1){if(bytes.size()+count>25*1024*1024)throw new Exception("Too large");bytes.write(chunk,0,count);}if(!java.util.Arrays.equals(bytes.toByteArray(),text.getBytes(StandardCharsets.UTF_8)))throw new Exception("Readback failed");}
+        JSObject result=new JSObject();result.put("uri",android.net.Uri.fromFile(file).toString());call.resolve(result);
+    }catch(Exception error){call.reject("Could not prepare this CSV file. Your records are kept.");}}
+    @PluginMethod public void makeReport(PluginCall call){try{
+        String text=call.getString("text");if(text==null||text.isEmpty()||text.getBytes(StandardCharsets.UTF_8).length>1024*1024)throw new Exception("Invalid report");
+        File file=exportLocation(call,"pdf");PdfDocument document=new PdfDocument();
+        try{
+            TextPaint paint=new TextPaint(Paint.ANTI_ALIAS_FLAG);paint.setTextSize(11);paint.setTypeface(Typeface.MONOSPACE);
+            StaticLayout layout=StaticLayout.Builder.obtain(text,0,text.length(),paint,515).setIncludePad(false).build();
+            String attestation=call.getString("attestation");if(attestation!=null&&!text.endsWith(attestation))throw new Exception("Invalid attestation");
+            int attestationLine=attestation==null?layout.getLineCount():layout.getLineForOffset(text.length()-attestation.length());
+            int start=0,number=0;
+            while(start<layout.getLineCount()){
+                int top=layout.getLineTop(start),end=start;
+                int sectionEnd=start<attestationLine?attestationLine:layout.getLineCount();
+                while(end<sectionEnd&&layout.getLineBottom(end)-top<=750)end++;
+                if(end==start)throw new Exception("Cannot lay out report");
+                // Draw only this page's characters. Clipping a whole-document
+                // layout leaves duplicated invisible text in PDF extraction.
+                String pageText=text.substring(layout.getLineStart(start),layout.getLineEnd(end-1));
+                if(pageText.trim().isEmpty()){start=end;continue;}
+                if(++number>1000)throw new Exception("Too many pages");
+                PdfDocument.Page page=document.startPage(new PdfDocument.PageInfo.Builder(595,842,number).create());
+                StaticLayout pageLayout=StaticLayout.Builder.obtain(pageText,0,pageText.length(),paint,515).setIncludePad(false).build();
+                android.graphics.Canvas canvas=page.getCanvas();canvas.save();canvas.clipRect(40,40,555,790);canvas.translate(40,40);pageLayout.draw(canvas);canvas.restore();
+                Paint footer=new Paint(Paint.ANTI_ALIAS_FLAG);footer.setTextSize(9);canvas.drawText("Whose Day - Page "+number,40,820,footer);
+                document.finishPage(page);start=end;
+            }
+            try(FileOutputStream stream=new FileOutputStream(file)){document.writeTo(stream);stream.getFD().sync();}
+            if(file.length()>25*1024*1024)throw new Exception("Too large");
         }finally{document.close();}
         JSObject result=new JSObject();result.put("uri",android.net.Uri.fromFile(file).toString());call.resolve(result);
-    }catch(Exception error){call.reject("Could not create the test PDF.");}}
+    }catch(Exception error){call.reject("Could not prepare the complete PDF. Choose a shorter period and try again.");}}
 }

@@ -2,7 +2,8 @@
 
 Owner approved the Capacitor approach and small feasibility build October 21,
 2026. This directory is an isolated native integration experiment; the production
-website deployment and dependencies are unchanged. The shared backup format now
+website deployment and dependencies are unchanged. Shared CSV/report builders are
+reused across website and native adapters. The shared backup format now
 accepts optional project ownership for isolated mobile backups.
 
 ## What is implemented
@@ -77,6 +78,8 @@ pnpm test:accounts
 pnpm test:sync
 pnpm test:settings
 pnpm test:backup
+pnpm test:reports
+pnpm test:accessibility
 pnpm ios
 ```
 
@@ -103,12 +106,12 @@ before publishing the new in-memory state or the saved confirmation. The
 browser review uses committed IndexedDB transactions; browser results alone do
 not establish native persistence. Neither mode imports old localStorage records.
 
-The 68 mobile unit/integration checks cover verified saves, invalid stored data,
+The 73 mobile unit/integration checks cover verified saves, invalid stored data,
 scope separation, stale edits, duplicate saves and preserving answers/backfill
 dates on failure, account switching, offline auth, sign-out/callback races and
 profile ownership/recovery, Settings edits and stale writes, deletion checkpoint
 recovery/service guards, offline cloud reconciliation, profile restore and
-conflict/CAS races and atomic backup restore/recovery. `test:sync` walks through two browser preview devices at
+conflict/CAS races, atomic backup restore/recovery and guarded report exports. `test:sync` walks through two browser preview devices at
 390px/320px; its shared mock cloud stays in IndexedDB, without real auth or
 server requests. `test:settings` covers failed-save retry, child-history preservation,
 appearance, offline reopening, profile conflicts and simulated deletion. The iOS
@@ -245,7 +248,7 @@ this test app does not silently redirect its localStorage calls to native storag
 The full check-in tree in the bundled preview remains a browser demo.
 
 Before real-user use: account-bound storage and migration, encryption/key recovery,
-proper native backup/import and report parity, CORS/deletion adaptation, Universal
+production storage/key-recovery decisions, live deletion activation, Universal
 Links, accessibility/device QA and accurate release privacy disclosures are still
 required. The lab privacy manifest is not an App Store disclosure review.
 
@@ -275,3 +278,22 @@ uncommitted source changes, omits existing build folders, and skips generated
 `config N.xml` duplicates only after verifying byte equality with `config.xml`.
 Differing copies fail explicitly. Source files are preserved; APK/probe paths
 continue to come from `.build/android-build.json`.
+
+## Account reports and owner QA
+
+The account entry now uses the shared five report types and period filters, with
+native paginated PDF, complete CSV, Files save, system sharing and clipboard
+actions. Browser review supports print/copy/CSV download. See
+[report implementation and QA](../docs/product/mobile-reports.md).
+Run `pnpm test:reports`, `pnpm probe:reports:ios SIMULATOR_UUID` or
+`pnpm probe:reports:android emulator-5554` after the appropriate native build.
+Synthetic PDF/CSV evidence is ignored under `.build/reports/`; the read-only
+`scripts/verify-report-pdfs.py` checks complete content and page orientation.
+Physical/provider/release checks remain in the
+[owner QA list](../docs/product/mobile-owner-qa.md).
+
+`test:accessibility` checks account/profile and Settings/Reports controls at
+320px, 390px and landscape widths, including named fields/buttons, 44px button
+targets, keyboard report selection and an enlarged-text layout. It is a focused
+browser first pass; physical VoiceOver, native keyboard and actual Dynamic Type
+remain in owner QA. Screenshots/checkpoint results are in `.build/accessibility/`.
