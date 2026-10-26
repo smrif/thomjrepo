@@ -21,7 +21,7 @@ Owner checks are tracked by ID in [mobile owner QA](mobile-owner-qa.md).
 | Native account deletion | Client/service prepared, live test endpoint disabled | Configure separate test service and complete approved disposable QA (IOS-QA-07). |
 | Policy access and agreement | Approved documents are available offline; guided signup atomically records a separate account/version-bound local receipt | Integrate the production/server acceptance contract and complete final policy/release review. Legacy test profile acceptance remains false; reading alone does not record consent. |
 | Privacy manifest | Tracking false, collected-data array empty; timestamp/disk-space reasons present | Review shipped app and dependencies; empty lab declarations do not describe the signed-in cloud product. |
-| Test routes | Lab, shell preview and standalone synthetic check-in routes remain bundled | Remove or deliberately gate prototype tools and banners for the final release. |
+| Test routes | Development keeps lab/preview/check-in QA routes. A separate candidate web payload excludes those routes, sample-account shortcuts, mock controls, demo/reset actions and JS probes. | Wire the candidate payload into the approved native archive; verify actual bundled hashes and native/device behavior. Test wording remains until release review. See [candidate packaging](mobile-candidate-packaging.md). |
 | Native analytics | Website analytics scripts removed; native build has no telemetry adapter | Decide native collection before writing final disclosures; website Mixpanel is a separate implemented data path. |
 
 Run `pnpm --dir mobile release:inventory` to refresh the local, read-only inventory.

@@ -97,6 +97,15 @@
 - [ ] Complete separately approved real signup/email-return and server receipt/
   retry QA. Final release identity/callback configuration and production
   activation remain gated.
+- [x] Prepare a candidate web-payload profile that excludes lab routes, sample
+  account shortcuts, mock controls, demo/reset actions and JavaScript simulator
+  probes. Separate config/output, staged validation, file hashes and automated
+  browser/build boundary QA are implemented. Development QA tools remain available.
+  See [candidate packaging](docs/product/mobile-candidate-packaging.md).
+- [ ] Wire the approved candidate profile into the final native archive and
+  verify its bundled hashes, identity/callback configuration and device behavior.
+  Current native build commands still produce the development app; production,
+  signing, real-account QA and store release approvals remain separate.
 - [x] Connect the test-project sign-in client to a verified local family profile
   and account-specific shared check-ins. October 22: 28 unit/integration checks
   and two-account UI walkthroughs at 390px/320px passed, including offline reopen,

@@ -37,7 +37,7 @@ export function syncUI({accounts,previewDevice='',online,toggleOnline,canDownloa
   }
   function render(){
     const label=text();$('account-sync-status').textContent=label;
-    if(previewDevice){const toggle=$('account-preview-network');toggle.textContent=online()?'Go offline on this device':'Reconnect this device';toggle.disabled=navigator.onLine===false;}
+    if(__WHOSE_DAY_LAB__&&previewDevice){const toggle=$('account-preview-network');toggle.textContent=online()?'Go offline on this device':'Reconnect this device';toggle.disabled=navigator.onLine===false;}
     for(const el of document.querySelectorAll('[data-mobile-sync-status]'))el.textContent=label;
     const summary=$('settings-sync-summary');if(summary)summary.textContent=label;
     const home=$('account-sync-home');if(home)home.textContent=label+' Open sync.';
@@ -72,7 +72,7 @@ export function syncUI({accounts,previewDevice='',online,toggleOnline,canDownloa
   $('account-sync-environment').textContent=previewDevice?'Two-device browser preview. The mock cloud is stored in this browser; it does not contact a server.':'Separate mobile test backend. Production accounts are not connected.';
   $('account-sync-now').onclick=()=>accounts().sync();
   $('account-profile-apply').onclick=()=>location.reload();
-  if(previewDevice){
+  if(__WHOSE_DAY_LAB__&&previewDevice){
     const toggle=$('account-preview-network');toggle.hidden=false;
     const updateToggle=()=>{toggle.textContent=online()?'Go offline on this device':'Reconnect this device';render()};
     toggle.onclick=async()=>{await toggleOnline();updateToggle();await accounts().sync()};

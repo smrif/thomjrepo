@@ -13,22 +13,17 @@ import {syncUI} from './sync-ui.js';
 import {mountSettings} from './settings-runtime.js';
 import {deletionUI} from './deletion-ui.js';
 import {mountBackup} from './backup-runtime.js';
-import {runBackupProbe} from './backup-probe.js';
 import {mountReports} from './reports-runtime.js';
-import {runReportsProbe} from './reports-probe.js';
-import {runPhotoProbe} from './photo-probe.js';
 import {mountPolicies} from './policies-runtime.js';
 import {mountOnboarding} from './onboarding-runtime.js';
-import {onboardingProbe} from './onboarding-probe.js';
 import {accountDeletion} from './delete-account.js';
 import {mountProduct} from './product-runtime.js';
-import {PROBE_PROJECT,probeProfile,createProbeAuth,runAccountProductProbe} from './account-probe.js';
 import config from '../config.generated.json';
 
 const native=Capacitor.isNativePlatform(),$=id=>document.getElementById(id);
-const params=new URLSearchParams(location.search),syncPreview=!native&&params.get('sync')==='preview',device=params.get('device')==='two'?'two':'one';
-const onboardingPreview=!native&&!syncPreview&&params.get('onboarding')==='preview',previewKey='account-preview:v1:identity'+(onboardingPreview?':onboarding':'');
-let vault,accounts,auth,onboarding,onboardingFixture,loadedOwner=null,signingOut=false,mounting=false,probeMode='',syncView=null,settings=null,deletion=null,previewOnline=true;
+const params=new URLSearchParams(location.search),syncPreview=__WHOSE_DAY_LAB__&&!native&&params.get('sync')==='preview',device=params.get('device')==='two'?'two':'one';
+const onboardingPreview=__WHOSE_DAY_LAB__&&!native&&!syncPreview&&params.get('onboarding')==='preview',previewKey='account-preview:v1:identity'+(onboardingPreview?':onboarding':'');
+let vault,accounts,auth,onboarding,onboardingFixture,probeTools,loadedOwner=null,signingOut=false,mounting=false,probeMode='',syncView=null,settings=null,deletion=null,previewOnline=true;
 const online=()=>navigator.onLine!==false&&(!syncPreview||previewOnline);
 const canDownload=()=>!loadedOwner||['s-home','s-cal','s-trends'].includes(document.body.dataset.activeScreen);
 function refreshProduct(){
@@ -43,14 +38,14 @@ function refreshProduct(){
 }
 function view(name){
   document.body.dataset.accountView=name;
-  for(const id of ['welcome','profile','onboarding','panel','restore','deletion','file-restore','policies'])$('account-'+id).hidden=id!==name;
+  for(const id of ['welcome','profile','onboarding','panel','restore','deletion','file-restore','policies']){const page=$('account-'+id);if(page)page.hidden=id!==name;}
   if(name!=='product')document.body.dataset.checkinState=name==='loading'?'loading':'locked';
   $('checkin-loading').hidden=name!=='loading';
 }
 function message(text){$('account-message').textContent=text;}
 function fail(){
   view('welcome');message('Could not open this account. Your saved records have not been replaced. Close and reopen to retry.');
-  if(probeMode)vault.write({key:'probe:'+probeMode,value:JSON.stringify({passed:false,error:'Account startup or verification failed.'})}).catch(()=>{});
+  if(__WHOSE_DAY_LAB__&&probeMode)vault.write({key:'probe:'+probeMode,value:JSON.stringify({passed:false,error:'Account startup or verification failed.'})}).catch(()=>{});
 }
 async function receive(session){
   if(signingOut)return;
@@ -72,8 +67,9 @@ async function stateChanged(state){
   if(state.status==='loading'){view('loading');return;}
   if(state.status==='restore-unavailable'){view('restore');$('account-restore-retry').disabled=false;return;}
   if(state.status==='needs-profile'){
-    if(probeMode&&!probeMode.startsWith('onboarding-')){if(!['account-write','backup-write','reports-write','photo-write'].includes(probeMode))throw new Error('Missing probe profile.');await accounts.saveProfile(probeProfile);return;}
+    if(__WHOSE_DAY_LAB__&&probeMode&&!probeMode.startsWith('onboarding-')){if(!['account-write','backup-write','reports-write','photo-write'].includes(probeMode))throw new Error('Missing probe profile.');await accounts.saveProfile(probeTools.probeProfile);return;}
     if(await onboarding.needsProfile(state))return;
+    if(!__WHOSE_DAY_LAB__)throw Error('Account setup must finish before opening records.');
     $('account-profile-email').textContent=state.account.email;
     // Never carry a different account's partially authored profile into this form.
     $('account-profile-form').reset();$('account-profile-save').disabled=false;$('account-profile-message').textContent='';view('profile');return;
@@ -103,11 +99,13 @@ async function stateChanged(state){
     }
     view('product');
     if(syncView)queueMicrotask(()=>accounts.sync());
-    if(probeMode.startsWith('reports-'))await runReportsProbe({vault,accounts,mode:probeMode});
-    else if(probeMode.startsWith('photo-'))await runPhotoProbe({vault,accounts,mode:probeMode});
-    else if(probeMode.startsWith('backup-'))await runBackupProbe({vault,accounts,mode:probeMode});
+    if(__WHOSE_DAY_LAB__){
+    if(probeMode.startsWith('reports-'))await (await import('./reports-probe.js')).runReportsProbe({vault,accounts,mode:probeMode});
+    else if(probeMode.startsWith('photo-'))await (await import('./photo-probe.js')).runPhotoProbe({vault,accounts,mode:probeMode});
+    else if(probeMode.startsWith('backup-'))await (await import('./backup-probe.js')).runBackupProbe({vault,accounts,mode:probeMode});
     else if(probeMode.startsWith('onboarding-'))await vault.write({key:'probe:onboarding-ui-ready',value:JSON.stringify({passed:true,scope:state.account.scope,userId:state.account.id,at:new Date().toISOString()})});
-    else if(probeMode)await runAccountProductProbe({vault,accounts,mode:probeMode});
+    else if(probeMode)await probeTools.runAccountProductProbe({vault,accounts,mode:probeMode});
+    }
   }catch{fail();}finally{mounting=false;}
 }
 async function signOut(){
@@ -115,7 +113,7 @@ async function signOut(){
   signingOut=true;accounts.lock();view('welcome');message('Signing out…');
   try{
     if(native)await auth.signOut();
-    else{
+    else if(__WHOSE_DAY_LAB__){
       await vault.write({key:previewKey,value:'null'});
       if((await vault.read({key:previewKey})).value!=='null')throw new Error('Sign-out not saved.');
     }
@@ -139,7 +137,7 @@ $('account-login').onsubmit=async event=>{
   catch{message('Could not send the link. Check the approved test email and your connection, then try again.');}
   finally{$('account-send').disabled=false;}
 };
-$('account-profile-form').onsubmit=async event=>{
+if(__WHOSE_DAY_LAB__)$('account-profile-form').onsubmit=async event=>{
   event.preventDefault();$('account-profile-save').disabled=true;$('account-profile-message').textContent='';
   const owner=accounts.state.account?.scope;
   try{await accounts.saveProfile({currentParentLabel:$('account-parent').value,coParentLabel:$('account-coparent').value,children:$('account-children').value.split(/\r?\n/).map(v=>v.trim()).filter(Boolean)});}
@@ -148,26 +146,33 @@ $('account-profile-form').onsubmit=async event=>{
 };
 async function start(){
   try{
+    // A candidate web payload cannot fall back to browser identities or storage.
+    // Native authentication remains the only way into its account screens.
+    if(!__WHOSE_DAY_LAB__&&!native){
+      $('account-signup').disabled=true;$('account-signin').disabled=true;
+      $('account-intro').textContent='Open the installed app to sign in.';view('welcome');return;
+    }
     if(new URLSearchParams(location.search).has('demo'))throw new Error('No demo seeding in account records.');
-    vault=native?registerPlugin('WhoseDayVault'):await browserVault();
-    if(native){const {mode}=await vault.testMode();if(['onboarding-write','onboarding-read','account-write','account-read','backup-write','backup-read','reports-write','reports-read','photo-write','photo-read'].includes(mode))probeMode=mode;}
+    vault=__WHOSE_DAY_LAB__&&!native?await browserVault():registerPlugin('WhoseDayVault');
+    if(__WHOSE_DAY_LAB__&&native){const {mode}=await vault.testMode();if(['onboarding-write','onboarding-read','account-write','account-read','backup-write','backup-read','reports-write','reports-read','photo-write','photo-read'].includes(mode))probeMode=mode;}
+    if(__WHOSE_DAY_LAB__&&probeMode)probeTools=await import('./account-probe.js');
     const sharedVault=vault;
-    if(syncPreview){vault=deviceVault(vault,device);previewOnline=(await vault.read({key:'sync-preview:online'})).value!=='false';}
-    if(probeMode.startsWith('onboarding-'))onboardingFixture=await onboardingProbe(vault,probeMode,receive);
-    const project=onboardingFixture?onboardingFixture.project:probeMode.startsWith('photo-')?'sim-photo-probe':probeMode.startsWith('reports-')?'sim-reports-probe':probeMode.startsWith('backup-')?'sim-backup-probe':probeMode?PROBE_PROJECT:native&&config.auth?.enabled?testProject(config.auth):syncPreview?'browser-sync-preview':onboardingPreview?'browser-onboarding-preview':'browser-preview';
+    if(__WHOSE_DAY_LAB__&&syncPreview){vault=deviceVault(vault,device);previewOnline=(await vault.read({key:'sync-preview:online'})).value!=='false';}
+    if(__WHOSE_DAY_LAB__&&probeMode.startsWith('onboarding-'))onboardingFixture=await (await import('./onboarding-probe.js')).onboardingProbe(vault,probeMode,receive);
+    const project=__WHOSE_DAY_LAB__&&probeMode?(onboardingFixture?onboardingFixture.project:probeMode.startsWith('photo-')?'sim-photo-probe':probeMode.startsWith('reports-')?'sim-reports-probe':probeMode.startsWith('backup-')?'sim-backup-probe':probeTools.PROBE_PROJECT):native&&config.auth?.enabled?testProject(config.auth):syncPreview?'browser-sync-preview':onboardingPreview?'browser-onboarding-preview':'browser-preview';
     const serverRegistration=registrationEnabled(config),syncEnabled=syncPreview||native&&!probeMode&&config.sync?.enabled===true&&config.auth?.enabled;
-    const backend=syncEnabled?(owner=>syncPreview?previewBackend(sharedVault,owner,online):(serverRegistration?registrationBackend:testBackend)(auth,config.auth,owner)):null;
+    const backend=syncEnabled?(owner=>__WHOSE_DAY_LAB__&&syncPreview?previewBackend(sharedVault,owner,online):(serverRegistration?registrationBackend:testBackend)(auth,config.auth,owner)):null;
     accounts=createAccountStore(vault,{project,backend,canDownload,online,onSync:(kind,state)=>syncView?.update(kind,state),onState:state=>{stateChanged(state).catch(fail)}});
-    async function choosePreview(index){
+    const choosePreview=__WHOSE_DAY_LAB__?async function(index){
       const value=JSON.stringify({id:previewAccounts[index].user.id});
       await vault.write({key:previewKey,value});if((await vault.read({key:previewKey})).value!==value)throw Error('Account choice not saved.');
       await receive(previewAccounts[index]);
-    }
-    onboarding=mountOnboarding({vault,project,native,accounts,auth:()=>native?auth:{signOut},previewAccounts,choosePreview,setView:view,policies});
+    }:null;
+    onboarding=mountOnboarding({vault,project,native,accounts,auth:()=>native?auth:{signOut},previewAccounts:__WHOSE_DAY_LAB__?previewAccounts:[],choosePreview,setView:view,policies});
     $('account-signup').onclick=()=>onboarding.beginSignup().catch(fail);
     $('account-signin').onclick=async()=>{try{await onboarding.signIn();$('account-login').hidden=!native||!auth;$('account-intro').textContent=native?'Sign in to restore your existing profile and records.':'Choose your existing sample account below. This preview sends no email.';if(native&&auth)$('account-email').focus();}catch{message('Could not save the sign-in choice. Try again.')}};
-    if(syncEnabled)syncView=syncUI({accounts:()=>accounts,canDownload,previewDevice:syncPreview?device:'',online,toggleOnline:async()=>{previewOnline=!previewOnline;await vault.write({key:'sync-preview:online',value:String(previewOnline)})}});
-    const remove=syncPreview?(owner=>previewBackend(sharedVault,owner,online).remove()):native&&config.deletion?.enabled?(owner=>accountDeletion(auth,config)(owner)):null;
+    if(syncEnabled)syncView=syncUI({accounts:()=>accounts,canDownload,previewDevice:syncPreview?device:'',online,toggleOnline:__WHOSE_DAY_LAB__?async()=>{previewOnline=!previewOnline;await vault.write({key:'sync-preview:online',value:String(previewOnline)})}:null});
+    const remove=__WHOSE_DAY_LAB__&&syncPreview?(owner=>previewBackend(sharedVault,owner,online).remove()):native&&config.deletion?.enabled?(owner=>accountDeletion(auth,config)(owner)):null;
     deletion=deletionUI({accounts,remove,online,view,signOut,preview:syncPreview,restore:()=>location.reload(),complete:async()=>{
       signingOut=true;
       try{
@@ -190,16 +195,17 @@ async function start(){
     }
     if(syncEnabled)setTimeout(retry,retryDelay);
     if(native){
-      if(onboardingFixture){auth=onboardingFixture.auth;await auth.start();return;}
-      if(probeMode){auth=await createProbeAuth(vault,probeMode,receive);await auth.start();return;}
+      if(__WHOSE_DAY_LAB__&&onboardingFixture){auth=onboardingFixture.auth;await auth.start();return;}
+      if(__WHOSE_DAY_LAB__&&probeMode){auth=await probeTools.createProbeAuth(vault,probeMode,receive);await auth.start();return;}
       $('account-login').hidden=true;$('account-unconfigured').hidden=!!config.auth?.enabled;
+      if(!__WHOSE_DAY_LAB__&&!config.auth?.enabled){$('account-signup').disabled=true;$('account-signin').disabled=true;}
       auth=createAuth({config:config.auth,vault:projectAuthVault(vault,project),createClient,onSession:receive,onError:text=>{if(!onboarding.authError(text))message(text)}});
       if(auth){
         await App.addListener('appUrlOpen',({url})=>auth.callback(url));
         await auth.start();const launch=await App.getLaunchUrl();if(launch?.url)await auth.callback(launch.url);
         await App.addListener('appStateChange',({isActive})=>auth.foreground(isActive).then(()=>{if(isActive)accounts.sync()}).catch(()=>{accounts.lock();fail()}));
       }else view('welcome');
-    }else{
+    }else if(__WHOSE_DAY_LAB__){
       for(const id of ['account-preview-a','account-preview-b'])$(id).disabled=true;
       $('account-preview').hidden=false;$('account-intro').textContent=syncPreview?'Sync preview · Device '+device+'. Try the same sample account on both preview devices.':'Try the app with two separate sample accounts.';
       for(const [i,id] of ['account-preview-a','account-preview-b'].entries())$(id).onclick=async()=>{

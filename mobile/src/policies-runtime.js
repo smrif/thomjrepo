@@ -30,7 +30,7 @@ export function mountPolicies({setView,owner,status}){
     const group=document.createElement('div');group.className='mobile-policy-actions';group.setAttribute('role','group');group.setAttribute('aria-label','Policies');
     for(const kind of ['terms','privacy']){const button=document.createElement('button');button.type='button';button.className='settings-export-btn';button.dataset.mobilePolicy=kind;button.textContent=documents[kind].title;button.onclick=()=>open(kind);group.append(button);}host.append(group);
   }
-  for(const id of ['account-welcome','account-profile','account-panel'])controls($(id));
+  for(const id of ['account-welcome','account-profile','account-panel'])if($(id))controls($(id));
   $('mobile-policy-back').onclick=close;
   page.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();close()}});
   return{controls,addSettings(){controls(document.querySelector('[data-settings-page="overview"]'))}};

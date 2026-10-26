@@ -17,8 +17,26 @@ physical-device, real-provider, real-account or owner judgment checks.
 | IOS-QA-08 | Review final app name, bundle identifier, developer team, support/policy links, listing copy, privacy answers and release screenshots. | Owner-approved identity/listing and disclosures matching the actual release behavior. | Current identifier is the feasibility identifier; no TestFlight or App Store release exists. Guided onboarding records a separate explicit local receipt; production/server acceptance integration still needs the release contract. Draft listing/data inventory and screenshot/review plan are in [release preparation](mobile-release-preparation.md). Owner/legal decisions remain separate. |
 | IOS-QA-09 | Approve a fresh test signup/email when ready, then check unfinished setup, email return, expired/duplicate links and completed-account reopen on an iPhone. | Correct verified email receives its own setup/receipt; existing accounts restore without overwritten names or inferred agreement; keyboard and VoiceOver remain usable. | Guided browser/atomic storage tests pass with synthetic data. Native WebView form, unfinished draft, pending-verification termination, explicit receipt and cold reopen pass with synthetic verification. No fresh emails, live identity creation or production acceptance writes were performed. |
 | IOS-QA-10 | Separately approve a fresh test signup for actual server receipt/email-return recovery QA. | Atomic profile/history, exact retry and existing-account restoration work through a real verified identity on Supabase. | October 26: migration applied only to Whose Day Mobile Test; all ten hosted security checks pass, anonymous table/RPC access is denied (401/42501), authenticated missing identity is rejected (22023), and the ignored local v1 flag is enabled. No real signup/email was performed. Final production identity/callback/activation needs separate review. See [registration contract](mobile-registration.md). |
+| IOS-QA-11 | After release identity/signing/configuration are approved and the native archive uses the candidate profile, review that installed build on an iPhone. | Correct account onboarding and recovery work; lab/sample routes and probe launch modes do not appear; archive payload hashes match the reviewed candidate. | October 26: separate candidate web packaging, explicit config isolation, staged rejection/recovery and browser boundaries pass. Native build commands still use development assets. The browser native-platform shim is DOM-only evidence; no installed candidate, archive, production activation or submission is claimed. See [candidate packaging](mobile-candidate-packaging.md). |
 
 ## Codex first-pass record
+
+- Candidate web packaging: the emitted 48-file payload excludes lab/preview and
+  standalone check-in routes, sample shortcuts, mock controls, demo/reset actions
+  and JavaScript probes. Default/old QA URLs cannot open a browser identity or
+  alter stored records; offline policies pass at 320px/390px. Configuration and
+  failed-build preservation pass in an isolated fixture. All 88 unit checks plus
+  the added isolated build check pass, along with affected development browser
+  suites. CI now checks the unconfigured candidate profile separately.
+  The freshly rebuilt development simulator onboarding regression passed on an
+  unchanged rerun (83 seconds, zero failures). The first attempt failed to find
+  Create an account after Save and leave setup; the cause remains unproven and
+  should be investigated if it recurs. The native account probe also passes:
+  records/image/checkpoints, policy reading, draft/receipt recovery, account
+  separation and offline sign-out survive termination. This is regression
+  evidence for the development app, not a native candidate archive. Evidence is
+  in the ignored candidate manifest/QA files, `ios-onboarding-ui-probe.json` and
+  `ios-account-probe.json`.
 
 - Server registration preparation: website profile mapping and an atomic,
   retry-safe profile/acceptance RPC are implemented. Local database/client checks

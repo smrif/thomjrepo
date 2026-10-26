@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
+    "build:candidate": "node scripts/build.mjs --candidate",
+    "test:candidate": "node test/candidate-ui.mjs",
     "sync": "node scripts/build.mjs && cap sync",
     "test": "node --test test/*.test.mjs",
     "test:ui": "node test/ui.mjs",

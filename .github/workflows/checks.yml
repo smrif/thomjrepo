@@ -77,3 +77,7 @@ jobs:
           pnpm --dir mobile test:reports
           pnpm --dir mobile test:accessibility
           pnpm --dir mobile test:policies
+      - name: Build and verify candidate web payload without local auth configuration
+        run: |
+          pnpm --dir mobile build:candidate
+          pnpm --dir mobile test:candidate

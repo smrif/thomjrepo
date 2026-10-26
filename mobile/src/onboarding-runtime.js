@@ -23,7 +23,7 @@ export function mountOnboarding({vault,project,native,accounts,auth,previewAccou
     for(const el of form.querySelectorAll('[data-onboarding-step]'))el.hidden=Number(el.dataset.onboardingStep)!==step;
     $('onboarding-progress').textContent='Step '+(step+1)+' of 5';$('onboarding-heading').textContent=headings[step];
     $('onboarding-back').hidden=step===0;submitControl();
-    $('onboarding-email').readOnly=!!scope||!native;$('onboarding-preview-choice').hidden=native||!!scope;
+    $('onboarding-email').readOnly=!!scope||!native;if(__WHOSE_DAY_LAB__)$('onboarding-preview-choice').hidden=native||!!scope;
     if(focus){window.scrollTo(0,0);$('onboarding-heading').focus();}
   }
   async function persist(){
@@ -43,12 +43,12 @@ export function mountOnboarding({vault,project,native,accounts,auth,previewAccou
     const current=++generation;scope=owner?.scope||'';store=onboardingStore(vault,project,scope||'guest');active=true;waiting=false;draftBroken=false;
     countdown();setBusy(true);feedback('');$('onboarding-save-status').textContent='';$('onboarding-agree').checked=false;$('onboarding-restart').hidden=true;
     fields({activityIds:defaultActivities});step=0;setView('onboarding');
-    try{const saved=await store.load();if(current!==generation)return;if(saved){fields(saved.answers);step=saved.step;}if(owner)$('onboarding-email').value=owner.email;else if(!native)$('onboarding-email').value=previewAccounts[Number($('onboarding-preview-account').value)].user.email;
+    try{const saved=await store.load();if(current!==generation)return;if(saved){fields(saved.answers);step=saved.step;}if(owner)$('onboarding-email').value=owner.email;else if(__WHOSE_DAY_LAB__&&!native)$('onboarding-email').value=previewAccounts[Number($('onboarding-preview-account').value)].user.email;
       if(native&&!owner){const pending=await store.pending();if(current!==generation)return;if(pending){try{validateIntent(pending.value,versions);waiting=true;countdown(Date.now()+Math.min(60000,Math.max(0,Date.parse(pending.value.acceptedAt)+60000-Date.now())));feedback('Open the newest email link to finish setup, or request another link when the timer ends.');}catch{/* Changed policy versions require a new explicit submission. */}}}setBusy(false);render();}
     catch(error){if(current!==generation)return;draftBroken=true;setBusy(false);feedback('Saved setup could not be read. Start a new setup to replace only this unfinished draft.');for(const el of form.querySelectorAll('input,textarea,select'))el.disabled=true;$('onboarding-restart').hidden=false;render();}
   }
   form.addEventListener('input',event=>{if(busy||!active||draftBroken)return;feedback('');if(event.target.id==='onboarding-agree')return;waiting=false;persist().catch(()=>{});});
-  $('onboarding-preview-account').onchange=()=>{$('onboarding-email').value=previewAccounts[Number($('onboarding-preview-account').value)].user.email;$('onboarding-agree').checked=false;persist().catch(()=>{});};
+  if(__WHOSE_DAY_LAB__)$('onboarding-preview-account').onchange=()=>{$('onboarding-email').value=previewAccounts[Number($('onboarding-preview-account').value)].user.email;$('onboarding-agree').checked=false;persist().catch(()=>{});};
   $('onboarding-back').onclick=async()=>{if(busy)return;try{setBusy(true);step--;feedback('');render();await persist();}catch(error){feedback(error.message);}finally{setBusy(false)}};
   $('onboarding-leave').onclick=async()=>{if(busy)return;setBusy(true);try{if(!draftBroken){await persist();if(!waiting)await store.intent(null);}active=false;generation++;countdown();$('onboarding-agree').checked=false;if(scope)await auth().signOut();else setView('welcome');}catch(error){feedback(error.message);}finally{setBusy(false)}};
   $('onboarding-restart').onclick=async()=>{if(busy)return;try{await store.clear();await begin(accounts.state.status==='needs-profile'?accounts.state.account:null)}catch{feedback('Could not replace the saved draft. Close and reopen to retry.')}};
@@ -65,7 +65,8 @@ export function mountOnboarding({vault,project,native,accounts,auth,previewAccou
       else if(native){
         try{await auth().send(email,{signup:true});}catch(error){await store.intent(previous?.value||null);throw error;}
         if(current!==generation)return;waiting=true;countdown(Date.now()+60000);render(false);feedback('Check your email on this device. Open the newest link to verify your account and finish setup. Your answers are saved.');
-      }else await choosePreview(Number($('onboarding-preview-account').value));
+      }else if(__WHOSE_DAY_LAB__)await choosePreview(Number($('onboarding-preview-account').value));
+      else throw Error('Open the installed app to finish setup.');
     }catch(error){if(current===generation)feedback(error.message?.startsWith('Setup')||error.message?.startsWith('This setup')||error.message?.startsWith('New test')||error.message?.startsWith('Use the approved')||/^(Enter|Choose|Agree|Review|Could not save setup)/.test(error.message)?error.message:'Could not save or finish setup. Your answers are still here. Retry, or reopen the app to check its saved copy.');}
     finally{if(current===generation)setBusy(false);}
   };
@@ -89,7 +90,7 @@ export function mountOnboarding({vault,project,native,accounts,auth,previewAccou
           feedback(error.message?.startsWith('Review')?error.message:'Could not finish saved setup. Your answers are still here. Review your agreement, then try again.');return true;
         }}
       }
-      if(!native)return false; // Explicit browser-only synthetic profile shortcuts.
+      if(__WHOSE_DAY_LAB__&&!native)return false; // Explicit browser-only synthetic profile shortcuts.
       await begin(state.account);return true;
     },
     async signIn(){generation++;active=false;countdown();await onboardingStore(vault,project).intent(null);setView('welcome');},
