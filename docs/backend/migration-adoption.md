@@ -19,6 +19,13 @@ Apply these files in order only to a fresh approved Supabase environment:
 Compare production against the combined final state, not the baseline's temporary
 grants. Supabase provisions Auth, API roles and platform objects separately.
 
+October 26 release preparation adds a **separate, not-yet-applied** migration,
+`20261026000100_mobile_registration.sql`, for mobile registration/history. It is
+not part of the already-deployed baseline comparison or history repair above.
+Review its target and additive changes separately; never replay the baseline to
+install it in an existing project. See [mobile registration](../product/mobile-registration.md)
+and its read-only `supabase/checks/mobile-registration.sql` metadata check.
+
 | Object | Expected app-owned contract |
 | --- | --- |
 | `profiles` | `user_id` primary key; labels, children/activities JSON, theme, report email, policy version/acceptance fields, created/updated timestamps. |

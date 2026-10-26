@@ -4,6 +4,7 @@ import {resolve,join} from 'node:path';
 import {build} from 'esbuild';
 import {testProject} from '../src/auth.js';
 import {deletionEndpoint} from '../src/delete-account.js';
+import {registrationEnabled} from '../src/registration-config.js';
 const root=fileURLToPath(new URL('..',import.meta.url)),repo=resolve(root,'..'),out=join(root,'www');
 const sharedSource=await readFile(join(repo,'app.js'),'utf8'),policies={};
 for(const [kind,constant] of [['terms','CURRENT_TERMS_VERSION'],['privacy','CURRENT_PRIVACY_VERSION']]){
@@ -23,6 +24,7 @@ const project=config.auth?.enabled?testProject(config.auth):null;
 const deletionURL=deletionEndpoint(config);
 if(config.deletion?.enabled&&!project)throw new Error('Deletion requires test auth.');
 if(config.sync?.enabled&&!project)throw new Error('Sync requires an explicitly configured test auth project.');
+registrationEnabled(config);
 await writeFile(join(root,'config.generated.json'),JSON.stringify(config));
 try{await build({entryPoints:[join(root,'src/main.js')],bundle:true,outfile:join(out,'lab.js'),format:'iife',target:'es2022',minify:false})}finally{await rm(join(root,'config.generated.json'))}
 for(const file of ['index.html','lab.css'])await cp(join(root,'src',file),join(out,file));

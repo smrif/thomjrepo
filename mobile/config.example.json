@@ -7,6 +7,10 @@
   "sync": {
     "enabled": false
   },
+  "registration": {
+    "enabled": false,
+    "contractVersion": 1
+  },
   "deletion": {
     "enabled": false,
     "project": "ijewfmltnlqpydwuiedb",

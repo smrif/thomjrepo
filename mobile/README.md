@@ -334,3 +334,14 @@ with decode-time downsampling, a 1600px boundary and a 3 MiB processed JPEG limi
 The saved processed image is retained in complete JSON/CSV exports. See
 [photo implementation and QA](../docs/product/mobile-photo-qa.md) for the source
 file limit, permission boundary and remaining device/provider checks.
+
+## Server registration preparation
+
+The optional registration adapter uses the website profile schema and a single
+authenticated RPC for new profile plus protected acceptance history. Existing
+profiles restore without inferred agreement or replacement. The migration and
+SDK/database recovery tests are prepared; hosted schema and configuration remain
+unchanged. Run `pnpm test:registration` for isolated PostgreSQL/SDK QA.
+See [registration contract and enablement](../docs/product/mobile-registration.md)
+before setting `registration.enabled` and `contractVersion: 1` in ignored test
+configuration. Production URL refusal and the current callback remain in place.

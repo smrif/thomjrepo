@@ -50,7 +50,10 @@ in-app offline reader. The website's signup and acceptance behavior are unchange
 ## Environment and release boundaries
 
 This is the separate **test app**, not production account registration. Receipts
-are local account records; the test cloud adapter still omits acceptance columns.
+are local account records by default; ordinary profile sync omits acceptance columns.
+The optional [server registration contract](mobile-registration.md) now supplies
+an atomic server profile/history transaction, tested locally but not yet deployed
+or enabled in a hosted project.
 The legacy profile field remains `termsAccepted:false` to avoid implying the
 website/server's acceptance contract has been met. New explicit agreement is
 represented by the separate receipt, not inferred from that legacy field.

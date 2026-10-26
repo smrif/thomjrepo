@@ -83,6 +83,15 @@
   existing-user migration. This is implementation beyond device QA; keep the
   production block and deployment approval until the release integration is
   reviewed and verified. Local onboarding receipts do not replace server history.
+- [x] Prepare and locally verify the additive server registration contract:
+  atomic profile/acceptance history, exact-attempt recovery, existing website
+  profile mapping/preservation, protected owner-readable receipts and an explicit
+  test-project configuration gate. See [registration contract](docs/product/mobile-registration.md).
+  No hosted migration, production activation or fresh email was performed.
+- [ ] Review/apply the registration migration in the separate mobile test
+  project, verify its grants/RLS/RPC on the provider, then enable the explicit
+  registration flag for approved live signup/recovery QA. Final release
+  identity/callback configuration and production activation remain gated.
 - [x] Connect the test-project sign-in client to a verified local family profile
   and account-specific shared check-ins. October 22: 28 unit/integration checks
   and two-account UI walkthroughs at 390px/320px passed, including offline reopen,

@@ -6,6 +6,8 @@ import {createAccountStore} from './account-store.js';
 import {previewAccounts} from './account-preview.js';
 import {browserVault} from './browser-vault.js';
 import {testBackend} from './test-backend.js';
+import {registrationBackend} from './registration-backend.js';
+import {registrationEnabled} from './registration-config.js';
 import {deviceVault,previewBackend} from './sync-preview.js';
 import {syncUI} from './sync-ui.js';
 import {mountSettings} from './settings-runtime.js';
@@ -153,8 +155,8 @@ async function start(){
     if(syncPreview){vault=deviceVault(vault,device);previewOnline=(await vault.read({key:'sync-preview:online'})).value!=='false';}
     if(probeMode.startsWith('onboarding-'))onboardingFixture=await onboardingProbe(vault,probeMode,receive);
     const project=onboardingFixture?onboardingFixture.project:probeMode.startsWith('photo-')?'sim-photo-probe':probeMode.startsWith('reports-')?'sim-reports-probe':probeMode.startsWith('backup-')?'sim-backup-probe':probeMode?PROBE_PROJECT:native&&config.auth?.enabled?testProject(config.auth):syncPreview?'browser-sync-preview':onboardingPreview?'browser-onboarding-preview':'browser-preview';
-    const syncEnabled=syncPreview||native&&!probeMode&&config.sync?.enabled===true&&config.auth?.enabled;
-    const backend=syncEnabled?(owner=>syncPreview?previewBackend(sharedVault,owner,online):testBackend(auth,config.auth,owner)):null;
+    const serverRegistration=registrationEnabled(config),syncEnabled=syncPreview||native&&!probeMode&&config.sync?.enabled===true&&config.auth?.enabled;
+    const backend=syncEnabled?(owner=>syncPreview?previewBackend(sharedVault,owner,online):(serverRegistration?registrationBackend:testBackend)(auth,config.auth,owner)):null;
     accounts=createAccountStore(vault,{project,backend,canDownload,online,onSync:(kind,state)=>syncView?.update(kind,state),onState:state=>{stateChanged(state).catch(fail)}});
     async function choosePreview(index){
       const value=JSON.stringify({id:previewAccounts[index].user.id});

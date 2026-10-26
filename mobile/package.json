@@ -30,7 +30,8 @@
     "test:accessibility": "node test/accessibility-ui.mjs",
     "test:policies": "node test/policies-ui.mjs",
     "probe:files:ios": "node scripts/probe-files-ios.mjs",
-    "test:onboarding": "node test/onboarding-ui.mjs"
+    "test:onboarding": "node test/onboarding-ui.mjs",
+    "test:registration": "node --test test/registration.test.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",

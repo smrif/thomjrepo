@@ -16,8 +16,17 @@ physical-device, real-provider, real-account or owner judgment checks.
 | IOS-QA-07 | Configure the separate test deletion service with the test server secret entered directly into its encrypted worker binding; separately approve a disposable identity and permanent deletion. | Correct exact account deleted, old session denied, separate account retained; uncertain outcome stays gated. | Synthetic service/ownership, two-device deletion, rejection/lost-response tests pass. Live service/secret and irreversible disposable QA remain pending. |
 | IOS-QA-08 | Review final app name, bundle identifier, developer team, support/policy links, listing copy, privacy answers and release screenshots. | Owner-approved identity/listing and disclosures matching the actual release behavior. | Current identifier is the feasibility identifier; no TestFlight or App Store release exists. Guided onboarding records a separate explicit local receipt; production/server acceptance integration still needs the release contract. Draft listing/data inventory and screenshot/review plan are in [release preparation](mobile-release-preparation.md). Owner/legal decisions remain separate. |
 | IOS-QA-09 | Approve a fresh test signup/email when ready, then check unfinished setup, email return, expired/duplicate links and completed-account reopen on an iPhone. | Correct verified email receives its own setup/receipt; existing accounts restore without overwritten names or inferred agreement; keyboard and VoiceOver remain usable. | Guided browser/atomic storage tests pass with synthetic data. Native WebView form, unfinished draft, pending-verification termination, explicit receipt and cold reopen pass with synthetic verification. No fresh emails, live identity creation or production acceptance writes were performed. |
+| IOS-QA-10 | Confirm applying the prepared registration migration only to Whose Day Mobile Test, verify metadata, then separately approve a fresh test signup for server recovery QA. | Atomic profile/history, owner-only history reads, no direct receipt mutation, exact retry and existing-account restoration work on Supabase. | Isolated PostgreSQL and actual SDK/in-memory transport checks pass, including rollback, response loss, legacy profiles and account changes. Hosted endpoint/flag remain disabled; final production identity/callback/activation needs separate review. See [registration contract](mobile-registration.md). |
 
 ## Codex first-pass record
+
+- Server registration preparation: website profile mapping and an atomic,
+  retry-safe profile/acceptance RPC are implemented. Local database/client checks
+  pass; direct history mutation and anonymous access are denied. Hosted schema
+  and real signup remain unverified. See [contract and activation boundaries](mobile-registration.md).
+  The October 26 rebuilt native onboarding regression passes (168 seconds, zero
+  failures), alongside 86 unit checks and the affected browser suites. A one-off
+  Settings scroll assertion passed on unchanged rerun; its cause is unproven.
 
 - Guided onboarding: five steps, resumable verified drafts, explicit versioned
   local agreement receipt, account guards and existing-profile protection are
