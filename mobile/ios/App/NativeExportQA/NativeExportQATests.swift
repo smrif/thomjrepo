@@ -125,6 +125,9 @@ final class NativeExportQATests: XCTestCase {
         let resend = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Send a new sign-up link")).firstMatch
         XCTAssertTrue(resend.exists); XCTAssertFalse(resend.isEnabled)
         picture(app, "Native onboarding awaiting synthetic verification")
+        tap(app, "Save and leave setup")
+        XCTAssertTrue(app.buttons["Create an account"].firstMatch.waitForExistence(timeout: 15))
+        picture(app, "Pending signup preserved after leaving setup")
         // The DEBUG fixture delivers the synthetic identity on the next launch,
         // proving that pending submission survives termination before verification.
         app.terminate(); app.launch()

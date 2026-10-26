@@ -50,7 +50,7 @@ export function mountOnboarding({vault,project,native,accounts,auth,previewAccou
   form.addEventListener('input',event=>{if(busy||!active||draftBroken)return;feedback('');if(event.target.id==='onboarding-agree')return;waiting=false;persist().catch(()=>{});});
   $('onboarding-preview-account').onchange=()=>{$('onboarding-email').value=previewAccounts[Number($('onboarding-preview-account').value)].user.email;$('onboarding-agree').checked=false;persist().catch(()=>{});};
   $('onboarding-back').onclick=async()=>{if(busy)return;try{setBusy(true);step--;feedback('');render();await persist();}catch(error){feedback(error.message);}finally{setBusy(false)}};
-  $('onboarding-leave').onclick=async()=>{if(busy)return;setBusy(true);try{if(!draftBroken){await persist();await store.intent(null);}active=false;generation++;countdown();$('onboarding-agree').checked=false;if(scope)await auth().signOut();else setView('welcome');}catch(error){feedback(error.message);}finally{setBusy(false)}};
+  $('onboarding-leave').onclick=async()=>{if(busy)return;setBusy(true);try{if(!draftBroken){await persist();if(!waiting)await store.intent(null);}active=false;generation++;countdown();$('onboarding-agree').checked=false;if(scope)await auth().signOut();else setView('welcome');}catch(error){feedback(error.message);}finally{setBusy(false)}};
   $('onboarding-restart').onclick=async()=>{if(busy)return;try{await store.clear();await begin(accounts.state.status==='needs-profile'?accounts.state.account:null)}catch{feedback('Could not replace the saved draft. Close and reopen to retry.')}};
   form.onsubmit=async event=>{
     event.preventDefault();if(busy||draftBroken)return;const current=generation;setBusy(true);feedback('');

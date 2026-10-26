@@ -27,6 +27,8 @@ in-app offline reader. The website's signup and acceptance behavior are unchange
   cannot inherit its family labels or agreement. Pending agreement expires after
   24 hours (answers remain saved), and future-dated submissions require review.
   The storage key must match the guest or exact verified-account scope.
+  Save and leave after requesting a link preserves the pending submission so a
+  verified return can finish without asking for the family details again.
 - Native signup uses the existing test-only PKCE client and requests creation
   only for the explicitly approved inbox when that configuration allows it.
   Sign in always requests `shouldCreateUser:false`, including when signup is
@@ -86,8 +88,10 @@ or deliberately gate all lab routes/shortcuts.
   terminates with an unfinished draft, resumes it, reads the policy, explicitly
   agrees, verifies the resend timer, terminates while verification is pending,
   then completes from the synthetic returned identity and reopens the account.
-  SQLite receipt/profile readback is required by the wrapper. Eight screenshots
-  were reviewed; a safe-area mask fixes scrolled text behind the status bar.
+  SQLite receipt/profile readback is required by the wrapper. Nine screenshots
+  were exported, including leaving the pending signup; visual review also covers
+  the return to the account screen. A safe-area mask fixes scrolled text behind
+  the status bar.
   Initial incomplete XCTest runs are not counted as passes; waits now confirm
   saved progress and each screen, and close the native keyboard before continuing.
 - The extended native account write/read probe also passes: unfinished onboarding
@@ -115,8 +119,13 @@ with source hashes, XCTest result bundle, screenshots and exact synthetic receip
 `mobile/.build/ios-account-probe.json` records the extended storage restart cases.
 The runner rejects physical devices and all verification is labeled synthetic.
 
-Final simulator UI run: 104 seconds, zero failures at 15:00 PDT on October 23.
-Result bundle: `whose-day-files-ui-6wntbO/result.xcresult`; eight exported screenshots
-were visually inspected. Source/build hashes in the evidence match the tested
+Final simulator UI run: 88 seconds, zero failures at 15:08 PDT on October 23.
+Result bundle: `whose-day-files-ui-ca6Lio/result.xcresult`; nine exported screenshots
+include the successful Save and leave/pending-verification recovery sequence. Source/build hashes in the evidence match the tested
 WebView bundle, native bridge and XCTest source. No physical install, provider
 change, email, production deployment or App Store action was performed.
+
+October 26 completion after the rate-limit interruption: browser checks at 320px
+and 390px now explicitly cover leaving/resuming before requesting a link. The
+assertions wait for draft loading to finish. Combined with the October 23 native
+pending-link leave/reopen pass, this verifies both Save and leave paths.
