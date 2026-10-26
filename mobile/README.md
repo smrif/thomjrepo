@@ -340,8 +340,10 @@ file limit, permission boundary and remaining device/provider checks.
 The optional registration adapter uses the website profile schema and a single
 authenticated RPC for new profile plus protected acceptance history. Existing
 profiles restore without inferred agreement or replacement. The migration and
-SDK/database recovery tests are prepared; hosted schema and configuration remain
-unchanged. Run `pnpm test:registration` for isolated PostgreSQL/SDK QA.
+SDK/database recovery tests pass. The migration is now applied only to Whose Day
+Mobile Test with passing hosted access checks and its ignored local flag enabled;
+real signup/email-return QA remains pending. Run `pnpm test:registration` for
+isolated PostgreSQL/SDK QA.
 See [registration contract and enablement](../docs/product/mobile-registration.md)
 before setting `registration.enabled` and `contractVersion: 1` in ignored test
 configuration. Production URL refusal and the current callback remain in place.

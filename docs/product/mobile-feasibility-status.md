@@ -1,4 +1,4 @@
-# Mobile feasibility status — October 23, 2026
+# Mobile feasibility status — October 26, 2026
 
 The owner approved Capacitor and the small feasibility build. Implementation is
 isolated in `mobile/`, with small platform hooks and verified-save handling in
@@ -7,6 +7,13 @@ platform hooks were subsequently deployed to the website October 22; the native
 app has not been released. Production provider settings are unchanged.
 
 ## Implemented
+
+- October 26 server registration: atomic profile/acceptance history and exact
+  retry are implemented and tested locally. The additive migration is applied
+  only to Whose Day Mobile Test; ten hosted permission checks, anonymous API
+  denial and authenticated missing-identity rejection pass. The ignored local
+  test flag is enabled. Real signup/email-return QA and production activation
+  remain separate. See [registration](mobile-registration.md).
 
 - October 23 guided onboarding: separate signup/sign-in, five validated steps,
   verified resumable drafts, matching-email completion and an atomic local

@@ -87,11 +87,16 @@
   atomic profile/acceptance history, exact-attempt recovery, existing website
   profile mapping/preservation, protected owner-readable receipts and an explicit
   test-project configuration gate. See [registration contract](docs/product/mobile-registration.md).
-  No hosted migration, production activation or fresh email was performed.
-- [ ] Review/apply the registration migration in the separate mobile test
-  project, verify its grants/RLS/RPC on the provider, then enable the explicit
-  registration flag for approved live signup/recovery QA. Final release
-  identity/callback configuration and production activation remain gated.
+  Hosted test activation is recorded below; production activation and fresh
+  signup emails remain separate.
+- [x] Apply the registration migration only in Whose Day Mobile Test and verify
+  provider grants/RLS/RPC. October 26: ten catalog checks pass, anonymous history/
+  RPC access returns 401/42501, and authenticated execution rejects missing
+  identity with 22023 without user writes. The ignored local registration v1 flag
+  is enabled. No production change, real signup or email was performed.
+- [ ] Complete separately approved real signup/email-return and server receipt/
+  retry QA. Final release identity/callback configuration and production
+  activation remain gated.
 - [x] Connect the test-project sign-in client to a verified local family profile
   and account-specific shared check-ins. October 22: 28 unit/integration checks
   and two-account UI walkthroughs at 390px/320px passed, including offline reopen,

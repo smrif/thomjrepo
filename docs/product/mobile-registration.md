@@ -1,9 +1,11 @@
 # Mobile server registration contract — October 26, 2026
 
-The release registration transaction is implemented and tested locally against
-the same profile schema as the website. It is not deployed or enabled in a hosted
-project. Production authentication remains blocked by the existing test-project
-guard; no production configuration, users or acceptance records were changed.
+The release registration transaction is implemented against the website profile
+schema and was applied October 26 only to **Whose Day Mobile Test**
+(`ijewfmltnlqpydwuiedb`). Hosted permission checks pass and the ignored local test
+flag is enabled. Production authentication remains blocked by the existing
+test-project guard. No production configuration, real signup, email or user
+acceptance record was changed by this activation.
 
 ## Account and data mapping
 
@@ -66,11 +68,13 @@ The optional ignored local configuration is explicit:
 ```
 
 This is only the relevant fragment; keep the existing separate test-project URL,
-publishable key and approved test-inbox restrictions. Do not enable it until the
-new migration is applied and verified in **Whose Day Mobile Test**
-(`ijewfmltnlqpydwuiedb`). Missing flags preserve the current test app. An enabled
+publishable key and approved test-inbox restrictions. Enable it only after the
+migration is applied and verified in the separate test project. That step is
+complete for **Whose Day Mobile Test**. Missing flags preserve the current test app. An enabled
 contract with missing auth/sync, an unknown version or the production URL is
-refused by the build/runtime. No local configuration was changed by this work.
+refused by the build/runtime. October 26 activation changes only this flag in
+the existing ignored local test configuration; auth, sync and inbox restrictions
+are preserved.
 
 Before hosted application, review the exact additive migration and target. Never
 replay the baseline/bootstrap into an existing project. After application, run
@@ -99,8 +103,9 @@ legacy profile preservation, deletion cascade/stale identity, local storage
 failure, lost server response, a profile created during email return, invalid
 receipt responses, stale drafts, offline completion and account changes.
 
-Hosted schema/RPC, real signup and physical-device checks are deferred in
-[owner QA](mobile-owner-qa.md). This increment does not claim those passed.
+Hosted schema/access verification is complete as recorded below. Real signup,
+server receipt recovery through an email return and physical-device checks
+remain deferred in [owner QA](mobile-owner-qa.md).
 
 October 26 evidence: all 86 mobile unit/integration tests pass. The rebuilt iOS
 17.5 simulator onboarding regression also passes (168 seconds, zero failures):
@@ -124,4 +129,39 @@ Local logs: `/tmp/whose-day-registration-unit-final.log`,
 `/tmp/whose-day-registration-settings-diagnostic.log` and
 `/tmp/whose-day-registration-native.log`. The preceding `ac17848` hosted run
 [passed both jobs](https://github.com/smrif/thomjrepo/actions/runs/40347930607);
-the new registration increment needs its own hosted verification.
+the registration implementation's own
+[hosted run also passed both jobs](https://github.com/smrif/thomjrepo/actions/runs/40357744730).
+
+## Hosted test-project activation
+
+The owner approved proceeding after reviewing the migration and its new
+authenticated endpoint. The Supabase dashboard showed **Whose Day Mobile Test**,
+project `ijewfmltnlqpydwuiedb`, and a healthy database. Read-only preflight found
+the existing `profiles` table and no registration table/function. The complete
+reviewed SQL was pasted, copied back and compared before execution. The editor
+reported success. It was applied through the SQL editor; Supabase migration
+history metadata was not repaired or changed.
+
+- The read-only metadata query returned one row with all ten checks true,
+  including RLS, owner reads, no direct client/anonymous history mutations,
+  authenticated-only RPC execution, fixed search path and Auth deletion cascade.
+- API requests using only the existing public test-project key returned HTTP 401
+  and PostgreSQL `42501` for both history reads (`limit=0`) and RPC execution.
+  No real identity or user record was used.
+- A transaction-local authenticated role with no JWT subject reached the RPC and
+  received exactly `22023: Verified account does not match setup`. The check
+  rolled back and wrote no user data. This verifies function execution/refusal,
+  not a positive real-user signup.
+- The ignored local configuration now enables registration contract v1. The
+  test-project, sync and approved-inbox settings are preserved. Production
+  refusal remains enforced. No email, new identity or acceptance row was created.
+- The simulator build with this test flag succeeds. The browser bundle, copied
+  iOS assets and compiled app have matching hashes and include the enabled v1
+  flag. Build log: `/tmp/whose-day-registration-enabled-ios-build.log`. This is
+  build/configuration evidence, not a real authenticated signup test.
+
+Evidence: ignored `mobile/.build/registration-hosted.json` and
+`mobile/.build/registration-hosted-security.png`. Live signup/email return,
+receipt/retry and existing-user restoration still require the approved real
+account QA pass. Production activation and final callback/signing identity
+remain separate release gates.
