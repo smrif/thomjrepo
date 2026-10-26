@@ -91,11 +91,17 @@ try {
     assert.equal(await page.evaluate(() => fetch('/api/probe').then(() => true).catch(() => false)), false, 'API responses must not be served offline');
     await page.reload();
     await page.locator('#s-home').waitFor({ state: 'visible' });
+    await page.waitForFunction(() => appAccessState === 'offline');
     await page.evaluate(() => showCal());
     assert.equal(await page.locator('#s-cal').isVisible(), true);
     await page.evaluate(() => showSetup());
     assert.equal(await page.locator('#s-setup').isVisible(), true);
-    assert.match(await page.locator('#cloud-sync-status-panel').innerText(), /offline/i);
+    // Offline startup hides the signed-in sync panel. Check the status that is
+    // actually shown, rather than text persisted inside that hidden panel.
+    assert.match(await page.locator('#settings-sync-summary').innerText(), /offline/i);
+    await page.evaluate(() => openSettingsPage('sync'));
+    await page.locator('#cloud-auth-pill').waitFor({ state: 'visible' });
+    assert.match(await page.locator('#cloud-auth-pill').innerText(), /offline/i);
     // The bundled SDK must load on a cold offline reload, not just in the first tab.
     const session = await page.evaluate(() => WhoseDayBackend.getSession());
     assert.equal(session.user.id, 'offline-test');

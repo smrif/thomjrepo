@@ -129,3 +129,18 @@ October 26 completion after the rate-limit interruption: browser checks at 320px
 and 390px now explicitly cover leaving/resuming before requesting a link. The
 assertions wait for draft loading to finish. Combined with the October 23 native
 pending-link leave/reopen pass, this verifies both Save and leave paths.
+
+The hosted run for `7ee4d76` passed onboarding but failed two older assertions:
+the website offline check read text inside a hidden signed-in status panel, and
+the mobile policy check expected Today after reopening a saved Settings route.
+The tests now wait for offline account startup and assert the visible status,
+and wait for account mounting on the restored Settings route. Both targeted
+checks pass locally. These fixes change test assertions only; native source and
+the simulator evidence above are unchanged.
+
+October 26 full local verification also passes: 79 mobile unit tests, all ten
+mobile browser suites (including 87 accessibility checkpoints and both policy
+viewports), and all 49 website release results. Logs are in
+`/tmp/whose-day-onboarding-unit-current.log`,
+`/tmp/whose-day-onboarding-mobile-final.log` and
+`/tmp/whose-day-onboarding-release-final.log`. Hosted CI is separate evidence.

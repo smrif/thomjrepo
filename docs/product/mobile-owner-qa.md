@@ -1,6 +1,6 @@
 # iOS owner QA and decisions
 
-Updated October 23, 2026. The owner asked Codex to continue implementation while
+Updated October 26, 2026. The owner asked Codex to continue implementation while
 away, run a first QA pass and collect checks requiring owner help. Keep this list
 current as each increment finishes. Local/synthetic results do not substitute for
 physical-device, real-provider, real-account or owner judgment checks.
@@ -23,6 +23,10 @@ physical-device, real-provider, real-account or owner judgment checks.
   local agreement receipt, account guards and existing-profile protection are
   implemented. Browser rollback/retry and offline reopen pass at 320px/390px;
   native form/pending-verification/cold-reopen and account storage probes also pass.
+  October 26 follow-up verifies Save and leave before and after requesting a
+  link. CI exposed two older assertions: offline status must use the visible
+  Settings status, and policy reopening must wait for the restored Settings
+  route. Both corrected checks pass locally; no new owner QA is required.
   See [onboarding evidence and release boundaries](mobile-onboarding.md).
 
 - Offline policies: complete current versioned text, internal links, source focus/
