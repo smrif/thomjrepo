@@ -84,6 +84,33 @@ final class NativeExportQATests: XCTestCase {
         if done.exists && done.isHittable { done.tap() }
         text(app, "Setup progress saved on this device.")
     }
+    func testCandidateSignedOutEntry() throws {
+        #if DEBUG
+        throw XCTSkip("Run this check only against the isolated Release candidate.")
+        #else
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.whoseday.feasibility")
+        for arguments in [[], ["--lab-onboarding-write", "--lab-account-write", "--lab-auth"]] {
+            app.launchArguments = arguments; app.launch()
+            text(app, "Test sign-in is not configured in this build.")
+            let signup = app.buttons["Create an account"].firstMatch
+            XCTAssertTrue(signup.exists); XCTAssertFalse(signup.isEnabled)
+            XCTAssertFalse(app.buttons["Sign in"].firstMatch.isEnabled)
+            XCTAssertFalse(app.buttons["Use sample account A"].exists)
+            XCTAssertFalse(app.buttons["Use sample account B"].exists)
+            XCTAssertFalse(app.links["Open native lab"].exists)
+            XCTAssertFalse(app.links["Open sample check-in"].exists)
+            XCTAssertFalse(app.staticTexts["Ready to log today"].exists)
+            picture(app, arguments.isEmpty ? "Candidate welcome" : "Candidate ignores lab launch arguments")
+            tap(app, "Terms of Use"); text(app, "Terms of Use")
+            picture(app, "Candidate bundled terms"); tap(app, "Back")
+            tap(app, "Privacy Policy"); text(app, "Privacy Policy")
+            picture(app, "Candidate bundled privacy"); tap(app, "Back")
+            text(app, "Test sign-in is not configured in this build.")
+            app.terminate()
+        }
+        #endif
+    }
     func testOnboardingColdReopen() throws {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.whoseday.feasibility")

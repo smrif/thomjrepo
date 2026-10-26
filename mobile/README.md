@@ -8,6 +8,12 @@ accepts optional project ownership for isolated mobile backups.
 
 ## What is implemented
 
+- Separate candidate packaging: isolated native Release simulator build and
+  unsigned device inspection archive, with manifest/binary/identity checks and
+  fresh simulator entry/policy/reopen QA. Development lab tools stay in Debug;
+  native probe methods are omitted from Release. See
+  [native candidate commands and gates](../docs/product/mobile-native-candidate.md).
+
 - Guided native onboarding: separate signup/sign-in, family/activity steps,
   verified resumable drafts and an explicit account/version-bound local receipt
   committed atomically with the profile. Browser Create an account uses labeled

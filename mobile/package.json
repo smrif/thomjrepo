@@ -6,6 +6,9 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "build:candidate": "node scripts/build.mjs --candidate",
+    "build:candidate:ios": "node scripts/build-candidate-ios.mjs --simulator",
+    "archive:candidate:ios": "node scripts/build-candidate-ios.mjs --archive",
+    "probe:candidate:ios": "node scripts/probe-candidate-ios.mjs",
     "test:candidate": "node test/candidate-ui.mjs",
     "sync": "node scripts/build.mjs && cap sync",
     "test": "node --test test/*.test.mjs",

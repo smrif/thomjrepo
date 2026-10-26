@@ -17,9 +17,24 @@ physical-device, real-provider, real-account or owner judgment checks.
 | IOS-QA-08 | Review final app name, bundle identifier, developer team, support/policy links, listing copy, privacy answers and release screenshots. | Owner-approved identity/listing and disclosures matching the actual release behavior. | Current identifier is the feasibility identifier; no TestFlight or App Store release exists. Guided onboarding records a separate explicit local receipt; production/server acceptance integration still needs the release contract. Draft listing/data inventory and screenshot/review plan are in [release preparation](mobile-release-preparation.md). Owner/legal decisions remain separate. |
 | IOS-QA-09 | Approve a fresh test signup/email when ready, then check unfinished setup, email return, expired/duplicate links and completed-account reopen on an iPhone. | Correct verified email receives its own setup/receipt; existing accounts restore without overwritten names or inferred agreement; keyboard and VoiceOver remain usable. | Guided browser/atomic storage tests pass with synthetic data. Native WebView form, unfinished draft, pending-verification termination, explicit receipt and cold reopen pass with synthetic verification. No fresh emails, live identity creation or production acceptance writes were performed. |
 | IOS-QA-10 | Separately approve a fresh test signup for actual server receipt/email-return recovery QA. | Atomic profile/history, exact retry and existing-account restoration work through a real verified identity on Supabase. | October 26: migration applied only to Whose Day Mobile Test; all ten hosted security checks pass, anonymous table/RPC access is denied (401/42501), authenticated missing identity is rejected (22023), and the ignored local v1 flag is enabled. No real signup/email was performed. Final production identity/callback/activation needs separate review. See [registration contract](mobile-registration.md). |
-| IOS-QA-11 | After release identity/signing/configuration are approved and the native archive uses the candidate profile, review that installed build on an iPhone. | Correct account onboarding and recovery work; lab/sample routes and probe launch modes do not appear; archive payload hashes match the reviewed candidate. | October 26: separate candidate web packaging, explicit config isolation, staged rejection/recovery and browser boundaries pass. Native build commands still use development assets. The browser native-platform shim is DOM-only evidence; no installed candidate, archive, production activation or submission is claimed. See [candidate packaging](mobile-candidate-packaging.md). |
+| IOS-QA-11 | After final identity/signing/configuration are approved, review the signed candidate on an iPhone. | Correct account onboarding and recovery work; lab/sample routes and probe launch modes do not appear; signed archive payload hashes match the reviewed candidate. | October 26: isolated native Release simulator build and unsigned device inspection archive verify candidate resource hashes, identity/configuration, build settings and omitted native probe markers. Fresh simulator welcome/policies/reopen/ignored-lab-argument checks pass, with six screenshots and restored reference boot state. Auth is disabled for this pass; no real account, signed device build, production activation or submission is claimed. See [native candidate packaging](mobile-native-candidate.md). |
 
 ## Codex first-pass record
+
+- Native candidate packaging: separate Release simulator and unsigned device
+  archive commands preserve development assets and existing app identity. Copied
+  and compiled web resources must match the candidate manifest, with only two
+  empty Capacitor compatibility stubs allowed. Probe methods/registrations are
+  omitted from Release. All 94 unit/integration checks pass, including new native
+  boundary refusals. Actual unconfigured candidate XCTest passes on a fresh
+  iOS 17.5 simulator; six screenshots were exported and inspected. The reference
+  simulator's original app/data was not replaced and its boot state was restored.
+  Debug compilation and synthetic account/backup/rollback restart probes also
+  pass; the candidate browser boundary check passes. Archive inspection initially hit a JSON-incompatible date in Xcode metadata;
+  the checker now extracts the required application path directly. See ignored
+  `ios-candidate-simulator.json`, `ios-candidate-ui.json` and
+  `ios-candidate-archive.json` under `mobile/.build`. Final signed archive,
+  authenticated candidate flows and physical/provider QA remain separate.
 
 - Candidate web packaging: the emitted 48-file payload excludes lab/preview and
   standalone check-in routes, sample shortcuts, mock controls, demo/reset actions

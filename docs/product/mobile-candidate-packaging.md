@@ -81,12 +81,16 @@ in that QA directory. Development native regression results are tracked in
 ## Remaining release work
 
 The ordinary `build:ios`, Capacitor config and native development artifact still
-use `www`. There is intentionally no signing/archive/upload command for the new
-profile yet. Before a release: approve app identity/team/callback/device scope,
-wire the candidate profile into the native archive without reverting to lab
-assets, verify copied and archived payload hashes, and run candidate native/device
-QA. Native simulator helper methods already require DEBUG plus simulator at
-compile time; candidate JavaScript does not call them.
+use `www`. Separate native candidate commands now stage Release simulator builds
+and unsigned device inspection archives, with copied/compiled resource and binary
+checks. Actual unconfigured candidate welcome/policy/reopen QA passes on a fresh
+simulator. See [native candidate packaging](mobile-native-candidate.md) for commands
+and evidence. Native probe methods are omitted from Release; development simulator
+tools remain available.
+
+Before a release, approve app identity/team/callback/device scope, complete the
+approved account/provider checks, and verify the final signed archive and physical
+device. The unsigned inspection archive does not satisfy these remaining gates.
 
 Actual signup/email-return, server receipt/retry, production activation, live
 deletion, privacy/store assets and TestFlight/App Store submission remain under

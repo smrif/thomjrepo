@@ -102,10 +102,15 @@
   probes. Separate config/output, staged validation, file hashes and automated
   browser/build boundary QA are implemented. Development QA tools remain available.
   See [candidate packaging](docs/product/mobile-candidate-packaging.md).
-- [ ] Wire the approved candidate profile into the final native archive and
-  verify its bundled hashes, identity/callback configuration and device behavior.
-  Current native build commands still produce the development app; production,
-  signing, real-account QA and store release approvals remain separate.
+- [x] Connect the candidate profile to an isolated native Release simulator build
+  and unsigned device inspection archive. Verify copied/compiled web bytes,
+  preserved identity/config, Release settings, omitted native probes and untouched
+  development assets. Fresh simulator welcome/policies/reopen/ignored-lab-argument
+  QA passes. See [native candidate packaging](docs/product/mobile-native-candidate.md).
+- [ ] Apply the owner-approved final app identity/team/callback/device scope and
+  verify the final signed archive and physical-device behavior. Existing native
+  development commands still produce the lab app; production activation,
+  real-account QA and store release approvals remain separate.
 - [x] Connect the test-project sign-in client to a verified local family profile
   and account-specific shared check-ins. October 22: 28 unit/integration checks
   and two-account UI walkthroughs at 390px/320px passed, including offline reopen,

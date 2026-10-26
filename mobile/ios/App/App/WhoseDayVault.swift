@@ -11,7 +11,16 @@ import ImageIO
 public class WhoseDayVaultPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDelegate, UIAdaptivePresentationControllerDelegate, PHPickerViewControllerDelegate {
     public let identifier = "WhoseDayVaultPlugin"
     public let jsName = "WhoseDayVault"
-    public let pluginMethods: [CAPPluginMethod] = ["testMode", "write", "read", "keys", "writeSecret", "readSecret", "removeSecret", "makeReport", "compareBatch", "exportBackup", "importBackup", "probeBackupFile", "makeTextFile", "saveExport", "copyText", "pickImage"].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
+    public let pluginMethods: [CAPPluginMethod] = {
+        var names = ["write", "read", "keys", "writeSecret", "readSecret", "removeSecret", "makeReport", "compareBatch", "exportBackup", "importBackup", "makeTextFile", "saveExport", "copyText", "pickImage"]
+        #if DEBUG
+        names += ["testMode"]
+        #if targetEnvironment(simulator)
+        names += ["probeBackupFile"]
+        #endif
+        #endif
+        return names.map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
+    }()
     private let queue = DispatchQueue(label: "com.whoseday.feasibility.vault")
     private let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
     private enum VaultError: Error { case invalid, storage }
@@ -69,8 +78,9 @@ public class WhoseDayVaultPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerD
         }
     }
 
+    #if DEBUG
     @objc func testMode(_ call: CAPPluginCall) {
-        #if DEBUG && targetEnvironment(simulator)
+        #if targetEnvironment(simulator)
         let args = ProcessInfo.processInfo.arguments
         let mode = args.contains("--lab-onboarding-write") ? "onboarding-write" : args.contains("--lab-onboarding-read") ? "onboarding-read" : args.contains("--lab-photo-write") ? "photo-write" : args.contains("--lab-photo-read") ? "photo-read" : args.contains("--lab-reports-write") ? "reports-write" : args.contains("--lab-reports-read") ? "reports-read" : args.contains("--lab-backup-write") ? "backup-write" : args.contains("--lab-backup-read") ? "backup-read" : args.contains("--lab-account-write") ? "account-write" : args.contains("--lab-account-read") ? "account-read" : args.contains("--lab-checkin-write") ? "checkin-write" : args.contains("--lab-checkin-read") ? "checkin-read" : args.contains("--lab-probe-write") ? "write" : args.contains("--lab-probe-read") ? "read" : args.contains("--lab-auth") ? "auth" : ""
         call.resolve(["mode": mode])
@@ -78,6 +88,7 @@ public class WhoseDayVaultPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerD
         call.resolve(["mode": ""])
         #endif
     }
+    #endif
     private func key(_ call: CAPPluginCall) throws -> String {
         guard let key = call.getString("key"), !key.isEmpty, key.count <= 200,
               key.range(of: "^[A-Za-z0-9:._-]+$", options: .regularExpression) != nil else { throw VaultError.invalid }
@@ -250,17 +261,15 @@ public class WhoseDayVaultPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerD
             } catch { DispatchQueue.main.async { self.finishDocument(error: "Could not read this backup. Choose a UTF-8 JSON file up to 25 MB.") } }
         }
     }
+    #if DEBUG && targetEnvironment(simulator)
     @objc func probeBackupFile(_ call: CAPPluginCall) {
-        #if DEBUG && targetEnvironment(simulator)
         guard ProcessInfo.processInfo.arguments.contains("--lab-backup-write"), let text = call.getString("text") else { call.reject("Probe unavailable."); return }
         queue.async { do {
             let url = try self.backupFile(text, name: "whose-day-backup-2000-01-01.json"); defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
             call.resolve(["text": try self.readBackup(url)])
         } catch { call.reject("Backup file probe failed.") } }
-        #else
-        call.reject("Probe unavailable.")
-        #endif
     }
+    #endif
     private func secretQuery(_ call: CAPPluginCall) throws -> [String: Any] {
         return [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: "com.whoseday.feasibility.auth", kSecAttrAccount as String: try key(call)]
     }
